@@ -1,0 +1,25 @@
+#########################################################3
+# Design
+#########################################################3
+
+class AssignInAlways extends Module
+  constructor: ->
+    super()
+
+    Port(
+      din: input(5)
+      dout: output(5)
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      r1: reg(5).init(0)
+    )
+
+  build: ->
+    always =>
+      assign(@r1(3:1)) => $ @din(4:2)+0x100
+
+module.exports=AssignInAlways
+

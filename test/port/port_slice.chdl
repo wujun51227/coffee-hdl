@@ -1,0 +1,21 @@
+#########################################################3
+# Design
+#########################################################3
+
+class PortSlice extends Module
+  constructor: ->
+    super()
+    
+    Port(
+      din: input(5)
+      dout: input(5)
+    )
+
+
+  build: ->
+    assign(@dout(3,2)) => $ @din(0,2)+@din(0)
+    assign(@dout(2:0)) => $ @din(4:2)+@din(0)
+
+
+module.exports=PortSlice
+

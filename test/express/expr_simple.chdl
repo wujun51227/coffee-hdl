@@ -1,0 +1,14 @@
+class ExprSimple extends Module
+  constructor: ->
+    super()
+    Port(
+      out: input(5)
+      sel: input()
+    )
+
+  build: ->
+    data=100
+    assign(@out) => $ @sel ? {data+1} ":" hex(5,0x1f)
+
+module.exports=ExprSimple
+

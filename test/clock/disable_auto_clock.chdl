@@ -1,0 +1,34 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+
+    @disableAutoClock()
+
+    Port(
+      din: input(10)
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      count: reg(10)
+    )
+
+  build: ->
+    always =>
+      assign(@count) => $ @din + 1
+
+class DisableAutoClock extends Module
+  u0_cell1: new cell1()
+
+  constructor: ->
+    super()
+    @disableAutoClock()
+
+  build: ->
+
+module.exports=DisableAutoClock
+

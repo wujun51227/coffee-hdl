@@ -1,0 +1,50 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    #@setBlackBox()
+    Port(
+      din: input(16)
+      dout: output(16)
+    )
+
+  build: ->
+
+class cell2 extends Module
+  u0_cell1: new cell1()
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: bind('c_din')
+        dout: bind('c_dout')
+    )
+
+    @u0_cell1.bind(
+      din: channel('c_din')
+      dout: channel('c_dout')
+    )
+
+  build: ->
+
+
+class ChanelBindExtend extends Module
+  u0_cell2: new cell2()
+
+  constructor: ->
+    super()
+
+    Port(
+      top_port: bind('ch')
+    )
+
+    @u0_cell2.bind(
+      bundle: channel('ch')
+    )
+
+  build: ->
+
+module.exports=ChanelBindExtend
+

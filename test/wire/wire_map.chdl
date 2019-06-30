@@ -1,0 +1,45 @@
+#########################################################3
+# Design
+#########################################################3
+
+class WireMap extends Module
+  constructor: ->
+    super()
+    Port(
+      dout: input(16)
+      addr: input(16)
+      enable: input()
+    )
+
+    Wire(
+      group1:
+        addr: wire(16)
+        data:
+          byte1: wire(16)
+          byte2: wire(16)
+          byte3: wire(16)
+          byte4: wire(16)
+      group2:
+        addr: wire(16)
+        data:
+          byte1: wire(16)
+          byte2: wire(16)
+          byte3: wire(16)
+          byte4: wire(16)
+    )
+
+  build: ->
+    always =>
+      $if(@enable) =>
+        list=[]
+        for key,value of @group1.data
+          list.push($ {value} + @group2.data[key])
+        assign(@dout) => $ {list.join('+')}
+      $endif()
+
+    assign(@addr) => $ @group1.addr + @group2.addr
+
+
+
+module.exports=WireMap
+

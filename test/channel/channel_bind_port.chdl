@@ -1,0 +1,65 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: input(16)
+        dout: output(16)
+    )
+
+  build: ->
+
+class cell2 extends Module
+  u0_cell1: new cell1()
+  u1_cell1: new cell1()
+  constructor: ->
+    super()
+
+    @u0_cell1.bind(
+      bundle: channel('ch1')
+    )
+
+    @u1_cell1.bind(
+      bundle: channel('ch2')
+    )
+
+  build: ->
+
+class cell3 extends Module
+  constructor: ->
+    super()
+    Port(
+      din: input(16)
+    )
+
+  build: ->
+
+
+class ChannelBindPort extends Module
+  u0_cell2: new cell2()
+  u0_cell1: new cell1()
+  u0_cell3: new cell3()
+
+  constructor: ->
+    super()
+    Port(
+      cell1_port: bind('cell1_ch')
+      cell2_port: bind('u0_cell2.ch1')
+      cell3_port: bind('cell3_ch')
+    )
+
+    @u0_cell1.bind(
+      bundle: channel('cell1_ch')
+    )
+
+    @u0_cell3.bind(
+      din: channel('cell3_ch')
+    )
+
+  build: ->
+
+module.exports=ChannelBindPort
+

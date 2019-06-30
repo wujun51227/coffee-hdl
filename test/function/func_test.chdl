@@ -1,0 +1,42 @@
+#########################################################3
+# Design
+#########################################################3
+
+class FuncTest extends Module
+  constructor: ->
+    super()
+    Port(
+      in1: input(5)
+      in2: input(5)
+      enable: input()
+    )
+
+    Wire(
+      w1: wire(5)
+      w2: wire(15)
+      w3: wire(15)
+    )
+
+    Reg(
+      r1: reg(10)
+    )
+
+  add: (v1,v2) -> $ @in1+{v1}+{v2}
+
+  mul: (v1,v2) -> $ {v1}*{v2}
+
+  build: ->
+    assign(@w1) => $ @add(@mul(hex(10,0x123),@in1),@in2)
+    assign(@w2) => $ cat(@in1,@in2,@w1)
+    list=[@w1,@w2,hex(5,0x1f)]
+    assign(@w3) => $ cat(list)
+    @initial([
+      "w1 = 0"
+    ])
+    always =>
+      assign(@r1) =>
+        @verilog('$display("data is %d",ff1);')
+        $ 100
+
+module.exports=FuncTest
+

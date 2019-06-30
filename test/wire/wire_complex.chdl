@@ -1,0 +1,44 @@
+#########################################################3
+# Design
+#########################################################3
+class WireClass
+  constructor: ->
+    @addr= wire(16)
+    @data= [
+      wire(16)
+      wire(16)
+      wire(16)
+      wire(16)
+    ]
+
+class WireComplex extends Module
+  constructor: ->
+    super()
+    Port(
+      dout: input(16)
+      addr: input(16)
+      enable: input()
+    )
+
+    Wire(
+      wire_array:[
+        new WireClass()
+        new WireClass()
+      ]
+    )
+
+  build: ->
+    assign(@addr) => $ @wire_array[0].addr + @wire_array[1].addr
+    list=[]
+    for i in [0...4]
+      list.push($ @wire_array[0].data[i])
+      list.push($ @wire_array[1].data[i])
+    assign(@dout) =>
+      $if(@enable) =>
+        $ {list.join(' + ')}
+      $else =>
+        0
+      $endif()
+
+module.exports=WireComplex
+

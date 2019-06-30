@@ -1,0 +1,56 @@
+#########################################################3
+# Design
+#########################################################3
+
+class PipeTest extends Module
+  constructor: ->
+    super()
+    Port(
+      in1: input(5)
+      enable: input()
+      dout1: output()
+      dout2: output()
+      reset: input()
+    )
+
+    Wire(
+      sync_sig: wire(5)
+      )
+
+
+  doSync: (sigIn,sigOut)->
+    pipeline(sigIn,{hasReset:'reset'}).next((pipe)=>
+      assign_pipe('d1',sigIn.getWidth()) => $ {sigIn}
+    ).next( (pipe)=>
+      assign_pipe('d2',sigIn.getWidth()) => $ {pipe.d1}
+    ).final( (pipe)=>
+      assign(sigOut) => $ {pipe.d2}
+    )
+
+  build: ->
+    @doSync(@in1,@sync_sig)
+
+    pipeline('doubleSync',{hasReset:'reset'}).next((pipe)=>
+      assign_pipe('d1',5) => $ @in1
+    ).next( (pipe)=>
+      assign_pipe('d2',5) => $ {pipe.d1}+@enable
+    ).next( (pipe)=>
+      assign_pipe('d3',5) => $ {pipe.d2}
+    ).final( (pipe)=>
+      tmp = $ {pipe.d3(10:8)}
+      assign(@dout1) => $ {pipe.d1(3:1)} & {pipe.d2} + {tmp}
+    )
+
+    pipeline('sync').next((pipe)=>
+      #level 1 pipe logic
+      assign_pipe(d1:32) => $ @in1
+    ).next((pipe)=>
+      #level 2 pipe logic
+      assign_pipe(d2:32) => $ {pipe.d1}
+    ).final((pipe)=>
+      #some combo logic
+      assign(@dout2) => $ (!{pipe.d1}) & {pipe.d2}
+    )
+
+module.exports=PipeTest
+

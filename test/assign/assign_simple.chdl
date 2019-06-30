@@ -1,0 +1,18 @@
+#########################################################3
+# Design
+#########################################################3
+
+class AssignSimple extends Module
+  constructor: ->
+    super()
+
+    Port(
+      din: input(5)
+      dout: output(5)
+    )
+
+  build: ->
+    assign(@dout) => $ @din + 1
+
+module.exports=AssignSimple
+

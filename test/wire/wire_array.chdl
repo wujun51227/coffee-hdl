@@ -1,0 +1,36 @@
+#########################################################3
+# Design
+#########################################################3
+
+class WireArray extends Module
+  constructor: ->
+    super()
+    Port(
+      din: input(5)
+      enable: input()
+    )
+
+    Wire(
+      w1: wire(16) for i in [0...5]
+      w2: Array.from({ length: 5 }, () => wire(5))
+      w3: [
+        wire(5)
+        wire(5)
+        wire(5)
+        wire(5)
+        wire(5)
+        ]
+    )
+
+  build: ->
+    for i in [0...@w1.length]
+      assign(@w1[i]) =>
+        $if(@din) =>
+          $ @w2[i] + @w3[i] + @din
+        $else =>
+          $ 0x1f
+        $endif()
+
+
+module.exports=WireArray
+

@@ -1,0 +1,24 @@
+#########################################################3
+# Design
+#########################################################3
+{in_port,out_port} = require 'port_def'
+
+class PortComplex extends Module
+  constructor: ->
+    super()
+    
+    Port(
+      bus: [
+        out_port
+        in_port
+      ]
+    )
+
+
+  build: ->
+    tmp=@bus[1].din
+    assign(@bus[0].dout) => $ @bus[1].din+@bus[2]
+
+
+module.exports=PortComplex
+

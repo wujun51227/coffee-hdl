@@ -1,0 +1,28 @@
+#########################################################3
+# Design
+#########################################################3
+
+class PortArray extends Module
+  constructor: ->
+    super()
+    
+    Port(
+      dout: Array.from({ length: 5 }, () => output(5))
+      din1: (input(5) for i in [0..4])
+      din2: [
+        input(5)
+        input(5)
+        input(5)
+        input(5)
+        input(5)
+        ]
+    )
+
+
+
+  build: ->
+    for i in [0...@dout.length]
+      assign(@dout[i]) => $ @din1[i]+@din2[i]
+
+module.exports=PortArray
+

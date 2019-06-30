@@ -1,0 +1,14 @@
+
+class cell4 extends Module
+  constructor: ->
+    super()
+
+    @setCombModule()
+
+    Port(
+      din: input(10)
+    )
+
+  build: ->
+
+module.exports=cell4

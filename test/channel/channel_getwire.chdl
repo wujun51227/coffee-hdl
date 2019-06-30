@@ -1,0 +1,58 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: input(16)
+        dout: output(16)
+      select: input()
+    )
+
+  build: ->
+
+class cell2 extends Module
+  u0_cell1: new cell1()
+  u1_cell1: new cell1()
+  constructor: ->
+    super()
+
+    @u0_cell1.bind(
+      bundle: channel('ch1')
+    )
+
+    @u1_cell1.bind(
+      bundle: channel('ch2')
+    )
+
+  build: ->
+
+
+class ChannelGetWire extends Module
+  u0_cell2: new cell2()
+  u0_cell1: new cell1()
+
+  constructor: ->
+    super()
+    Port(
+      cell2_port: bind('u0_cell2.ch1')
+      cell1_port: bind('cell1_ch')
+      dout: output(16)
+    )
+
+    Probe(
+      cell2_probe: 'u0_cell2.ch2'
+    )
+
+    @u0_cell1.bind(
+      bundle: channel('cell1_ch')
+      select: channel('cell1_select')
+    )
+
+  build: ->
+    assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.getWire('din')
+
+module.exports=ChannelGetWire
+

@@ -1,0 +1,27 @@
+#########################################################3
+# Design
+#########################################################3
+
+class RegSimple extends Module
+  constructor: ->
+    super()
+
+    Port(
+      hclk: input().asClock()
+      rstn: input().asReset()
+      dout: output(5).fromReg('ff1')
+      din: input(9)
+    )
+
+    Reg(
+      ff1: reg(5).init(0).clock('hclk').syncReset('rstn')
+      ff2: reg(6).init(100).clock('hclk').noReset()
+      ff3: reg(7).init(0xff).clock('hclk').highReset()
+      ff4: reg(8).clock('hclk').syncReset('rstn').highReset()
+      ff5: reg(9)
+    )
+
+  build: ->
+
+module.exports=RegSimple
+

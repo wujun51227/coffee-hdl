@@ -1,0 +1,68 @@
+#########################################################3
+# Design
+#########################################################3
+bus={
+  master:
+    ready: input()
+    valid: output()
+  slave:
+    ready: output()
+    valid: input()
+}
+
+class master_cell extends Module
+  constructor: ->
+    super()
+    Port(
+      master: bus.master
+    )
+
+  build: ->
+
+class slave_cell extends Module
+  constructor: ->
+    super()
+    Port(
+      slave: bus.slave
+    )
+
+  build: ->
+
+class cell1 extends Module
+  u0_master_cell: new master_cell()
+  constructor: ->
+    super()
+
+    @u0_master_cell.bind(
+      master: channel 'master_channel'
+    )
+
+  build: ->
+
+class cell2 extends Module
+  u0_slave_cell: new slave_cell()
+  constructor: ->
+    super()
+
+    @u0_slave_cell.bind(
+      slave: channel 'slave_channel'
+    )
+
+  build: ->
+
+
+class HubSimple extends Module
+  u0_cell1: new cell1()
+  u0_cell2: new cell2()
+
+  constructor: ->
+    super()
+
+    Hub(
+      bus_connect: ['u0_cell1.master_channel','u0_cell2.slave_channel']
+      )
+
+  build: ->
+
+module.exports=HubSimple
+

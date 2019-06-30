@@ -1,0 +1,26 @@
+#########################################################3
+# Design
+#########################################################3
+
+class PortMap extends Module
+  constructor: ->
+    super()
+    
+    Port(
+      bus:
+        enable: input()
+        data:
+          din: input(5)
+          dout: output(5)
+    )
+
+  build: ->
+    assign(@bus.data.dout) =>
+      $if(@bus.enable) =>
+        $ @bus.data.din
+      $else =>
+        $ 0
+      $endif()
+
+module.exports=PortMap
+

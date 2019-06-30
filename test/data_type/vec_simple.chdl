@@ -1,0 +1,23 @@
+class VecSimple extends Module
+  constructor: ->
+    super()
+    Port(
+      in1: input(5)
+      enable: input()
+      out1: output(16)
+    )
+
+    Mem(
+      mem: vec(16,1024)
+    )
+
+  build: ->
+    always =>
+      $if(@enable) =>
+        assign(@mem.index(10)) => $ @in1
+        assign(@mem.index(12)(3:2)) => $ @in1
+        assign(@out1) => $ @mem.index(100)+ @mem.index(11)(15:0)
+      $endif()
+
+module.exports=VecSimple
+

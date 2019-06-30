@@ -1,0 +1,38 @@
+class AssignCond extends Module
+  constructor: ->
+    super()
+
+    width=80
+
+    Port(
+      add1: input(width)
+      add2: input(width)
+      dout_q: output(width+1).fromReg('dout')
+    )
+
+    Reg(
+      dout: reg(width+1)
+      )
+
+    if width>64
+      Reg(
+        latch: reg(65).setField(
+          carry:[64,64]
+          rest:[63,0]
+          )
+        )
+
+
+  build: ->
+    assign(@dout) =>
+      if(@dout.getWidth()<=64)
+        $ @add1 + @add2
+      else
+        hiword= $ @add1(64,@add1.getWidth()-64)+@add2(64,@add2.getWidth()-64)+@latch.field('carry')
+        $ cat(hiword,@latch.field('rest'))
+
+    if(@dout.getWidth()>64)
+      assign(@latch) => $ @add1(63:0)+@add2(63:0)
+
+module.exports=AssignCond
+

@@ -1,0 +1,32 @@
+#########################################################3
+# Design
+#########################################################3
+
+class RegArray extends Module
+  constructor: ->
+    super()
+
+    Port(
+      hclk: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      ff1: Array.from({ length: 5 }, () => reg(5))
+      ff2: (reg(5) for i in [0..4])
+      ff3: [
+        reg(5)
+        reg(5)
+        reg(5)
+        reg(5)
+        reg(5)
+        ]
+    )
+
+  build: ->
+    always =>
+      for i in [0...@ff1.length]
+        assign(@ff1[i]) => $ @ff2[i] + @ff3[i]
+
+module.exports=RegArray
+

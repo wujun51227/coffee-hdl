@@ -1,0 +1,34 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bus:
+        din: input(16)
+        dout: output(16)
+    )
+
+  build: ->
+
+
+class ChannelBindPortMap extends Module
+  u0_cell1: new cell1()
+
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        cell1_port: bind('cell1_ch')
+        din: input(16)
+    )
+
+    @u0_cell1.bind(
+      bus: channel('cell1_ch')
+    )
+
+  build: ->
+
+module.exports=ChannelBindPortMap
+

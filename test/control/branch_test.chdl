@@ -1,0 +1,64 @@
+#########################################################3
+# Design
+#########################################################3
+
+class BranchTest extends Module
+  constructor: ->
+    super()
+
+    Port(
+      in1: input(5)
+      din: input(5)
+      enable: input()
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Wire(
+      w1: wire(5)
+      w2:
+        w3: wire(16)
+        w4: wire(32)
+        w5: wire(32)
+        w6: wire(32)
+    )
+
+    Reg(
+      r1: reg(5).init(0)
+    )
+
+  build: ->
+    assign(@w2.w4) =>
+      $if(@in1==hex(5,1)) =>
+        $ @w2.w3+1
+      $elseif(@in1==hex(5,2)) =>
+        $ @w2.w3+2
+      $else =>
+        0
+      $endif()
+
+    assign(@w2.w5) =>
+      $balance(@w2.w5.getWidth()) [
+        $cond(@in1(1)) => $ @w2.w4
+        $cond(@in1(2)) => $ @w2.w5
+      ]
+
+    assign(@w2.w6) =>
+      $order() [
+        $cond(@in1(1)) => $ @w2.w3(9:7)
+        $cond(@in1(2)) => $ @w2.w3(3:1)
+        $default() => $ @w2.w3(6:4)
+      ]
+
+    assign(@w2.w6) =>
+      $expand(@w2.w5.getWidth()) => $ @w2.w3(9:7)
+
+    always =>
+      $if(@in1==hex(5,1)) =>
+        assign(@r1(3:1)) => $ @din(4:2)+0x100
+      $elseif(@in1==hex(5,2)) =>
+        assign(@r1(3:1)) => $ @din(4:2)+0x200
+      $endif()
+
+module.exports=BranchTest
+

@@ -1,0 +1,49 @@
+#########################################################3
+# Design
+#########################################################3
+
+class RegState extends Module
+  constructor: ->
+    super()
+
+    Port(
+      writeEnable: input()
+      stall: input()
+      readEnable: input()
+      quit: input()
+      hclk: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      ff1: reg(5)
+      ff2: reg(5)
+    )
+
+  build: ->
+    @ff1.stateDef(['idle','write','pending','read'])
+    @ff2.stateDef(
+      idle: 100
+      send: 200
+      pending: 300
+      )
+
+    always =>
+      $if(@ff1.isState('idle')) =>
+        $if(@writeEnable) =>
+          @ff1.setState('write')
+        $endif()
+
+    always =>
+      @ff1.stateSwitch(
+        'write':
+          'pending': => $ @stall==1
+          'idle': => $ @quit==1
+        'pending':
+          'read': => $ @readEnable==1
+          'idle': => $ @quit==1
+          )
+
+
+module.exports=RegState
+

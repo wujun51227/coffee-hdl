@@ -1,0 +1,32 @@
+{
+  "name": "coffee-hdl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "test"
+  },
+  "dependencies": {
+    "coffeescript": "^2.3.2",
+    "commander": "^2.19.0",
+    "directory-tree": "^2.1.0",
+    "glob": "^7.1.3",
+    "lodash": "^4.17.11",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.6.2",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "fancy-log": "^1.3.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@tauren.myqnapcloud.com:10022/woodford/coffee-hdl.git"
+  },
+  "author": "",
+  "license": "ISC"
+}

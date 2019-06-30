@@ -1,0 +1,33 @@
+cell1 = importDesign('./cell1.chdl')
+
+class ImportSimple extends Module
+  u0_cell1: new cell1()
+
+  constructor: ->
+    super()
+    Port(
+      bindBundle: bind('up_signal')
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      data_latch: reg(16)
+    )
+
+    Wire(
+      data_wire: wire(16)
+    )
+
+    @u0_cell1.bind(
+      bundle: channel 'up_signal'
+    )
+
+  build: ->
+    assign(@data_wire) => $ channel_wire('up_signal','din')+1
+
+    always =>
+      assign(@data_latch) => $ @data_wire*2
+
+module.exports=ImportSimple
+

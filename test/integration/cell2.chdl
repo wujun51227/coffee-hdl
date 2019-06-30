@@ -1,0 +1,14 @@
+cell1 = importDesign('cell1')
+
+class cell2 extends Module
+  u0_cell1: new cell1()
+  constructor: ->
+    super()
+
+    @u0_cell1.bind(
+      bundle: channel 'ch1'
+    )
+
+  build: ->
+
+module.exports=cell2
