@@ -11,10 +11,16 @@ mkdirp= require 'mkdirp'
 
 args = require('minimist')(process.argv.slice(2))
 
+if args.help?
+  console.log "Usage:"
+  console.log "  chdl_compile.coffee [--autoClockDisable] chdl_file [--output=out_dir]"
+  process.exit()
+
 cfg={}
 if args.autoClockDisable?
   cfg.autoClock=false
 configBase(cfg)
+
 
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
