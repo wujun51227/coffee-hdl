@@ -10,7 +10,7 @@ coffee-hdl需要nodejs v8以上环境支持以及2.0以上版本的coffeescript�
 
 coffee-hdl安装步骤
 
-		git clone git@github.com:wujun51227/coffee-hdl.git
+		git clone https://github.com/wujun51227/coffee-hdl.git
 		cd coffee-hdl
 		npm install #or yarn install
 		source sourceme.sh
