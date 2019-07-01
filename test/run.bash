@@ -38,3 +38,6 @@ chdl_compile.coffee ./wire/wire_array.chdl --output=test_result/wire_array
 chdl_compile.coffee ./wire/wire_complex.chdl --output=test_result/wire_complex
 chdl_compile.coffee ./wire/wire_map.chdl --output=test_result/wire_map
 chdl_compile.coffee ./wire/wire_simple.chdl --output=test_result/wire_simple
+echo "========================================="
+echo "generate verilog code in ./test_result"
+echo "========================================="
