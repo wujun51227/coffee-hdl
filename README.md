@@ -1,7 +1,7 @@
 # coffee-hdl
 coffeescript based hardware description language
 
-Please see the user guide in doc
+Please see the [user guide](doc/coffee-hdl.md) in doc
 
 Install:
    
