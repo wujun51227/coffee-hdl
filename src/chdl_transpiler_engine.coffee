@@ -735,13 +735,13 @@ cat= (args...)->
     list=_.map(args,(i)=>getValue(i))
     return '{'+list.join(',')+'}'
 
-transToVerilog= (text,debug=false) ->
+transToVerilog= (text,debug=false,param='') ->
   head = "chdl_base = require 'chdl_base'\n"
   head += "{op_reduce}= require 'chdl_base'\n"
   text = head + text
   #console.log ">>>>",module.paths
-  text+="\ndut=module.exports"
-  text+="\nchdl_base.toVerilog(new dut())"
+  text+="\n__dut__=module.exports"
+  text+="\nchdl_base.toVerilog(new __dut__(#{param}))"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"
@@ -772,8 +772,8 @@ transToJs= (text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head += "{op_reduce}= require 'chdl_base'\n"
   text = head + text
-  text+="\ndut=module.exports"
-  text+="\nreturn dut"
+  text+="\n__dut__=module.exports"
+  text+="\nreturn __dut__"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"

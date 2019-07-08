@@ -21,12 +21,13 @@ if args.autoClockDisable?
   cfg.autoClock=false
 configBase(cfg)
 
+programParam= args.param ? ''
 
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
   fs.readFile fileName, 'utf-8', (error, text) ->
     return if error
-    javascript=transToVerilog(text,false)
+    javascript=transToVerilog(text,false,programParam)
     printBuffer.flush()
     for i,index in printBuffer.getBin()
       code= i.list.join("\n")
