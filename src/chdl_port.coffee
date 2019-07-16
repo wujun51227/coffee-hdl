@@ -86,10 +86,10 @@ class Port extends Wire
 
   portDeclare: ->portDeclare(@type,this)
 
-  verilogDeclare: ->
-    ret=super.verilogDeclare()
+  verilogAssign: ->
     if @reg?
-      ret+="\nassign #{@refName()} = #{@reg};"
-    return ret
+      return "\nassign #{@refName()} = #{@reg};"
+    else
+      return ''
 
 module.exports=Port

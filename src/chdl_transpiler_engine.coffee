@@ -387,6 +387,14 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='behave_reg'
+      list =[
+        ['IDENTIFIER', 'chdl_base', {}]
+        [ '.',     '.',  { } ]
+        ['PROPERTY', 'behave_reg', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='channel'
       list =[
         #['IDENTIFIER', 'chdl_base', {}]
@@ -719,6 +727,8 @@ getValue=(i)=>
   if i.constructor?.name=='Wire'
     return i.refName()
   if i.constructor?.name=='Reg'
+    return i.refName()
+  if i.constructor?.name=='BehaveReg'
     return i.refName()
   if _.isFunction(i)
     return i().refName()

@@ -4,6 +4,7 @@ log    =  require 'fancy-log'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
+BehaveReg     = require('chdl_behave_reg')
 Vec     = require('chdl_vec')
 Wire    = require('chdl_wire')
 Port    = require('chdl_port')
@@ -23,10 +24,7 @@ config={
 }
 
 getCellList= (inst)->
-  p = Object.getPrototypeOf(inst)
-  list=({name:k,inst:v} for k,v of p when typeof(v)=='object' and v instanceof Module)
-  for i in inst.__cells
-    list.push(i)
+  list=(i for i in inst.__cells)
   return _.sortBy(list,['name'])
 
 
@@ -98,6 +96,10 @@ code_gen= (inst)=>
     "  "+i[1].portDeclare()
   ).join(",\n")
   printBuffer.add ');'
+  printBuffer.blank('//channel declare')
+  for [name,channel] in toFlatten(inst.__channels)
+    code=channel.verilogDeclare()
+    printBuffer.add(code) if code!=''
   printBuffer.blank('//wire declare')
   for [name,wire] in toFlatten(inst.__wires)
     if wire.constructor.name=='Wire'
@@ -114,14 +116,12 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogDeclare()
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
-  printBuffer.blank('//channel declare')
-  for [name,channel] in toFlatten(inst.__channels)
-    code=channel.verilogDeclare()
-    printBuffer.add(code) if code!=''
   printBuffer.blank('//pipeline declare')
   for i in inst.__pipeRegs
     for [name,reg] in toFlatten(i.pipe)
       printBuffer.add reg.verilogDeclare(true)
+  for [name,port] in toFlatten(inst.__ports)
+      printBuffer.add port.verilogAssign()
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   printBuffer.add i for i in inst.__wireAssignList
 
@@ -151,6 +151,11 @@ code_gen= (inst)=>
     printBuffer.blank()
 
   printBuffer.blank('//datapath logic')
+  for i in inst.__pureAlwaysList
+    printBuffer.add "always begin"
+    printBuffer.add '  '+i
+    printBuffer.add "end"
+
   for i in inst.__pipeAlwaysList when i.list? and i.list.length>0
     item=_.find(inst.__pipeRegs,(n)=>n.name==i.name)
     hasReset=false
@@ -239,6 +244,8 @@ probe= (name)-> Wire.bind(name)
 
 reg= (width=1)-> packEl('reg', Reg.create(width))
 
+behave_reg= (width=1)-> packEl('reg', new BehaveReg(width))
+
 wire= (width=1)->packEl('wire', Wire.create(width))
 
 op_reduce = (list,op)-> list.join(op)
@@ -274,6 +281,7 @@ module.exports.bind        = bind
 module.exports.probe       = probe
 module.exports.channel     = channel
 module.exports.reg         = reg
+module.exports.behave_reg         = behave_reg
 module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.op_reduce    = op_reduce

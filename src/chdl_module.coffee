@@ -88,6 +88,7 @@ class Module
     @__verilogParameter=null
 
     @__alwaysList     =  []
+    @__pureAlwaysList     =  []
     @__pipeAlwaysList =  []
     @__regs           =  {}
     @__pipeRegs       =  []
@@ -142,7 +143,8 @@ class Module
       return @__channels[path]
     #this[name]=channel
 
-  _getChannelWire: (channelName,path=null)-> return @__channels[channelName].getWire(path)
+  _getChannelWire: (channelName,path=null)->
+    return @__channels[channelName].getWire(path)
 
   __dumpPorts: ->
     console.log 'Module',@__instName
@@ -167,6 +169,7 @@ class Module
       else
         throw new Error('unkown dir '+dir)
     if this[name]?
+      console.trace()
       console.log "Port #{name} has been defined"
       return null
     else
