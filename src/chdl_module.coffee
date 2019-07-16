@@ -144,7 +144,11 @@ class Module
     #this[name]=channel
 
   _getChannelWire: (channelName,path=null)->
-    return @__channels[channelName].getWire(path)
+    if @__channels[channelName]?
+      return @__channels[channelName].getWire(path)
+    else
+      console.error 'Channel',channelName,'not found'
+      console.trace()
 
   __dumpPorts: ->
     console.log 'Module',@__instName

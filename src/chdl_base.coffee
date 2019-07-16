@@ -86,6 +86,7 @@ code_gen= (inst)=>
   for i in getCellList(inst)
     code_gen(i.inst)
 
+  channelBin.register(inst)
   inst.build()
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
@@ -265,6 +266,13 @@ importDesign=(path)->
       return transToJs(text,false)
   console.log "Cant find file "+name+".chdl"
 
+channelBin= do ->
+  inst=null
+  return {
+    register: (i)-> inst=i
+    getWire: (name)-> inst._getChannelWire(name)
+  }
+
 #module.exports.Wire      = Wire
 module.exports.Module    = Module
 #module.exports.Port      = Port
@@ -285,6 +293,7 @@ module.exports.behave_reg         = behave_reg
 module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.op_reduce    = op_reduce
+module.exports.channel_wire = channelBin.getWire
 module.exports.importDesign = importDesign
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.resetBase   =(path)->

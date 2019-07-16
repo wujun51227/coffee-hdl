@@ -85,7 +85,7 @@ scanToken= (tokens,index)->
   #console.log '>>>>>>tokens',index,tokens[index...]
   nativeItem = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
   catFunc = tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='cat' and tokens[index+1]?[0]=='CALL_START'
-  channelFunc = tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='channel_wire' and tokens[index+1]?[0]=='CALL_START'
+  #channelFunc = tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='channel_wire' and tokens[index+1]?[0]=='CALL_START'
   #constValue= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='__v' and tokens[index+1]?[0]=='CALL_START'
   toHex= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='hex' and tokens[index+1]?[0]=='CALL_START'
   toDec= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='dec' and tokens[index+1]?[0]=='CALL_START'
@@ -164,16 +164,11 @@ scanToken= (tokens,index)->
       else
         ret.push(token)
       i++
-  else if nativeItem or channelFunc
-    if channelFunc
-      list=[tokens[index]]
-      start_index=index
-      stop_index=index
-    else
-      list=[tokens[index],tokens[index+1]]
-      start_index=index
-      index++
-      stop_index=index
+  else if nativeItem
+    list=[tokens[index],tokens[index+1]]
+    start_index=index
+    index++
+    stop_index=index
     timeout_cnt=0
     while tokens[index]?
       timeout_cnt+=1
@@ -217,10 +212,6 @@ scanToken= (tokens,index)->
           cursor++
       else
         break
-    if channelFunc
-      list[0][0]='PROPERTY'
-      list[0][1]='_getChannelWire'
-      list.unshift ['@','@',{}]
     return [
       stop_index-start_index+1
       list
@@ -401,13 +392,6 @@ extractLogic = (tokens)->
         #[ '.',     '.',  { } ]
         ['@', '@', {}]
         ['PROPERTY', '_newChannel', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='channel_wire'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_getChannelWire', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -747,11 +731,11 @@ cat= (args...)->
 
 transToVerilog= (text,debug=false,param='') ->
   head = "chdl_base = require 'chdl_base'\n"
-  head += "{op_reduce}= require 'chdl_base'\n"
+  head += "{op_reduce,channel_wire}= require 'chdl_base'\n"
   text = head + text
   #console.log ">>>>",module.paths
   text+="\n__dut__=module.exports"
-  text+="\nchdl_base.toVerilog(new __dut__(#{param}))"
+  text+="\nchdl_base.toVerilog(new __dut__(\"#{param}\"))"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"
@@ -780,7 +764,7 @@ transToVerilog= (text,debug=false,param='') ->
 
 transToJs= (text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
-  head += "{op_reduce}= require 'chdl_base'\n"
+  head += "{op_reduce,channel_wire}= require 'chdl_base'\n"
   text = head + text
   text+="\n__dut__=module.exports"
   text+="\nreturn __dut__"
