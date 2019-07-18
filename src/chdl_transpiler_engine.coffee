@@ -48,6 +48,23 @@ findCallSlice=(tokens,index)->
     i++
   return [start,-1]
 
+findCallBound=(tokens,index)->
+  i=index
+  cnt=0
+  start=-1
+  while token = tokens[i]
+    if token[0]=='CALL_START'
+      if start==-1
+        start=i
+      cnt++
+    else if token[0]=='CALL_END'
+      cnt--
+      if cnt==0
+        unless (tokens[i+1]? and tokens[i+1][0]=='CALL_START')
+          return [start,i]
+    i++
+  return [start,-1]
+
 findPipeRegSlice=(tokens,index)->
   i=index
   cnt=0
@@ -228,7 +245,7 @@ scanToken= (tokens,index)->
     ]
   else if findKeyword
     start_index=index
-    [dummy,stop_index]=findCallSlice(tokens,index+1)
+    [dummy,stop_index]=findCallBound(tokens,index+1)
     list=tokens.slice(start_index,stop_index+1)
     return [
       list.length

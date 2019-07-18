@@ -273,7 +273,7 @@ instEnv= do ->
   inst=null
   return {
     register: (i)-> inst=i
-    getWire: (name)-> inst._getChannelWire(name)
+    getWire: (name,path=null)-> inst._getChannelWire(name,path)
     hasChannel: (name)-> inst.__channels[name]?
     cell: (name)-> inst.__getCell(name)
     infer: (number,offset=0)->
