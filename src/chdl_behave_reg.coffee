@@ -94,7 +94,7 @@ class BehaveReg extends Reg
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
     list.push "initial begin"
-    list.push "  #{@elName} = #{@resetValue};"
+    list.push "  #{@elName} = #{@width}'h#{@resetValue};"
     list.push "end"
     return list.join("\n")
 
@@ -102,6 +102,7 @@ class BehaveReg extends Reg
 
   delay: (delay=0)=>
     return (assignFunc) =>
+      @cell.__assignWidth=@width
       if delay==0
         @cell.__pureAlwaysList.push "  #{@elName} = #{assignFunc()};"
       else

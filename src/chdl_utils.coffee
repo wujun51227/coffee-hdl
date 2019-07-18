@@ -220,3 +220,81 @@ module.exports.packEl = (type,bin)->
   for i in Object.keys(bin) when typeof bin[i] == 'function'
     ret[i]=bin[i]
   return ret
+
+__v=(width,number)->
+  if width==null
+    width=getWidth(number)
+  if _.isString(number)
+    if number.match(/^0x/)
+      m=number.match(/^0x(.*)/)
+      return "#{width}'h#{m[1]}"
+    else if number.match(/^0o/)
+      m=number.match(/^0o(.*)/)
+      return "#{width}'o#{m[1]}"
+    else if number.match(/^0b/)
+      m=number.match(/^0b(.*)/)
+      return "#{width}'b#{m[1]}"
+    else
+      if width=='1' or width==1
+        return "1'b#{number}"
+      else if width==''
+        return "#{number}"
+      else
+        return "#{width}'d#{number}"
+  else if _.isNumber(Number(number))
+    if width==''
+      return "#{number}"
+    else if width=='1' or width==1
+      return "1'b#{number}"
+    else
+      return "#{width}'d#{number}"
+  else
+    throw new Error("const value error")
+
+module.exports.__v=__v
+
+getWidth = (number)->
+  if Number(number)==0
+    return 1
+  else
+    Math.floor(Math.log2(Number(number))+1)
+
+module.exports.hex = (n,m=null)->
+  if m==null
+    w=getWidth(n)
+    __v(w,'0x'+(n>>>0).toString(16))
+  else
+    __v(n,'0x'+(m>>>0).toString(16))
+
+module.exports.dec= (n,m=null)->
+  if m==null
+    w=getWidth(n)
+    __v(w,n>>>0)
+  else
+    __v(n,m>>>0)
+
+module.exports.oct= (n,m=null)->
+  if m==null
+    w=getWidth(n)
+    __v(w,'0o'+(n>>>0).toString(8))
+  else
+    __v(n, '0o'+(m>>>0).toString(8))
+
+module.exports.bin= (n,m=null)->
+  if m==null
+    w=getWidth(n)
+    __v(w,'0b'+(n>>>0).toString(2))
+  else
+    __v(n, '0b'+(m>>>0).toString(2))
+
+module.exports.cat= (args...)->
+  if args.length==1 and _.isPlainObject(args[0])
+    list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>getValue(i[1])).reverse()
+    return '{'+list.join(',')+'}'
+  else if args.length==1 and _.isArray(args[0])
+    list=_.map(args[0],(i)=>getValue(i))
+    return '{'+list.join(',')+'}'
+  else
+    list=_.map(args,(i)=>getValue(i))
+    return '{'+list.join(',')+'}'
+

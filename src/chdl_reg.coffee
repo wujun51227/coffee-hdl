@@ -1,6 +1,6 @@
 CircuitEl = require 'chdl_el'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
   value: 0
@@ -160,9 +160,9 @@ class Reg extends CircuitEl
 
     if @needInitial
       list.push "initial begin"
-      list.push "  #{@elName} = 'hx;"
+      list.push "  #{@elName} = #{@width}'hx;"
       list.push "  #1"
-      list.push "  #{@elName} = #{@resetValue};"
+      list.push "  #{@elName} = #{hex(@width,@resetValue)};"
       list.push "end"
     return list.join("\n")
 
@@ -215,6 +215,7 @@ class Reg extends CircuitEl
       return ''
 
   assign: (assignFunc)=>
+    @cell.__assignWidth=@width
     if @cell.__pipeName? or @isMem
       @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
     else if @cell.__assignInAlways

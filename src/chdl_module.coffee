@@ -6,6 +6,7 @@ Channel = require 'chdl_channel'
 {packEl,toSignal,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
+uuid  = require 'uuid/v1'
 
 class Module
   @create: (args...)-> new this(args...)
@@ -14,8 +15,15 @@ class Module
 
   __signature:{}
 
-  _cellmap: (name,inst) ->
-    @__cells.push({name:name,inst:inst})
+  _cellmap: (v) ->
+    for name,inst of map
+      @__cells.push({name:name,inst:inst})
+
+  __getCell: (name)=>
+    p=Object.getPrototypeOf(this)
+    for k,v of p when typeof(v)=='object' and v instanceof Module
+      return v if k==name
+    return _.find(@__cells,{name:name})
 
   _reg: (obj) ->
     for k,v of obj
@@ -82,6 +90,7 @@ class Module
 
   constructor: (param=null)->
     @param=param
+    @__id = uuid()
     #@moduleName=this.constructor.name
     @__moduleName=null
     @__isCombModule=false
@@ -108,6 +117,7 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
+    @__assignWidth=null
     @__updateWires=[]
     @__assignWaiting=false
     @__assignInAlways=false

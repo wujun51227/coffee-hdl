@@ -116,6 +116,7 @@ class Wire extends CircuitEl
 
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
+    @cell.__assignWidth=@width
     if @cell.__assignInAlways
       if @staticAssign
         throw new Error("This wire have been static assigned")

@@ -52,7 +52,8 @@ class ChannelGetWire extends Module
     )
 
   build: ->
-    assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.getWire('din')
+    #assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.getWire('din')
+    assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')
 
 module.exports=ChannelGetWire
 

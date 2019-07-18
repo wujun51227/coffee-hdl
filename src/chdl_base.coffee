@@ -11,7 +11,7 @@ Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 {getPaths,transToJs} = require 'chdl_transpiler_engine'
-{packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
+{packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -24,9 +24,11 @@ config={
 }
 
 getCellList= (inst)->
-  list=(i for i in inst.__cells)
+  p = Object.getPrototypeOf(inst)
+  list=({name:k,inst:v} for k,v of p when typeof(v)=='object' and v instanceof Module)
+  for i in inst.__cells
+    list.push(i) unless _.find(list,(n)-> n.inst.__id==i.inst.__id)
   return _.sortBy(list,['name'])
-
 
 cell_build = (inst) =>
   inst.__elaboration()
@@ -86,7 +88,7 @@ code_gen= (inst)=>
   for i in getCellList(inst)
     code_gen(i.inst)
 
-  channelBin.register(inst)
+  instEnv.register(inst)
   inst.build()
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
@@ -266,11 +268,25 @@ importDesign=(path)->
       return transToJs(text,false)
   console.log "Cant find file "+name+".chdl"
 
-channelBin= do ->
+
+instEnv= do ->
   inst=null
   return {
     register: (i)-> inst=i
     getWire: (name)-> inst._getChannelWire(name)
+    hasChannel: (name)-> inst.__channels[name]?
+    cell: (name)-> inst.__getCell(name)
+    infer: (number,offset=0)->
+      actWidth=inst.__assignWidth+offset
+      if _.isNumber(number)
+        __v(actWidth,number)
+      else if number.getWidth()>actWidth
+        number(0,actWidth)
+      else if number.getWidth()<actWidth
+        diffWidth=actWidth-number.getWidth()
+        return "{#{__v(diffWidth,'0x0')},#{number().refName()}}"
+      else
+        return number
   }
 
 #module.exports.Wire      = Wire
@@ -293,7 +309,10 @@ module.exports.behave_reg         = behave_reg
 module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.op_reduce    = op_reduce
-module.exports.channel_wire = channelBin.getWire
+module.exports.channel_wire = instEnv.getWire
+module.exports.channel_exist = instEnv.hasChannel
+module.exports.infer        = instEnv.infer
+module.exports.cell         = instEnv.cell
 module.exports.importDesign = importDesign
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.resetBase   =(path)->

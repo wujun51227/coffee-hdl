@@ -7,7 +7,7 @@ do ->
 coffee = require 'coffeescript'
 _ = require 'lodash'
 log = require 'fancy-log'
-{printBuffer}=require 'chdl_utils'
+{printBuffer,cat,hex,dec,oct,bin,__v}=require 'chdl_utils'
 
 debugExpr=''
 
@@ -84,13 +84,23 @@ scanToken= (tokens,index)->
   ret=[]
   #console.log '>>>>>>tokens',index,tokens[index...]
   nativeItem = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
-  catFunc = tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='cat' and tokens[index+1]?[0]=='CALL_START'
-  #channelFunc = tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='channel_wire' and tokens[index+1]?[0]=='CALL_START'
+  findKeyword = do ->
+    list=[
+      'cat'
+      'hex'
+      'dec'
+      'oct'
+      'bin'
+      'channel_wire'
+      'channel_exist'
+      'op_reduce'
+      'cell'
+      'infer'
+    ]
+    for key in list
+      return true if tokens[index][0]=='IDENTIFIER' and tokens[index][1]==key and tokens[index+1]?[0]=='CALL_START'
+    return false
   #constValue= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='__v' and tokens[index+1]?[0]=='CALL_START'
-  toHex= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='hex' and tokens[index+1]?[0]=='CALL_START'
-  toDec= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='dec' and tokens[index+1]?[0]=='CALL_START'
-  toOct= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='oct' and tokens[index+1]?[0]=='CALL_START'
-  toBin= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='bin' and tokens[index+1]?[0]=='CALL_START'
   #constValue= tokens[index][0]=='@' and tokens[index+1]?[0]=='CALL_START'
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
@@ -144,26 +154,26 @@ scanToken= (tokens,index)->
     ret.push ['STRING',"'"+String(token[1])+"'",{}]
     ret.push ['CALL_END',')',{}]
     return [1,ret]
-  else if toHex or toDec or toOct or toBin
-    numberToken=tokens[index+4]
-    if numberToken[0]=='NUMBER'
-      numberToken[0]='STRING'
-      numberToken[1]="'"+String(numberToken[1])+"'"
-    cnt=0
-    ret.push tokens[index]
-    i=index+1
-    while token = tokens[i]
-      if token[0]=='CALL_START'
-        ret.push token
-        cnt++
-      else if token[0]=='CALL_END'
-        ret.push token
-        cnt--
-        if cnt==0
-          return [ret.length,ret]
-      else
-        ret.push(token)
-      i++
+  #else if toHex or toDec or toOct or toBin
+  #  numberToken=tokens[index+4]
+  #  if numberToken[0]=='NUMBER'
+  #    numberToken[0]='STRING'
+  #    numberToken[1]="'"+String(numberToken[1])+"'"
+  #  cnt=0
+  #  ret.push tokens[index]
+  #  i=index+1
+  #  while token = tokens[i]
+  #    if token[0]=='CALL_START'
+  #      ret.push token
+  #      cnt++
+  #    else if token[0]=='CALL_END'
+  #      ret.push token
+  #      cnt--
+  #      if cnt==0
+  #        return [ret.length,ret]
+  #    else
+  #      ret.push(token)
+  #    i++
   else if nativeItem
     list=[tokens[index],tokens[index+1]]
     start_index=index
@@ -216,7 +226,7 @@ scanToken= (tokens,index)->
       stop_index-start_index+1
       list
     ]
-  else if catFunc
+  else if findKeyword
     start_index=index
     [dummy,stop_index]=findCallSlice(tokens,index+1)
     list=tokens.slice(start_index,stop_index+1)
@@ -635,70 +645,6 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-getWidth = (number)->
-  if Number(number)==0
-    return 1
-  else
-    Math.floor(Math.log2(Number(number))+1)
-
-hex = (n,m=null)->
-  if m==null
-    w=getWidth(n)
-    __v(w,'0x'+(n>>>0).toString(16))
-  else
-    __v(n,'0x'+(m>>>0).toString(16))
-
-dec= (n,m=null)->
-  if m==null
-    w=getWidth(n)
-    __v(w,n>>>0)
-  else
-    __v(n,m>>>0)
-
-oct= (n,m=null)->
-  if m==null
-    w=getWidth(n)
-    __v(w,'0o'+(n>>>0).toString(8))
-  else
-    __v(n, '0o'+(m>>>0).toString(8))
-
-bin= (n,m=null)->
-  if m==null
-    w=getWidth(n)
-    __v(w,'0b'+(n>>>0).toString(2))
-  else
-    __v(n, '0b'+(m>>>0).toString(2))
-
-__v=(widthIn,number)->
-  width=if widthIn? then widthIn else getWidth(number)
-
-  if _.isString(number)
-    if number.match(/^0x/)
-      m=number.match(/^0x(.*)/)
-      return "#{width}'h#{m[1]}"
-    else if number.match(/^0o/)
-      m=number.match(/^0o(.*)/)
-      return "#{width}'o#{m[1]}"
-    else if number.match(/^0b/)
-      m=number.match(/^0b(.*)/)
-      return "#{width}'b#{m[1]}"
-    else
-      if width=='1' or width==1
-        return "1'b#{number}"
-      else if width==''
-        return "#{number}"
-      else
-        return "#{width}'d#{number}"
-  else if _.isNumber(Number(number))
-    if width==''
-      return "#{number}"
-    else if width=='1' or width==1
-      return "1'b#{number}"
-    else
-      return "#{width}'d#{number}"
-  else
-    throw new Error("const value error")
-
 getValue=(i)=>
   if _.isString(i)
     return i
@@ -718,20 +664,9 @@ getValue=(i)=>
     return i().refName()
   throw new Error('arg type error'+i)
 
-cat= (args...)->
-  if args.length==1 and _.isPlainObject(args[0])
-    list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>getValue(i[1])).reverse()
-    return '{'+list.join(',')+'}'
-  else if args.length==1 and _.isArray(args[0])
-    list=_.map(args[0],(i)=>getValue(i))
-    return '{'+list.join(',')+'}'
-  else
-    list=_.map(args,(i)=>getValue(i))
-    return '{'+list.join(',')+'}'
-
 transToVerilog= (text,debug=false,param='') ->
   head = "chdl_base = require 'chdl_base'\n"
-  head += "{op_reduce,channel_wire}= require 'chdl_base'\n"
+  head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   text = head + text
   #console.log ">>>>",module.paths
   text+="\n__dut__=module.exports"
@@ -764,7 +699,7 @@ transToVerilog= (text,debug=false,param='') ->
 
 transToJs= (text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
-  head += "{op_reduce,channel_wire}= require 'chdl_base'\n"
+  head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   text = head + text
   text+="\n__dut__=module.exports"
   text+="\nreturn __dut__"

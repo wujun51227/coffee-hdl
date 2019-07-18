@@ -80,6 +80,7 @@ class Channel extends CircuitEl
       return packEl('wire',wire)
     else if path==null
       result=_.find(@portList,(i)=> i.path==@bindPortPath)
+      #console.log @portList,@bindPortPath
       width=_.get(result.cell,result.path).getWidth()
       wire=Wire.create(width)
       wire.link(@cell,@elName)
