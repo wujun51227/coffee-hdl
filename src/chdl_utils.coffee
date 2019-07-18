@@ -287,6 +287,25 @@ module.exports.bin= (n,m=null)->
   else
     __v(n, '0b'+(m>>>0).toString(2))
 
+getValue=(i)=>
+  if _.isString(i)
+    return i
+  if _.isNumber(i)
+    return i
+  if i.constructor?.name=='Expr'
+    return i.str
+  if i.constructor?.name=='Port'
+    return i.refName()
+  if i.constructor?.name=='Wire'
+    return i.refName()
+  if i.constructor?.name=='Reg'
+    return i.refName()
+  if i.constructor?.name=='BehaveReg'
+    return i.refName()
+  if _.isFunction(i)
+    return i().refName()
+  throw new Error('arg type error'+i)
+
 module.exports.cat= (args...)->
   if args.length==1 and _.isPlainObject(args[0])
     list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>getValue(i[1])).reverse()

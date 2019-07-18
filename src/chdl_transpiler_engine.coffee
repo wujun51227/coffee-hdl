@@ -662,25 +662,6 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-getValue=(i)=>
-  if _.isString(i)
-    return i
-  if _.isNumber(i)
-    return i
-  if i.constructor?.name=='Expr'
-    return i.str
-  if i.constructor?.name=='Port'
-    return i.refName()
-  if i.constructor?.name=='Wire'
-    return i.refName()
-  if i.constructor?.name=='Reg'
-    return i.refName()
-  if i.constructor?.name=='BehaveReg'
-    return i.refName()
-  if _.isFunction(i)
-    return i().refName()
-  throw new Error('arg type error'+i)
-
 transToVerilog= (text,debug=false,param='') ->
   head = "chdl_base = require 'chdl_base'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
