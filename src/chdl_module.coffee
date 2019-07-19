@@ -443,10 +443,16 @@ class Module
       first=true
       for {cond,value} in list
         if first
-          plist.push "({#{width}{#{cond}}}&(#{value}))"
+          if width>1
+            plist.push "({#{width}{#{cond}}}&(#{value}))"
+          else
+            plist.push "((#{cond})&(#{value}))"
           first=false
         else
-          plist.push "        ({#{width}{#{cond}}}&(#{value}))"
+          if width>1
+            plist.push "        ({#{width}{#{cond}}}&(#{value}))"
+          else
+            plist.push "        ((#{cond})&(#{value}))"
       return plist.join('|\n')
 
   _expandProcess: (w)=>
