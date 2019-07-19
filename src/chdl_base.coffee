@@ -4,13 +4,14 @@ log    =  require 'fancy-log'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
+BehaveReg     = require('chdl_behave_reg')
 Vec     = require('chdl_vec')
 Wire    = require('chdl_wire')
 Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 {getPaths,transToJs} = require 'chdl_transpiler_engine'
-{packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
+{packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -26,9 +27,8 @@ getCellList= (inst)->
   p = Object.getPrototypeOf(inst)
   list=({name:k,inst:v} for k,v of p when typeof(v)=='object' and v instanceof Module)
   for i in inst.__cells
-    list.push(i)
+    list.push(i) unless _.find(list,(n)-> n.inst.__id==i.inst.__id)
   return _.sortBy(list,['name'])
-
 
 cell_build = (inst) =>
   inst.__elaboration()
@@ -88,6 +88,7 @@ code_gen= (inst)=>
   for i in getCellList(inst)
     code_gen(i.inst)
 
+  instEnv.register(inst)
   inst.build()
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
@@ -98,6 +99,10 @@ code_gen= (inst)=>
     "  "+i[1].portDeclare()
   ).join(",\n")
   printBuffer.add ');'
+  printBuffer.blank('//channel declare')
+  for [name,channel] in toFlatten(inst.__channels)
+    code=channel.verilogDeclare()
+    printBuffer.add(code) if code!=''
   printBuffer.blank('//wire declare')
   for [name,wire] in toFlatten(inst.__wires)
     if wire.constructor.name=='Wire'
@@ -114,14 +119,12 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogDeclare()
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
-  printBuffer.blank('//channel declare')
-  for [name,channel] in toFlatten(inst.__channels)
-    code=channel.verilogDeclare()
-    printBuffer.add(code) if code!=''
   printBuffer.blank('//pipeline declare')
   for i in inst.__pipeRegs
     for [name,reg] in toFlatten(i.pipe)
       printBuffer.add reg.verilogDeclare(true)
+  for [name,port] in toFlatten(inst.__ports)
+      printBuffer.add port.verilogAssign()
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   printBuffer.add i for i in inst.__wireAssignList
 
@@ -151,6 +154,11 @@ code_gen= (inst)=>
     printBuffer.blank()
 
   printBuffer.blank('//datapath logic')
+  for i in inst.__pureAlwaysList
+    printBuffer.add "always begin"
+    printBuffer.add '  '+i
+    printBuffer.add "end"
+
   for i in inst.__pipeAlwaysList when i.list? and i.list.length>0
     item=_.find(inst.__pipeRegs,(n)=>n.name==i.name)
     hasReset=false
@@ -239,6 +247,8 @@ probe= (name)-> Wire.bind(name)
 
 reg= (width=1)-> packEl('reg', Reg.create(width))
 
+behave_reg= (width=1)-> packEl('reg', new BehaveReg(width))
+
 wire= (width=1)->packEl('wire', Wire.create(width))
 
 op_reduce = (list,op)-> list.join(op)
@@ -258,6 +268,27 @@ importDesign=(path)->
       return transToJs(text,false)
   console.log "Cant find file "+name+".chdl"
 
+
+instEnv= do ->
+  inst=null
+  return {
+    register: (i)-> inst=i
+    getWire: (name,path=null)-> inst._getChannelWire(name,path)
+    hasChannel: (name)-> inst.__channels[name]?
+    cell: (name)-> inst.__getCell(name)
+    infer: (number,offset=0)->
+      actWidth=inst.__assignWidth+offset
+      if _.isNumber(number)
+        __v(actWidth,number)
+      else if number.getWidth()>actWidth
+        number(0,actWidth)
+      else if number.getWidth()<actWidth
+        diffWidth=actWidth-number.getWidth()
+        return "{#{__v(diffWidth,'0x0')},#{number().refName()}}"
+      else
+        return number
+  }
+
 #module.exports.Wire      = Wire
 module.exports.Module    = Module
 #module.exports.Port      = Port
@@ -274,9 +305,14 @@ module.exports.bind        = bind
 module.exports.probe       = probe
 module.exports.channel     = channel
 module.exports.reg         = reg
+module.exports.behave_reg         = behave_reg
 module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.op_reduce    = op_reduce
+module.exports.channel_wire = instEnv.getWire
+module.exports.channel_exist = instEnv.hasChannel
+module.exports.infer        = instEnv.infer
+module.exports.cell         = instEnv.cell
 module.exports.importDesign = importDesign
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.resetBase   =(path)->

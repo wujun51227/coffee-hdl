@@ -13,12 +13,14 @@ args = require('minimist')(process.argv.slice(2))
 
 if args.help?
   console.log "Usage:"
-  console.log "  chdl_compile.coffee [--autoClockDisable] chdl_file [--output=out_dir]"
+  console.log "  chdl_compile.coffee [--autoClock] chdl_file [--output=out_dir]"
   process.exit()
 
-cfg={}
-if args.autoClockDisable?
-  cfg.autoClock=false
+cfg={
+  autoClock:false
+}
+if args.autoClock
+  cfg.autoClock=true
 configBase(cfg)
 
 programParam= args.param ? ''

@@ -6,6 +6,7 @@ Channel = require 'chdl_channel'
 {packEl,toSignal,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
+uuid  = require 'uuid/v1'
 
 class Module
   @create: (args...)-> new this(args...)
@@ -14,8 +15,15 @@ class Module
 
   __signature:{}
 
-  _cellmap: (name,inst) ->
-    @__cells.push({name:name,inst:inst})
+  _cellmap: (v) ->
+    for name,inst of v
+      @__cells.push({name:name,inst:inst})
+
+  __getCell: (name)=>
+    p=Object.getPrototypeOf(this)
+    for k,v of p when typeof(v)=='object' and v instanceof Module
+      return v if k==name
+    return _.find(@__cells,{name:name})
 
   _reg: (obj) ->
     for k,v of obj
@@ -82,12 +90,14 @@ class Module
 
   constructor: (param=null)->
     @param=param
+    @__id = uuid()
     #@moduleName=this.constructor.name
     @__moduleName=null
     @__isCombModule=false
     @__verilogParameter=null
 
     @__alwaysList     =  []
+    @__pureAlwaysList     =  []
     @__pipeAlwaysList =  []
     @__regs           =  {}
     @__pipeRegs       =  []
@@ -107,6 +117,7 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
+    @__assignWidth=null
     @__updateWires=[]
     @__assignWaiting=false
     @__assignInAlways=false
@@ -142,7 +153,12 @@ class Module
       return @__channels[path]
     #this[name]=channel
 
-  _getChannelWire: (channelName,path=null)-> return @__channels[channelName].getWire(path)
+  _getChannelWire: (channelName,path=null)->
+    if @__channels[channelName]?
+      return @__channels[channelName].getWire(path)
+    else
+      console.error 'Channel',channelName,'not found'
+      console.trace()
 
   __dumpPorts: ->
     console.log 'Module',@__instName
@@ -167,6 +183,7 @@ class Module
       else
         throw new Error('unkown dir '+dir)
     if this[name]?
+      console.trace()
       console.log "Port #{name} has been defined"
       return null
     else
@@ -426,10 +443,16 @@ class Module
       first=true
       for {cond,value} in list
         if first
-          plist.push "({#{width}{#{cond}}}&(#{value}))"
+          if width>1
+            plist.push "({#{width}{#{cond}}}&(#{value}))"
+          else
+            plist.push "((#{cond})&(#{value}))"
           first=false
         else
-          plist.push "        ({#{width}{#{cond}}}&(#{value}))"
+          if width>1
+            plist.push "        ({#{width}{#{cond}}}&(#{value}))"
+          else
+            plist.push "        ((#{cond})&(#{value}))"
       return plist.join('|\n')
 
   _expandProcess: (w)=>

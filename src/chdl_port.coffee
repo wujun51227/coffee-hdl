@@ -60,6 +60,7 @@ class Port extends Wire
 
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
+    @cell.__assignWidth=@width
     if @cell.__assignInAlways
       if @staticAssign
         throw new Error("This wire have been static assigned")
@@ -86,10 +87,10 @@ class Port extends Wire
 
   portDeclare: ->portDeclare(@type,this)
 
-  verilogDeclare: ->
-    ret=super.verilogDeclare()
+  verilogAssign: ->
     if @reg?
-      ret+="\nassign #{@refName()} = #{@reg};"
-    return ret
+      return "\nassign #{@refName()} = #{@reg};"
+    else
+      return ''
 
 module.exports=Port

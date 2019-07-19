@@ -1,11 +1,11 @@
 CircuitEl = require 'chdl_el'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
   value: 0
   resetMode: 'async' #async or sync
-  resetValue:0
+  resetValue: 0
 
   constructor: (width)->
     super()
@@ -20,12 +20,14 @@ class Reg extends CircuitEl
     @enableSignal=null
     @enableValue=null
     @fieldMap={}
+    @needInitial=false
 
   setMem: -> @isMem=true
 
-  init: (v)=>
+  init: (v,initial=false)=>
     @value=v
     @resetValue=v
+    @needInitial=initial
     return packEl('reg',this)
 
   clock:(clock)=>
@@ -155,6 +157,13 @@ class Reg extends CircuitEl
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
       list.push "reg ["+(@width-1)+":0] _"+@elName+";" unless pipe
+
+    if @needInitial
+      list.push "initial begin"
+      list.push "  #{@elName} = #{@width}'hx;"
+      list.push "  #1"
+      list.push "  #{@elName} = #{hex(@width,@resetValue)};"
+      list.push "end"
     return list.join("\n")
 
   verilogUpdate: ->
@@ -206,6 +215,7 @@ class Reg extends CircuitEl
       return ''
 
   assign: (assignFunc)=>
+    @cell.__assignWidth=@width
     if @cell.__pipeName? or @isMem
       @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
     else if @cell.__assignInAlways
@@ -231,9 +241,18 @@ class Reg extends CircuitEl
     else
       throw new Error("Set sateMap error "+JSON.stringify(arg))
 
+  nextStateIs: (name)=>
+    throw new Error(name+' is not valid') unless @stateIsValid(name)
+    "_#{@refName()}==#{@elName+'__'+name}"
+
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     "#{@refName()}==#{@elName+'__'+name}"
+
+  preSwitch: (prevState,nextState)=>
+    throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
+    throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
+    "((#{@refName()}==#{@elName+'__'+prevState}) && (_#{@refName()}==#{@elName+'__'+nextState}))"
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
@@ -247,6 +266,7 @@ class Reg extends CircuitEl
   getState: (name)=> @elName+'__'+name
 
   stateSwitch: (obj)=>
+    @cell.__regAssignList.push "_#{@refName()} = #{@elName};"
     for src,v of obj
       for dst,condFunc of v
           @cell.__regAssignList.push "if(#{@refName()}==#{@elName+'__'+src} && #{condFunc()}) begin"
