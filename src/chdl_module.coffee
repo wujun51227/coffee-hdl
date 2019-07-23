@@ -233,18 +233,21 @@ class Module
   __channelExpand:(channelType,localName,channelName)->
     localport=null
     nodeList=[]
-    for [name,port] in toFlatten(@__ports)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
-    for [name,port] in toFlatten(@__channels)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
-    for [name,port] in toFlatten(@__wires)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
+    if channelType=='hub'
+      nodeList=_.toPath(localName)
+    else
+      for [name,port] in toFlatten(@__ports)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
+      for [name,port] in toFlatten(@__channels)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
+      for [name,port] in toFlatten(@__wires)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
 
     type=null
     if localport?
@@ -277,14 +280,14 @@ class Module
           _.set(@__ports,newPath,netEl)
           _.set(@__wires,newPath,netEl)
         else
-          net=new Wire(width)
+          net=Wire.create(width)
           net.link(this,toSignal(newPath))
           netEl=packEl('wire',net)
           _.set(this,newPath,netEl)
           _.set(@__wires,newPath,netEl)
         if dir=='input'
           if type=='Wire'
-            net.assign(->wire.elName)
+            wire.assign(->toSignal(net.elName))
           else
             wire.assign(->toSignal(newPath))
         else if dir=='output'
@@ -359,7 +362,7 @@ class Module
 
   _hub: (arg)->
     for hubName,list of arg
-      @__addWire(hubName,0) unless this[hubName]?
+      #@__addWire(hubName,0) unless this[hubName]?
       for channelPath in list
         #console.log '>>>>add hub',hubName,channelPath
         @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
