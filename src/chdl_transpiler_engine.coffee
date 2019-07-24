@@ -331,6 +331,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='Channel'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_channel', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Probe'
       list =[
         ['@', '@', {}]
@@ -415,10 +422,9 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='channel'
       list =[
-        #['IDENTIFIER', 'chdl_base', {}]
-        #[ '.',     '.',  { } ]
-        ['@', '@', {}]
-        ['PROPERTY', '_newChannel', {}]
+        ['IDENTIFIER', 'chdl_base', {}]
+        [ '.',     '.',  { } ]
+        ['PROPERTY', 'channel', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length

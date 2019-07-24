@@ -49,13 +49,13 @@ class Module
       else
         this[k]=v
 
-  #C: (obj) ->
-  #  for k,v of obj
-  #    @__channels[k]=v
-  #    if this[k]?
-  #      throw new Error('Channel name conflicted '+k)
-  #    else
-  #      this[k]=v
+  _channel: (obj) ->
+    for k,v of obj
+      @__channels[k]=v
+      if this[k]?
+        throw new Error('Channel name conflicted '+k)
+      else
+        this[k]=v
 
   _probe: (obj) ->
     for k,v of obj
@@ -143,15 +143,6 @@ class Module
   isBlackBox: ()=> @__isBlackBox
 
   disableAutoClock: ()=> @__autoClock=false
-
-  _newChannel: (path)->
-    if not @__channels[path]?
-      channel=Channel.create()
-      @__channels[path]=channel
-      return channel
-    else
-      return @__channels[path]
-    #this[name]=channel
 
   _getChannelWire: (channelName,path=null)->
     if @__channels[channelName]?
