@@ -214,6 +214,9 @@ class Module
       delete @__wires[leaf]
 
   __findChannel: (inst,list)->
+    if _.get(inst,list)?
+      return _.get(inst,list)
+
     if list.length==1
       out=inst.__channels[list[0]]
       return out
@@ -221,7 +224,7 @@ class Module
       nextInst=inst[list[0]]
       return @__findChannel(nextInst,list.slice(1))
 
-  __channelExpand:(channelType,localName,channelName)->
+  __channelExpand:(channelType,localName,channelInfo)->
     localport=null
     nodeList=[]
     if channelType=='hub'
@@ -252,7 +255,12 @@ class Module
       return null
 
 
-    channel=@__findChannel(this,_.toPath(channelName))
+    if _.isString(channelInfo)
+      channel=@__findChannel(this,_.toPath(channelInfo))
+      channelName=channelInfo
+    else
+      channel=channelInfo
+      channelName=channelInfo.elName
     for obj in channel.portList
       bindPort=getPort(obj.cell,obj.path)
       dir=bindPort.type
@@ -329,15 +337,15 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
-  #_latch: (block)=>
-  #  @__assignInAlways=true
-  #  @__regAssignList=[]
-  #  @__updateWires=[]
-  #  block()
-  #  @__alwaysList.push([@__regAssignList,[]])
-  #  @__assignInAlways=false
-  #  @__updateWires=[]
-  #  @__regAssignList=[]
+  _passAlways: (block)=>
+    @__assignInAlways=true
+    @__regAssignList=[]
+    @__updateWires=[]
+    block()
+    @__alwaysList.push([@__regAssignList,[]])
+    @__assignInAlways=false
+    @__updateWires=[]
+    @__regAssignList=[]
 
   __pipeAlways: (block)=>
     @__assignInAlways=true
