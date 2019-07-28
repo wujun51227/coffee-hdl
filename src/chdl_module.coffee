@@ -470,7 +470,7 @@ class Module
         obj=block
       return  "{#{width}{#{obj}}}"
 
-  _orderProcess: ()=>
+  _orderProcess: (default_expr)=>
     return (list)=>
       plist=[]
       first=true
@@ -478,10 +478,10 @@ class Module
         if first
           plist.push "(#{cond})?(#{value}):"
           first=false
-        else if cond==''
-          plist.push "        (#{value})"
         else
           plist.push "        (#{cond})?(#{value}):"
+
+      plist.push "        (#{default_expr.str})"
       return plist.join('\n')
       
   _if: (cond)->
