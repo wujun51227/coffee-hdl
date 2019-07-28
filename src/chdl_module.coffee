@@ -16,7 +16,7 @@ class Module
   __signature:{}
 
   _cellmap: (v) ->
-    for name,inst of map
+    for name,inst of v
       @__cells.push({name:name,inst:inst})
 
   __getCell: (name)=>
@@ -49,13 +49,13 @@ class Module
       else
         this[k]=v
 
-  #C: (obj) ->
-  #  for k,v of obj
-  #    @__channels[k]=v
-  #    if this[k]?
-  #      throw new Error('Channel name conflicted '+k)
-  #    else
-  #      this[k]=v
+  _channel: (obj) ->
+    for k,v of obj
+      @__channels[k]=v
+      if this[k]?
+        throw new Error('Channel name conflicted '+k)
+      else
+        this[k]=v
 
   _probe: (obj) ->
     for k,v of obj
@@ -144,15 +144,6 @@ class Module
 
   disableAutoClock: ()=> @__autoClock=false
 
-  _newChannel: (path)->
-    if not @__channels[path]?
-      channel=Channel.create()
-      @__channels[path]=channel
-      return channel
-    else
-      return @__channels[path]
-    #this[name]=channel
-
   _getChannelWire: (channelName,path=null)->
     if @__channels[channelName]?
       return @__channels[channelName].getWire(path)
@@ -223,6 +214,9 @@ class Module
       delete @__wires[leaf]
 
   __findChannel: (inst,list)->
+    if _.get(inst,list)?
+      return _.get(inst,list)
+
     if list.length==1
       out=inst.__channels[list[0]]
       return out
@@ -230,21 +224,24 @@ class Module
       nextInst=inst[list[0]]
       return @__findChannel(nextInst,list.slice(1))
 
-  __channelExpand:(channelType,localName,channelName)->
+  __channelExpand:(channelType,localName,channelInfo)->
     localport=null
     nodeList=[]
-    for [name,port] in toFlatten(@__ports)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
-    for [name,port] in toFlatten(@__channels)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
-    for [name,port] in toFlatten(@__wires)
-      if toSignal(name)==localName
-        localport=port
-        nodeList=_.toPath(name)
+    if channelType=='hub'
+      nodeList=_.toPath(localName)
+    else
+      for [name,port] in toFlatten(@__ports)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
+      for [name,port] in toFlatten(@__channels)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
+      for [name,port] in toFlatten(@__wires)
+        if toSignal(name)==localName
+          localport=port
+          nodeList=_.toPath(name)
 
     type=null
     if localport?
@@ -254,11 +251,16 @@ class Module
 
     getPort= (cell,path)->
       for [name,port] in toFlatten(cell.__ports)
-        return port if name==path
+        return port if _.isEqual(_.toPath(name),_.toPath(path))
       return null
 
 
-    channel=@__findChannel(this,_.toPath(channelName))
+    if _.isString(channelInfo)
+      channel=@__findChannel(this,_.toPath(channelInfo))
+      channelName=channelInfo
+    else
+      channel=channelInfo
+      channelName=channelInfo.elName
     for obj in channel.portList
       bindPort=getPort(obj.cell,obj.path)
       dir=bindPort.type
@@ -277,14 +279,14 @@ class Module
           _.set(@__ports,newPath,netEl)
           _.set(@__wires,newPath,netEl)
         else
-          net=new Wire(width)
+          net=Wire.create(width)
           net.link(this,toSignal(newPath))
           netEl=packEl('wire',net)
           _.set(this,newPath,netEl)
           _.set(@__wires,newPath,netEl)
         if dir=='input'
           if type=='Wire'
-            net.assign(->wire.elName)
+            wire.assign(->toSignal(net.elName))
           else
             wire.assign(->toSignal(newPath))
         else if dir=='output'
@@ -301,6 +303,10 @@ class Module
   __elaboration: ->
     for [name,port] in toFlatten(@__ports)
       port.link(this,toSignal(name))
+      if port.isReg
+        createReg=new Reg(port.getWidth())
+        createReg.config(port.isRegConfig)
+        @__regs[toSignal(name)]=createReg
       #log 'elaboration port',this.constructor.name,name,port.elName
       if port.type==null
         @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
@@ -335,15 +341,15 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
-  #_latch: (block)=>
-  #  @__assignInAlways=true
-  #  @__regAssignList=[]
-  #  @__updateWires=[]
-  #  block()
-  #  @__alwaysList.push([@__regAssignList,[]])
-  #  @__assignInAlways=false
-  #  @__updateWires=[]
-  #  @__regAssignList=[]
+  _passAlways: (block)=>
+    @__assignInAlways=true
+    @__regAssignList=[]
+    @__updateWires=[]
+    block()
+    @__alwaysList.push([@__regAssignList,[]])
+    @__assignInAlways=false
+    @__updateWires=[]
+    @__regAssignList=[]
 
   __pipeAlways: (block)=>
     @__assignInAlways=true
@@ -359,7 +365,7 @@ class Module
 
   _hub: (arg)->
     for hubName,list of arg
-      @__addWire(hubName,0) unless this[hubName]?
+      #@__addWire(hubName,0) unless this[hubName]?
       for channelPath in list
         #console.log '>>>>add hub',hubName,channelPath
         @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
@@ -464,7 +470,7 @@ class Module
         obj=block
       return  "{#{width}{#{obj}}}"
 
-  _orderProcess: ()=>
+  _orderProcess: (default_expr)=>
     return (list)=>
       plist=[]
       first=true
@@ -472,10 +478,10 @@ class Module
         if first
           plist.push "(#{cond})?(#{value}):"
           first=false
-        else if cond==''
-          plist.push "        (#{value})"
         else
           plist.push "        (#{cond})?(#{value}):"
+
+      plist.push "        (#{default_expr.str})"
       return plist.join('\n')
       
   _if: (cond)->
@@ -489,7 +495,7 @@ class Module
     hitPorts={}
     for i in @__bindChannels
       #console.log '>>>>',name  for [name,port] in toFlatten(i.port)
-      for [name,port] in toFlatten(@__ports[i.portName])
+      for [name,port] in toFlatten(_.get(@__ports,i.portName))
         hitPorts[toSignal(port.elName)]=1
         if name!=''
           out.push "  .#{toSignal(port.elName)}( #{i.channel.elName}__#{toSignal(name)})"
@@ -504,7 +510,7 @@ class Module
     return out
 
   bind: (obj)->
-    for port,channel of obj when @__ports[port]?
+    for port,channel of obj when _.get(@__ports,port)?
       if channel instanceof Channel
         @__bindChannels.push {portName:port, channel: channel}
 

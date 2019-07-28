@@ -44,6 +44,19 @@ class Reg extends CircuitEl
     @resetName=reset
     return packEl('reg',this)
 
+  config: (data)=>
+    if data.resetMode?
+      @resetMode= data.resetMode
+    if data.noReset?
+      @resetMode= null
+      @resetName=null
+    if data.resetName?
+      @resetName= data.resetName
+    if data.clockName?
+      @bindClockName= data.clockName
+    if data.resetValue?
+      @resetValue= data.resetValue
+
   noReset: =>
     @resetMode=null
     @resetName=null

@@ -24,7 +24,7 @@ class Channel extends CircuitEl
 
   getPort: (cell,path)->
     for [name,port] in toFlatten(cell.__ports)
-      return port if name==path
+      return port if _.isEqual(_.toPath(name),_.toPath(path))
     return null
 
   verilogDeclare: ->
@@ -55,9 +55,11 @@ class Channel extends CircuitEl
       @bindPortPath=bindPortPath
       list=toFlatten(portBundle,bindPortPath)
       for [portPath,port] in list
+        pathList=_.toPath(bindPortPath)
         pinPath=_.toPath(portPath)
-        pinPath[0]=@elName
-        node=pinPath[1..]
+        #pinPath[0]=@elName
+        node=pinPath[pathList.length..]
+        pinPath.splice(0,pathList.length,@elName)
         @portList.push {node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
 
   signal: (path)->

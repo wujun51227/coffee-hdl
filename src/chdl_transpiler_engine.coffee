@@ -331,6 +331,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='Channel'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_channel', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Probe'
       list =[
         ['@', '@', {}]
@@ -415,10 +422,9 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='channel'
       list =[
-        #['IDENTIFIER', 'chdl_base', {}]
-        #[ '.',     '.',  { } ]
-        ['@', '@', {}]
-        ['PROPERTY', '_newChannel', {}]
+        ['IDENTIFIER', 'chdl_base', {}]
+        [ '.',     '.',  { } ]
+        ['PROPERTY', 'channel', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -445,13 +451,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    #else if token[0] is 'IDENTIFIER' and token[1]=='latch'
-    #  list =[
-    #    ['@', '@', {}]
-    #    ['PROPERTY', '_latch', {}]
-    #  ]
-    #  tokens.splice i, 1, list...
-    #  i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='pass_always'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_passAlways', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='pipeline'
       list =[
         ['@', '@', {}]
@@ -662,13 +668,13 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-transToVerilog= (text,debug=false,param='') ->
+transToVerilog= (text,debug=false,param=null) ->
   head = "chdl_base = require 'chdl_base'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   text = head + text
   #console.log ">>>>",module.paths
   text+="\n__dut__=module.exports"
-  text+="\nchdl_base.toVerilog(new __dut__(\"#{param}\"))"
+  text+="\nchdl_base.toVerilog(new __dut__(#{JSON.stringify(param)}))"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"

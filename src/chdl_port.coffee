@@ -36,6 +36,8 @@ class Port extends Wire
     super(width)
     @type=type
     @reg=null
+    @isReg=false
+    @isRegConfig={}
     @pendingValue=null
     @bindChannel=null
     @bindSignal=null
@@ -64,7 +66,7 @@ class Port extends Wire
     if @cell.__assignInAlways
       if @staticAssign
         throw new Error("This wire have been static assigned")
-      else if @firstCondAssign
+      else if @firstCondAssign and !@isReg
         if @width==1
           @cell.__wireAssignList.push "reg _"+@elName+";"
         else
@@ -83,6 +85,14 @@ class Port extends Wire
       @reg=toSignal(name)
     else
       throw new Error('Only output port can be aliased to a register')
+    return packEl('port',this)
+
+  asReg: (config={})=>
+    if @type=='output'
+      @isReg=true
+      @isRegConfig=config
+    else
+      throw new Error('Only output port can be treat as a register')
     return packEl('port',this)
 
   portDeclare: ->portDeclare(@type,this)
