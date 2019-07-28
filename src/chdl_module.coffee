@@ -251,7 +251,7 @@ class Module
 
     getPort= (cell,path)->
       for [name,port] in toFlatten(cell.__ports)
-        return port if name==path
+        return port if _.isEqual(_.toPath(name),_.toPath(path))
       return null
 
 
@@ -495,7 +495,7 @@ class Module
     hitPorts={}
     for i in @__bindChannels
       #console.log '>>>>',name  for [name,port] in toFlatten(i.port)
-      for [name,port] in toFlatten(@__ports[i.portName])
+      for [name,port] in toFlatten(_.get(@__ports,i.portName))
         hitPorts[toSignal(port.elName)]=1
         if name!=''
           out.push "  .#{toSignal(port.elName)}( #{i.channel.elName}__#{toSignal(name)})"
@@ -510,7 +510,7 @@ class Module
     return out
 
   bind: (obj)->
-    for port,channel of obj when @__ports[port]?
+    for port,channel of obj when _.get(@__ports,port)?
       if channel instanceof Channel
         @__bindChannels.push {portName:port, channel: channel}
 
