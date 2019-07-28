@@ -11,6 +11,9 @@ class RegSimple extends Module
       rstn: input().asReset()
       dout: output(5).fromReg('ff1')
       din: input(9)
+      aa:
+        bb:
+          asreg: output(9).asReg({noReset:true})
     )
 
     Reg(
@@ -21,7 +24,13 @@ class RegSimple extends Module
       ff5: reg(9)
     )
 
+
   build: ->
+    always =>
+      assign(@aa.bb.asreg) => $ 100
+
+    always =>
+      assign(@ff5) => $ @aa.bb.asreg
 
 module.exports=RegSimple
 

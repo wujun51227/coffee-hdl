@@ -109,6 +109,7 @@ code_gen= (inst)=>
       printBuffer.add wire.verilogDeclare()
   printBuffer.blank('//port wire declare')
   for [name,port] in toFlatten(inst.__ports)
+    unless port.isReg
       printBuffer.add port.verilogDeclare()
   printBuffer.blank('//register declare')
   for [name,reg] in toFlatten(inst.__vecs)

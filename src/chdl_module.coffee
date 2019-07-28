@@ -303,6 +303,10 @@ class Module
   __elaboration: ->
     for [name,port] in toFlatten(@__ports)
       port.link(this,toSignal(name))
+      if port.isReg
+        createReg=new Reg(port.getWidth())
+        createReg.config(port.isRegConfig)
+        @__regs[toSignal(name)]=createReg
       #log 'elaboration port',this.constructor.name,name,port.elName
       if port.type==null
         @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
