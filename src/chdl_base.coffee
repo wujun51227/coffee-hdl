@@ -125,7 +125,8 @@ code_gen= (inst)=>
     for [name,reg] in toFlatten(i.pipe)
       printBuffer.add reg.verilogDeclare(true)
   for [name,port] in toFlatten(inst.__ports)
-      printBuffer.add port.verilogAssign()
+      assignExpr=port.verilogAssign()
+      printBuffer.add assignExpr if assignExpr!=''
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   printBuffer.add i for i in inst.__wireAssignList
 
