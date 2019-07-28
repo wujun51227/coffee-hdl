@@ -9,6 +9,6 @@ then
   export PATH=$CHDL_ROOT/bin:$CHDL_ROOT/node_modules/.bin:$PATH
 
   echo "==============================="
-  echo "Usage:  chdl_compile.coffee [--param "parameter_string"] [--autoClock] chdl_file [--output=out_dir]"
+  echo "Usage:  chdl_compile.coffee [--param_file file_name] [--autoClock] -- chdl_file [--output=out_dir]"
   echo "==============================="
 fi

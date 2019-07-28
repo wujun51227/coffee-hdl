@@ -13,7 +13,7 @@ args = require('minimist')(process.argv.slice(2))
 
 if args.help?
   console.log "Usage:"
-  console.log "  chdl_compile.coffee [--autoClock] chdl_file [--output=out_dir]"
+  console.log "  chdl_compile.coffee [--param_file file_name] [--autoClock] -- chdl_file [--output=out_dir]"
   process.exit()
 
 cfg={
@@ -23,8 +23,17 @@ if args.autoClock
   cfg.autoClock=true
 configBase(cfg)
 
-programParam= args.param ? ''
+programParam=null
 
+if fs.existsSync("./chdl_config.json")
+  programParam= require path.resolve("./chdl_config.json")
+
+if args.param_file?
+  if fs.existsSync(path.resolve(args.param_file))
+    programParam= require path.resolve(args.param_file)
+  else
+    log "Can not find file #{args.param_file}"
+    
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
   fs.readFile fileName, 'utf-8', (error, text) ->
