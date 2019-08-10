@@ -2,6 +2,7 @@ Reg  = require 'chdl_reg'
 Wire = require 'chdl_wire'
 Port = require 'chdl_port'
 _    = require 'lodash'
+ElementSets = require 'chdl_el_sets'
 
 class Expr
   str: ''
@@ -20,15 +21,25 @@ class Expr
     else if s==null
       @str+=''
     else if s.__type? and s.__type=='reg'
-      @str+= s().refName()
+      n=s().refName()
+      ElementSets.add(n)
+      @str+= n
     else if s.__type? and s.__type=='wire'
-      @str+= s().refName()
+      n=s().refName()
+      ElementSets.add(n)
+      @str+= n
     else if s.__type? and s.__type=='port'
-      @str+= s().refName()
+      n=s().refName()
+      ElementSets.add(n)
+      @str+= n
     else if s instanceof Reg
-      @str+= s.refName()
+      n=s().refName()
+      ElementSets.add(n)
+      @str+= n
     else if s instanceof Wire
-      @str+= s.refName()
+      n=s().refName()
+      ElementSets.add(n)
+      @str+= n
     else if s.constructor?.name=='Channel'
       @str+= s.elName
     else if s instanceof Expr

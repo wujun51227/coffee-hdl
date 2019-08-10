@@ -1,4 +1,5 @@
 CircuitEl=require 'chdl_el'
+ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
 {packEl,toNumber}=require 'chdl_utils'
 
@@ -33,6 +34,7 @@ class Wire extends CircuitEl
     @states=[]
     @bindChannel=null
     @fieldMap={}
+    @depNames=[]
 
   init: (v)->
     @value=v
@@ -117,6 +119,7 @@ class Wire extends CircuitEl
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
+    ElementSets.clear()
     if @cell.__assignInAlways
       if @staticAssign
         throw new Error("This wire have been static assigned")
@@ -133,7 +136,9 @@ class Wire extends CircuitEl
       @staticAssign=true
     @cell.__assignWaiting=false
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
+    @depNames.push(ElementSets.get())
 
+  getDepNames: => @depNames
 
   verilogDeclare: ->
     list=[]

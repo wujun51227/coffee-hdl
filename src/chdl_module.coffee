@@ -3,6 +3,7 @@ Expr    = require 'chdl_expr'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
+ElementSets = require 'chdl_el_sets'
 {packEl,toSignal,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'

@@ -1,4 +1,5 @@
 CircuitEl = require 'chdl_el'
+ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
 {packEl,toNumber,hex}=require 'chdl_utils'
 
@@ -21,6 +22,7 @@ class Reg extends CircuitEl
     @enableValue=null
     @fieldMap={}
     @needInitial=false
+    @depNames=[]
 
   setMem: -> @isMem=true
 
@@ -228,6 +230,7 @@ class Reg extends CircuitEl
       return ''
 
   assign: (assignFunc)=>
+    ElementSets.clear()
     @cell.__assignWidth=@width
     if @cell.__pipeName? or @isMem
       @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
@@ -236,6 +239,9 @@ class Reg extends CircuitEl
       @cell.__updateWires.push({type:'reg',name:@elName})
     else
       @cell.__wireAssignList.push "assign _#{@refName()} = #{assignFunc()};"
+    @depNames.push(ElementSets.get())
+
+  getDepNames: => @depNames
 
   stateIsValid: (name)->
     for i in @states

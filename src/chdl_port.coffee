@@ -1,4 +1,5 @@
 Wire=require 'chdl_wire'
+ElementSets = require 'chdl_el_sets'
 {toSignal,portDeclare,packEl}=require 'chdl_utils'
 _ = require 'lodash'
 
@@ -41,6 +42,7 @@ class Port extends Wire
     @pendingValue=null
     @bindChannel=null
     @bindSignal=null
+    @depNames=[]
 
     @isClock=false
     @isReset=false
@@ -63,6 +65,7 @@ class Port extends Wire
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
+    ElementSets.clear()
     if @cell.__assignInAlways
       if @staticAssign
         throw new Error("This wire have been static assigned")
@@ -79,6 +82,9 @@ class Port extends Wire
       @staticAssign=true
     @cell.__assignWaiting=false
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
+    @depNames.push(ElementSets.get())
+
+  getDepNames: => @depNames
 
   fromReg: (name)=>
     if @type=='output'

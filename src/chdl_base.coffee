@@ -223,9 +223,8 @@ getVerilogParameter=(inst)->
     return ' '
   else
     list=[]
-    for key in Object.keys(inst.__verilogParameter).sort()
-      value=inst.__verilogParameter[key]
-      list.push(".#{key}(#{value})")
+    for i in inst.__verilogParameter
+      list.push(".#{i.key}(#{i.value})")
     return " #(\n  "+list.join(",\n  ")+"\n) "
 
 toVerilog=(inst)->
