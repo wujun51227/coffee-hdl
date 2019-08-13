@@ -99,6 +99,8 @@ code_gen= (inst)=>
     "  "+i[1].portDeclare()
   ).join(",\n")
   printBuffer.add ');'
+  printBuffer.blank('//parameter declare')
+  printBuffer.add inst.__parameterDeclare()
   printBuffer.blank('//channel declare')
   for [name,channel] in toFlatten(inst.__channels)
     code=channel.verilogDeclare()
@@ -219,11 +221,11 @@ code_gen= (inst)=>
   printBuffer.register(inst)
 
 getVerilogParameter=(inst)->
-  if inst.__verilogParameter==null
+  if inst.__instParameter==null
     return ' '
   else
     list=[]
-    for i in inst.__verilogParameter
+    for i in inst.__instParameter
       list.push(".#{i.key}(#{i.value})")
     return " #(\n  "+list.join(",\n  ")+"\n) "
 

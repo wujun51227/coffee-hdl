@@ -87,7 +87,9 @@ class Module
     @__specifyModuleName=name
     @__specify=true
 
-  verilogParameter: (s)->  @__verilogParameter=s
+  instParameter: (s)->  @__instParameter=s
+
+  moduleParameter: (s)->  @__moduleParameter=s
 
   constructor: (param=null)->
     @param=param
@@ -95,7 +97,8 @@ class Module
     #@moduleName=this.constructor.name
     @__moduleName=null
     @__isCombModule=false
-    @__verilogParameter=null
+    @__instParameter=null
+    @__moduleParameter=null
 
     @__alwaysList     =  []
     @__pureAlwaysList     =  []
@@ -604,5 +607,13 @@ class Module
           signal.assign(block)
         else
           signal.assign(->block)
+
+  __parameterDeclare: ->
+    out=''
+    if @__moduleParameter?
+      for i in @__moduleParameter
+        out+="parameter #{i.key} = #{i.value};\n"
+    return out
+      
 
 module.exports=Module

@@ -10,10 +10,15 @@ class verilogParameter extends Module
     super()
     Port()
 
-  @u0_cell2.verilogParameter([
+    @moduleParameter([
+      { key:'hello',value:100}
+      { key:'world',value:200}
+    ])
+
+    @u0_cell2.instParameter([
       { key:'width',value:100}
       { key:'height',value:200}
-  ])
+    ])
 
   build: ->
 

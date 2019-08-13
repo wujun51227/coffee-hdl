@@ -49,7 +49,7 @@ class Channel extends CircuitEl
 
   bindPort: (moduleInst,bindPortPath)->
     if @aliasPath?
-      throw new Error('This channel has been aliased')
+      throw new Error('This channel has been aliased '+@aliasPath)
     else
       portBundle=_.get(moduleInst.__ports,bindPortPath)
       @bindPortPath=bindPortPath
