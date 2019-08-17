@@ -20,7 +20,7 @@ moduleCache={}
 projectDir=''
 
 config={
-  autoClock: true
+  autoClock: false
 }
 
 getCellList= (inst)->
