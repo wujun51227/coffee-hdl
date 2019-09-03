@@ -14,7 +14,7 @@ class AssignInFunction extends Module
     )
 
   add:(v1,v2)->
-    $ {v1} + {v2}
+    $ v1 + v2
 
   build: ->
     assign(@dout) => $ @din3+@add(@din1,@din2)

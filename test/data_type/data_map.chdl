@@ -24,7 +24,7 @@ class DataMap extends Module
   build: ->
     assign(@dout) => $ @bus['l1'].k1
     assign(@bus.l1.l2['k3']) => $ @bus['l1']['l2'].k2
-    assign(_.get(@bus,'l1.l2.k4')) => $ {_.get(@bus,['l1','l2','k2'])}
+    assign(_.get(@bus,'l1.l2.k4')) => $ _.get(@bus,['l1','l2','k2'])
 
 
 module.exports=DataMap

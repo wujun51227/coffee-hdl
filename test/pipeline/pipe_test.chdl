@@ -10,7 +10,8 @@ class PipeTest extends Module
       enable: input()
       dout1: output()
       dout2: output()
-      reset: input()
+      clk: input().asClock()
+      reset: input().asReset()
     )
 
     Wire(
@@ -20,11 +21,11 @@ class PipeTest extends Module
 
   doSync: (sigIn,sigOut)->
     pipeline(sigIn,{hasReset:'reset'}).next((pipe)=>
-      assign_pipe('d1',sigIn.getWidth()) => $ {sigIn}
+      assign_pipe('d1',sigIn.getWidth()) => $ sigIn
     ).next( (pipe)=>
-      assign_pipe('d2',sigIn.getWidth()) => $ {pipe.d1}
+      assign_pipe('d2',sigIn.getWidth()) => $ pipe.d1
     ).final( (pipe)=>
-      assign(sigOut) => $ {pipe.d2}
+      assign(sigOut) => $ pipe.d2
     )
 
   build: ->
@@ -33,12 +34,12 @@ class PipeTest extends Module
     pipeline('doubleSync',{hasReset:'reset'}).next((pipe)=>
       assign_pipe('d1',5) => $ @in1
     ).next( (pipe)=>
-      assign_pipe('d2',5) => $ {pipe.d1}+@enable
+      assign_pipe('d2',5) => $ pipe.d1+@enable
     ).next( (pipe)=>
-      assign_pipe('d3',5) => $ {pipe.d2}
+      assign_pipe('d3',5) => $ pipe.d2
     ).final( (pipe)=>
-      tmp = $ {pipe.d3(10:8)}
-      assign(@dout1) => $ {pipe.d1(3:1)} & {pipe.d2} + {tmp}
+      tmp = $ pipe.d3(10:8)
+      assign(@dout1) => $ pipe.d1(3:1) & pipe.d2 + tmp
     )
 
     pipeline('sync').next((pipe)=>
@@ -46,10 +47,10 @@ class PipeTest extends Module
       assign_pipe(d1:32) => $ @in1
     ).next((pipe)=>
       #level 2 pipe logic
-      assign_pipe(d2:32) => $ {pipe.d1}
+      assign_pipe(d2:32) => $ pipe.d1
     ).final((pipe)=>
       #some combo logic
-      assign(@dout2) => $ (!{pipe.d1}) & {pipe.d2}
+      assign(@dout2) => $ (!pipe.d1) & pipe.d2
     )
 
 module.exports=PipeTest

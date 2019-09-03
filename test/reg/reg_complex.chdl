@@ -21,7 +21,7 @@ class RegComplex extends Module
     always =>
       $if(@group.addEnable) =>
         for i in @group.regFile
-          assign(i) => $ {i} + 1
+          assign(i) => $ i + 1
 
 module.exports=RegComplex
 

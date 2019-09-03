@@ -65,6 +65,43 @@ findCallBound=(tokens,index)->
     i++
   return [start,-1]
 
+findIndexBound=(tokens,index)->
+  i=index
+  cnt=0
+  start=-1
+  while token = tokens[i]
+    if token[0]=='INDEX_START'
+      if start==-1
+        start=i
+      cnt++
+    else if token[0]=='INDEX_END'
+      cnt--
+      if cnt==0
+        unless (tokens[i+1]? and tokens[i+1][0]=='INDEX_START')
+          return [start,i]
+    i++
+  return [start,-1]
+
+findPropertyBound=(tokens,index)->
+  i=index
+  start=index
+  while token = tokens[i]
+    if token[0]=='.' and tokens[i+1][0]=='PROPERTY'
+      i+=2
+      continue
+    else if token[0]=='CALL_START'
+      [dummy,stop_index]=findCallBound(tokens,i)
+      i=stop_index+1
+    else if token[0]=='INDEX_START'
+      [dummy,stop_index]=findIndexBound(tokens,i)
+      i=stop_index+1
+    else
+      break
+  if i==start
+    return [start,-1]
+  else
+    return [start,i-1]
+
 findPipeRegSlice=(tokens,index)->
   i=index
   cnt=0
@@ -254,6 +291,17 @@ scanToken= (tokens,index)->
   else if tokens[index][0]=='STRING'
     token = ['STRING',String(tokens[index][1]),{}]
     return [1,[token]]
+  else if tokens[index][0]=='IDENTIFIER' and tokens[index][1].match(/^[_a-zA-Z]/)
+    start_index=index
+    [dummy,stop_index]=findPropertyBound(tokens,index+1)
+    if stop_index==-1
+      return [1,[tokens[index]]]
+    else
+      list=tokens.slice(start_index,stop_index+1)
+      return [
+        list.length
+        list
+      ]
   else
     token = ['STRING',"'"+String(tokens[index][1])+"'",{}]
     return [1,[token]]
