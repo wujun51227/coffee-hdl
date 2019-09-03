@@ -159,7 +159,7 @@ scanToken= (tokens,index)->
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
-  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[1-9]/)
+  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[1-9]/) and tokens[index+1]?[0]!='\\'
   getIndex=false
   if tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='eval'
     cnt=0
@@ -280,14 +280,20 @@ scanToken= (tokens,index)->
       stop_index-start_index+1
       list
     ]
-  else if findKeyword
-    start_index=index
-    [dummy,stop_index]=findCallBound(tokens,index+1)
-    list=tokens.slice(start_index,stop_index+1)
-    return [
-      list.length
-      list
-    ]
+  #else if findKeyword
+  #  start_index=index
+  #  [dummy,stop_index]=findCallBound(tokens,index+1)
+  #  list=tokens.slice(start_index,stop_index+1)
+  #  return [
+  #    list.length
+  #    list
+  #  ]
+  else if tokens[index][0]=='NUMBER' and tokens[index+1][0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
+    token = ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+    return [3,[token]]
+  else if tokens[index][0]=='\\' and tokens[index+1]?[1].match(/^[hdob]/)
+    token = ['STRING',"'"+String("\\'"+tokens[index+1][1])+"'",{}]
+    return [2,[token]]
   else if tokens[index][0]=='STRING'
     token = ['STRING',String(tokens[index][1]),{}]
     return [1,[token]]
