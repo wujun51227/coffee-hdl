@@ -472,7 +472,7 @@ extractLogic = (tokens)->
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
+      #tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
       list.push tokens[callEnd]
@@ -498,7 +498,7 @@ extractLogic = (tokens)->
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
+      #tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
       list.push tokens[callEnd]

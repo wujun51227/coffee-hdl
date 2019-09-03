@@ -447,7 +447,12 @@ class Module
     }
 
   _caseProcess: (w)=>
-    width=w.str
+    if _.isString(w)
+      width=Number(w)
+    else if _.isNumber(w)
+      width=w
+    else
+      width=w.str
     return (list)=>
       plist=[]
       first=true
@@ -478,14 +483,14 @@ class Module
     return (list)=>
       plist=[]
       first=true
-      for {cond,value} in list
+      for {cond,value} in list[0]
         if first
           plist.push "(#{cond})?(#{value}):"
           first=false
         else
           plist.push "        (#{cond})?(#{value}):"
 
-      plist.push "        (#{default_expr.str})"
+      plist.push "        (#{list[1]})"
       return plist.join('\n')
       
   _if: (cond)->

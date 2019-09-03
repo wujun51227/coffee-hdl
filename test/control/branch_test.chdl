@@ -45,9 +45,11 @@ class BranchTest extends Module
 
     assign(@w2.w6) =>
       $order() [
-        $cond(@in1(1)) => $ @w2.w3(9:7)
-        $cond(@in1(2)) => $ @w2.w3(3:1)
-        $default() => $ @w2.w3(6:4)
+        [
+          $cond(@in1(1)) => $ @w2.w3(9:7)
+          $cond(@in1(2)) => $ @w2.w3(3:1)
+        ],
+        $ @w2.w3(6:4)
       ]
 
     assign(@w2.w6) =>
