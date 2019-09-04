@@ -19,12 +19,17 @@ class cell2 extends Module
   constructor: ->
     super()
 
+    Channel(
+      ch1: channel()
+      ch2: channel()
+    )
+
     @u0_cell1.bind(
-      bundle: channel('ch1')
+      bundle: @ch1
     )
 
     @u1_cell1.bind(
-      bundle: channel('ch2')
+      bundle: @ch2
     )
 
   build: ->
@@ -46,13 +51,18 @@ class ChannelGetWire extends Module
       cell2_probe: 'u0_cell2.ch2'
     )
 
+    Channel(
+      cell1_ch: channel()
+      cell1_select: channel()
+    )
+
     @u0_cell1.bind(
-      bundle: channel('cell1_ch')
-      select: channel('cell1_select')
+      bundle: @cell1_ch
+      select: @cell1_select
     )
 
   build: ->
-    assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.getWire('din')
+    assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.din
 
 module.exports=ChannelGetWire
 

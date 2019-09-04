@@ -1,4 +1,4 @@
-# coffee-hdl 用户手册 v0.1
+# coffee-hdl 用户手册 v0.2
 ##  介绍
 
 本文档是coffee-hdl(coffeescript hardware description language)的使用手册.coffee-hdl是嵌入在coffeescript编程语言中的硬件构造语言,是一种对coffeescript语言做了词法编译的改造扩充后的DSL,所以当您编写coffee-hdl时,实际上是在编写构造硬件电路的coffeescript程序.作者并不假定您是否了解如何在coffeescript中编程,我们将通过给出的例子指出必要的coffee-hdl语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
@@ -64,9 +64,13 @@ class ImportSimple extends Module     #申明当前模块
     Wire(
       data_wire: wire(16)           #申明线
     )
+    
+    Channel(
+    	up_signal: channel()       #通道申明
+    )
 
     @u0_cell1.bind(
-      bundle: channel 'up_signal'   #通道和例化模块端口对接
+      bundle:  @up_signal   #通道和例化模块端口对接
     )
 
   build: ->                         #模块内部数字逻辑
@@ -137,7 +141,7 @@ endmodule
 ##  数值字面量
 coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面不支持X态和Z态,只有0和1两种状态,数值字面量一般带有宽度信息.
 
-在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,如果使用coffeescript基本整数类型,则自动计算位宽信息,位宽计算方式遵守verilog规则.示例代码如下(test/data_type/const_data.chdl)
+在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,或者使用width\\[hoxb]value字面量表达,如果使用coffeescript基本整数类型,则自动计算位宽信息,位宽计算方式遵守verilog规则.示例代码如下(test/data_type/const_data.chdl)
 
 		hex(12,0x123) // 12'h123
 		hex(0x123)    // 9'h123
@@ -146,6 +150,8 @@ coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面�
 		oct(12, 123)  // 7'o173
 		0x123         // 9'h123
 		0b1100        // 4'b1100
+		12\h123      // 12'h123
+		32\hffff55aa  //32'hffff55aa
 
 字符串,对象等数据类型无法在电路描述层面使用,但是可以在宿主程序计算的时候影响电路生成的形式
 
@@ -213,10 +219,11 @@ assign out = (16{cond1}&(data1))|
 示例代码(test/control/branch_test.chdl)
 ```coffeescript
 assign(@w2.w6) =>
-  $order() [
+  $order() [[
     $cond(@in1(1)) => $ @w2.w3(9:7)
     $cond(@in1(2)) => $ @w2.w3(3:1)
-    $default() => $ @w2.w3(6:4)
+    ],
+    $ @w2.w3(6:4)
   ]
 ```
 
@@ -327,14 +334,14 @@ assign dout = {w3[4],w3[2],w3[0]};
 	
 ## 函数抽象
 coffee-hdl支持函数抽象表达以增强代码复用,函数声明方式是普通
-coffeescript函数,传入信号作为局部变量,在$表达式内使用的时候需要{}符号求值,函数的输出为$表达式,表现形式如下
+coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
 	
 示例代码(test/function/func_test.chdl)
 ```coffeescript
-add: (v1,v2) -> $ @in3+{v1}+{v2}
-mul: (v1,v2) -> $ {v1}*{v2}
+add: (v1,v2) -> $ @in3+v1+v2
+mul: (v1,v2) -> $ v1*v2
 build: ->
-  assign(@out) => $ @add(@mul(hex(10,0x123),@in1),@in2)
+  assign(@out) => $ @add(@mul(10\h123,@in1),@in2)
 ```
 
 生成代码
@@ -574,7 +581,7 @@ endmodule
 通道是对连接的抽象,在coffee-hdl中,channel的作用是取代verilog例化cell时候的port-pin连接的方式.和port-pin连接主要的区别channel是运行时确定宽度信息并检查,channel可以通过传统的port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
 ```coffeescript
 @some_cell.bind(
-  port_name: channel 'channel_name'
+  port_name:   @channel_name
 )
 ```
   或者
@@ -595,7 +602,7 @@ Port(
 把channel作为wire使用需要做显式转换,由于绑定的端口可能是数据结构,需要在参数当中指定数据结构成员
 
 ```coffeescript
-assign(@dout) => $ @cell2_port.din+('cell1_ch','din')(3:0)+@cell2_probe.getWire('din')
+assign(@dout) => $ @cell2_port.din+('cell1_ch','din')(3:0)+@cell2_probe.din
 ```
 
 生成代码
@@ -731,6 +738,7 @@ class HubSimple extends Module
  
 ## 关键字
 操作符
+
 * assign(signal) =>
 * assign_pipe(reg_name:string,width:number)=>
 * always =>
@@ -740,6 +748,7 @@ class HubSimple extends Module
 * get_channel(channel_name)
 
 类型
+
 * input(width:number)
 * output(width:number)
 * vec(width:number,depth:number)
@@ -754,6 +763,7 @@ class HubSimple extends Module
 
 
 电路生成
+
 * $if(expr) =>
 * $elseif(expr) =>
 * $else =>
@@ -761,11 +771,10 @@ class HubSimple extends Module
 * $balance(number:number) =>
 * $order(expr) =>
 * $cond(expr) =>
-* $default =>
-* $expand
 * $ expr
 
 模块资源申明
+
 * Port()
 * Probe()
 * Wire()
@@ -774,10 +783,12 @@ class HubSimple extends Module
 * Hub()
 
 模块自带方法
+
 * @setBlackBox()
 * @specifyModuleName(name:string)
 * @setCombModule()
-* @verilogParameter(parameter_string:string)
+* @moduleParameter(parameter_list)
+* @instParameter(parameter_list)
 * @verilog(verilog_string:string)
 * @initial(list:string[])
 

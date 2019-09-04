@@ -7,7 +7,7 @@ class ConstData extends Module
     )
 
   build: ->
-    assign(@out1) => $ 123+0x123+0o123+0b1100+hex(123)+hex(0x123)+oct(12,123)+dec(12,123)+bin(12,12)
+    assign(@out1) => $ 123+0x123+0o123+0b1100+hex(123)+hex(0x123)+oct(12,123)+dec(12,123)+bin(12,12)+12\h123+32\hffff55aa
     assign(@out2) => $ @out1(1) ? 100 ":" 200
 
 module.exports=ConstData
