@@ -240,14 +240,14 @@ __v=(width,number)->
       else if width==''
         return "#{number}"
       else
-        return "#{width}'d#{number}"
+        return "#{number}"
   else if _.isNumber(Number(number))
     if width==''
       return "#{number}"
     else if width=='1' or width==1
       return "1'b#{number}"
     else
-      return "#{width}'d#{number}"
+      return "#{number}"
   else
     throw new Error("const value error")
 
@@ -316,4 +316,7 @@ module.exports.cat= (args...)->
   else
     list=_.map(args,(i)=>getValue(i))
     return '{'+list.join(',')+'}'
+
+module.exports.expand= (num,sig)->
+  return "{#{getValue(num)}{#{getValue(sig)}}}"
 

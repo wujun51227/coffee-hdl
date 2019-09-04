@@ -33,8 +33,12 @@ class cell1 extends Module
   constructor: ->
     super()
 
+    Channel(
+      master_channel: channel()
+    )
+
     @u0_master_cell.bind(
-      master: channel 'master_channel'
+      master: @master_channel
     )
 
   build: ->
@@ -44,8 +48,12 @@ class cell2 extends Module
   constructor: ->
     super()
 
+    Channel(
+      slave_channel: channel()
+    )
+
     @u0_slave_cell.bind(
-      slave: channel 'slave_channel'
+      slave: @slave_channel
     )
 
   build: ->

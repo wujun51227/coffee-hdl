@@ -44,7 +44,7 @@ class riscv32i_decoder extends Module
     
   fieldWidth: (s)-> instTable.fieldProperty[s].width
 
-  sliceInstr: (lsb,width)-> $ (@instrLatch>>{lsb}) & @mask(width)
+  sliceInstr: (lsb,width)-> $ (@instrLatch>>lsb) & @mask(width)
 
   build: ->
     for name in Object.keys(@slice)
@@ -69,9 +69,9 @@ class riscv32i_decoder extends Module
           for i in item[2]
             cond=[]
             for checkItem in instTable.checkList when i[checkItem]?
-              cond.push($ @slice[checkItem]=={bin(@fieldWidth(checkItem),i[checkItem])})
+              cond.push($ @slice[checkItem]==bin(@fieldWidth(checkItem),i[checkItem]))
             if cond.length>0
-              $if({op_reduce(cond,'&&')}) =>
+              $if(op_reduce(cond,'&&')) =>
                 @opLatch.setState i.name
               $endif()
             else

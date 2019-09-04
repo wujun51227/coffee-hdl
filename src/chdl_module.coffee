@@ -417,9 +417,6 @@ class Module
   _cond: (cond)=>
     return (block)=> {cond:cond.str,value:block()}
 
-  _default: ()=>
-    return (block)=> {cond:'',value:block()}
-
   _wireProcess: (list=[])=>
     return {
       _if: (cond)=>
@@ -447,12 +444,7 @@ class Module
     }
 
   _caseProcess: (w)=>
-    if _.isString(w)
-      width=Number(w)
-    else if _.isNumber(w)
-      width=w
-    else
-      width=w.str
+    width=w.str
     return (list)=>
       plist=[]
       first=true
@@ -470,16 +462,7 @@ class Module
             plist.push "        ((#{cond})&(#{value}))"
       return plist.join('|\n')
 
-  _expandProcess: (w)=>
-    width=w.str
-    return (block)=>
-      if _.isFunction(block)
-        obj=block()
-      else
-        obj=block
-      return  "{#{width}{#{obj}}}"
-
-  _orderProcess: (default_expr)=>
+  _orderProcess: ()=>
     return (list)=>
       plist=[]
       first=true

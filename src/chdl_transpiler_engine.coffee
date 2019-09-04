@@ -7,7 +7,7 @@ do ->
 coffee = require 'coffeescript'
 _ = require 'lodash'
 log = require 'fancy-log'
-{printBuffer,cat,hex,dec,oct,bin,__v}=require 'chdl_utils'
+{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'
 
 debugExpr=''
 
@@ -138,22 +138,6 @@ scanToken= (tokens,index)->
   ret=[]
   #console.log '>>>>>>tokens',index,tokens[index...]
   nativeItem = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
-  findKeyword = do ->
-    list=[
-      'cat'
-      'hex'
-      'dec'
-      'oct'
-      'bin'
-      'channel_wire'
-      'channel_exist'
-      'op_reduce'
-      'cell'
-      'infer'
-    ]
-    for key in list
-      return true if tokens[index][0]=='IDENTIFIER' and tokens[index][1]==key and tokens[index+1]?[0]=='CALL_START'
-    return false
   #constValue= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='__v' and tokens[index+1]?[0]=='CALL_START'
   #constValue= tokens[index][0]=='@' and tokens[index+1]?[0]=='CALL_START'
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
@@ -161,32 +145,7 @@ scanToken= (tokens,index)->
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
   isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[1-9]/) and tokens[index+1]?[0]!='\\'
   getIndex=false
-  if tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='eval'
-    cnt=0
-    i=index
-    while token = tokens[i]
-      ret.push(token)
-      if token[0]=='CALL_START'
-        cnt++
-      else if token[0]=='CALL_END'
-        cnt--
-        if cnt==0
-          return [ret.length,ret]
-      i++
-  else if tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='$local'
-    cnt=0
-    i=index+1
-    while token = tokens[i]
-      if token[0]=='CALL_START'
-        cnt++
-      else if token[0]=='CALL_END'
-        cnt--
-        if cnt==0
-          return [ret.length+3,ret]
-      else
-        ret.push(token)
-      i++
-  else if tokens[index][0]=='{'
+  if tokens[index][0]=='{'
     i=index
     cnt=0
     list=[]
@@ -208,86 +167,18 @@ scanToken= (tokens,index)->
     ret.push ['STRING',"'"+String(token[1])+"'",{}]
     ret.push ['CALL_END',')',{}]
     return [1,ret]
-  #else if toHex or toDec or toOct or toBin
-  #  numberToken=tokens[index+4]
-  #  if numberToken[0]=='NUMBER'
-  #    numberToken[0]='STRING'
-  #    numberToken[1]="'"+String(numberToken[1])+"'"
-  #  cnt=0
-  #  ret.push tokens[index]
-  #  i=index+1
-  #  while token = tokens[i]
-  #    if token[0]=='CALL_START'
-  #      ret.push token
-  #      cnt++
-  #    else if token[0]=='CALL_END'
-  #      ret.push token
-  #      cnt--
-  #      if cnt==0
-  #        return [ret.length,ret]
-  #    else
-  #      ret.push(token)
-  #    i++
   else if nativeItem
-    list=[tokens[index],tokens[index+1]]
     start_index=index
-    index++
-    stop_index=index
-    timeout_cnt=0
-    while tokens[index]?
-      timeout_cnt+=1
-      break if timeout_cnt>100
-
-      if tokens[index+1]?[0]=='.'
-        cursor=index+1
-        if tokens[cursor][0]=='.' and tokens[cursor+1][0]=='PROPERTY'
-          list.push tokens[cursor]
-          list.push tokens[cursor+1]
-          stop_index=cursor+1
-          index=stop_index
-          cursor+=2
-      else if tokens[index+1]?[0]=='CALL_START'
-        cursor=index+1
-        cnt=0
-        while token = tokens[cursor]
-          list.push token
-          if token[0]=='CALL_START'
-            cnt++
-          else if token[0]=='CALL_END'
-            cnt--
-            if cnt==0
-              stop_index=cursor
-              index=stop_index
-              break
-          cursor++
-      else if tokens[index+1]?[0]=='INDEX_START'
-        cursor=index+1
-        cnt=0
-        while token = tokens[cursor]
-          list.push token
-          if token[0]=='INDEX_START'
-            cnt++
-          else if token[0]=='INDEX_END'
-            cnt--
-            if cnt==0
-              stop_index=cursor
-              index=stop_index
-              break
-          cursor++
-      else
-        break
-    return [
-      stop_index-start_index+1
-      list
-    ]
-  #else if findKeyword
-  #  start_index=index
-  #  [dummy,stop_index]=findCallBound(tokens,index+1)
-  #  list=tokens.slice(start_index,stop_index+1)
-  #  return [
-  #    list.length
-  #    list
-  #  ]
+    [dummy,stop_index]=findPropertyBound(tokens,index+2)
+    if stop_index==-1
+      list=tokens.slice(start_index,start_index+2)
+      return [2,list]
+    else
+      list=tokens.slice(start_index,stop_index+1)
+      return [
+        list.length
+        list
+      ]
   else if tokens[index][0]=='NUMBER' and tokens[index+1][0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
     token = ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
     return [3,[token]]
@@ -532,19 +423,6 @@ extractLogic = (tokens)->
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$expand'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_expandProcess', {}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$order'
       list =[
         ['@', '@', {}]
@@ -562,19 +440,6 @@ extractLogic = (tokens)->
       list =[
         ['@', '@', {}]
         ['PROPERTY', '_cond', {}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$default'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_default', {}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)

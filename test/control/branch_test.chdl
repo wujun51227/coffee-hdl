@@ -43,6 +43,12 @@ class BranchTest extends Module
         $cond(@in1(2)) => $ @w2.w5
       ]
 
+    assign(@w2.w5) =>
+      $balance(12) [
+        $cond(@in1(1)) => $ @w2.w4
+        $cond(@in1(2)) => $ @w2.w5
+      ]
+
     assign(@w2.w6) =>
       $order() [
         [
@@ -52,8 +58,9 @@ class BranchTest extends Module
         $ @w2.w3(6:4)
       ]
 
-    assign(@w2.w6) =>
-      $expand(@w2.w5.getWidth()) => $ @w2.w3(9:7)
+    assign(@w2.w6) => $ expand(@w2.w5.getWidth(), @w2.w3(9:7))
+
+    assign(@w2.w6) => $ expand(5, @w2.w3(9:7))
 
     always =>
       $if(@in1==hex(5,1)) =>
