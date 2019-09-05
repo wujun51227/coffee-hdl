@@ -1,0 +1,78 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: input(16)
+        dout: output(16)
+        sub:
+          din: input(16)
+          dout: output(16)
+    )
+
+  build: ->
+
+class cell2 extends Module
+  constructor: ->
+    super()
+    Port(
+      sub:
+        din: output(16)
+        dout: input(16)
+    )
+
+  build: ->
+
+class cell3 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: output(16)
+        dout: input(16)
+        sub:
+          din: input(16)
+          dout: input(16)
+    )
+
+  build: ->
+
+
+class ChannelPartConn extends Module
+  u0_cell1: new cell1()
+  u0_cell2: new cell2()
+  u0_cell3: new cell3()
+
+  constructor: ->
+    super()
+
+    Channel(
+      c1_bundle: channel()
+      c2_sub: channel()
+      c3_bundle: channel()
+      c1_sub: channel()
+    )
+
+    @u0_cell1.bind(
+      bundle: @c1_bundle
+      'bundle.sub': @c1_sub
+    )
+
+    @u0_cell2.bind(
+      sub: @c2_sub
+    )
+
+    @u0_cell3.bind(
+      bundle: @c3_bundle
+    )
+
+    Hub(
+      sub_conn: [@c1_sub,@c2_sub]
+      bundle_conn: [@c1_bundle,@c3_bundle]
+    )
+
+module.exports=ChannelPartConn
+

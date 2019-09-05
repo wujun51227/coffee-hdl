@@ -24,8 +24,12 @@ class ChannelBindPortMap extends Module
         din: input(16)
     )
 
+    Channel(
+      cell1_ch: channel()
+      )
+
     @u0_cell1.bind(
-      bus: channel('cell1_ch')
+      bus: @cell1_ch
     )
 
   build: ->

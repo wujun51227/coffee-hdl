@@ -23,8 +23,12 @@ class cell2 extends Module
         cell_port:bind('cell1_ch')
     )
 
+    Channel(
+      cell1_ch: channel()
+    )
+
     @u0_cell1.bind(
-      bus: channel 'cell1_ch'
+      bus: @cell1_ch
     )
 
   build: ->
@@ -39,8 +43,12 @@ class cell3 extends Module
         cell_port:bind('cell2_ch')
     )
 
+    Channel(
+      cell2_ch: channel()
+      )
+
     @u0_cell2.bind(
-      bundle: channel 'cell2_ch'
+      bundle: @cell2_ch
     )
 
   build: ->
@@ -55,8 +63,12 @@ class ChannelComplex extends Module
         top_port: bind('top_ch')
     )
 
+    Channel(
+      top_ch: channel()
+      )
+
     @u0_cell3.bind(
-      bundle: channel 'top_ch'
+      bundle: @top_ch
     )
 
   build: ->

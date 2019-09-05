@@ -143,7 +143,7 @@ scanToken= (tokens,index)->
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
-  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[1-9]/) and tokens[index+1]?[0]!='\\'
+  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[0-9]/) and tokens[index+1]?[0]!='\\'
   getIndex=false
   if tokens[index][0]=='{'
     i=index
@@ -617,7 +617,10 @@ transToVerilog= (text,debug=false,param=null) ->
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
   printBuffer.reset()
-  eval javaScript
+  try
+    eval javaScript
+  catch e
+    console.log e
   return javaScript
 
 transToJs= (text,debug=false) ->
@@ -648,7 +651,11 @@ transToJs= (text,debug=false) ->
   for fragment in fragments
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
-  return eval(javaScript)
+  try
+    return eval(javaScript)
+  catch e
+    console.log e
+    return null
 
 module.exports.transToVerilog = transToVerilog
 module.exports.transToJs= transToJs

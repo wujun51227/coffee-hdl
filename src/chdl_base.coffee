@@ -212,9 +212,26 @@ code_gen= (inst)=>
         resetPort=i.inst.__ports[i.inst.__defaultReset]
         if not resetPort.isBinded()
           resetPort.setBindSignal(inst.__defaultReset)
-    printBuffer.add i.inst._pinConnect(inst).join(",\n")
+    [pinConn,pinAssigns]=i.inst._pinConnect(inst)
+    printBuffer.add pinConn.join(",\n")
     printBuffer.add ');'
     printBuffer.blank()
+
+    if pinAssigns.length>0
+      pinAssignList=[]
+      for pinAssign in pinAssigns
+        hit= _.find(inst.__pinAssign,{to:pinAssign.to})
+        if hit?
+          pinAssignList.push({
+            from: pinAssign.from
+            to: hit.from
+          })
+        else
+          pinAssignList.push(pinAssign)
+      _.map(pinAssignList,(n)->
+        printBuffer.add "assign #{n.to} = #{n.from};"
+      )
+      printBuffer.blank()
 
   printBuffer.add 'endmodule'
   printBuffer.blank()

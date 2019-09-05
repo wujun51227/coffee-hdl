@@ -17,8 +17,12 @@ class cell2 extends Module
   constructor: ->
     super()
 
+    Channel(
+      ch1: channel()
+      )
+
     @u0_cell1.bind(
-      bundle: channel('ch1')
+      bundle: @ch1
     )
 
   build: ->

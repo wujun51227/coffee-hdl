@@ -18,12 +18,17 @@ class cell2 extends Module
   constructor: ->
     super()
 
+    Channel(
+      ch1: channel()
+      ch2: channel()
+      )
+
     @u0_cell1.bind(
-      bundle: channel('ch1')
+      bundle: @ch1
     )
 
     @u1_cell1.bind(
-      bundle: channel('ch2')
+      bundle: @ch2
     )
 
   build: ->
@@ -51,12 +56,17 @@ class ChannelBindPort extends Module
       cell3_port: bind('cell3_ch')
     )
 
+    Channel(
+      cell1_ch: channel()
+      cell3_ch: channel()
+    )
+
     @u0_cell1.bind(
-      bundle: channel('cell1_ch')
+      bundle: @cell1_ch
     )
 
     @u0_cell3.bind(
-      din: channel('cell3_ch')
+      din: @cell3_ch
     )
 
   build: ->

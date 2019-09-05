@@ -9,6 +9,7 @@ class Channel extends CircuitEl
     super()
     @bindPortPath=null
     @portList= []
+    @attachPath=null
     if path!=null
       @aliasPath=path
     else
@@ -46,6 +47,9 @@ class Channel extends CircuitEl
           else
             throw new Error('Channel width unkown')
     return list.join("\n")
+
+  attach: (parent,path)->
+    @attachPath={parent,path}
 
   bindPort: (moduleInst,bindPortPath)->
     if @aliasPath?

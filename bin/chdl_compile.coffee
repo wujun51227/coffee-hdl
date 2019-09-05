@@ -1,25 +1,35 @@
 #!/usr/bin/env coffee
 
+banner= ->
+    console.log '|          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬'
+    console.log '|          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││'
+    console.log '|          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘'
+
 fs = require 'fs'
 path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
 {transToVerilog,setPaths}=require 'chdl_transpiler_engine'
-{configBase}=require 'chdl_base'
+{configBase,resetBase}=require 'chdl_base'
 mkdirp= require 'mkdirp'
+chokidar = require('chokidar')
+program = require('commander')
 
-args = require('minimist')(process.argv.slice(2))
-
-if args.help?
-  console.log "Usage:"
-  console.log "  chdl_compile.coffee [--param_file file_name] [--autoClock] -- chdl_file [--output=out_dir]"
-  process.exit()
+program
+  .version('0.0.1')
+  .name('chdl_compile.coffee')
+  .usage('[options] source_file')
+  .option('-o, --output <dir name>')
+  .option('-w, --watch')
+  .option('-p, --param_file <file name>')
+  .option('-a, --autoClock')
+  .parse(process.argv)
 
 cfg={
   autoClock:false
 }
-if args.autoClock
+if program.autoClock
   cfg.autoClock=true
 configBase(cfg)
 
@@ -28,11 +38,11 @@ programParam=null
 if fs.existsSync("./chdl_config.json")
   programParam= require path.resolve("./chdl_config.json")
 
-if args.param_file?
-  if fs.existsSync(path.resolve(args.param_file))
-    programParam= require path.resolve(args.param_file)
+if program.param_file?
+  if fs.existsSync(path.resolve(program.param_file))
+    programParam= require path.resolve(program.param_file)
   else
-    log "Can not find file #{args.param_file}"
+    log "Can not find file #{program.param_file}"
     
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
@@ -52,8 +62,8 @@ processFile= (fileName,outDir) ->
           throw err if err
           log "generate code",fname+".v"
 
-fileName = args._[0]
-outDir= args.output ? './'
+fileName = program.args[0]
+outDir= program.output ? './'
 log 'Generate code to directory "'+outDir+'"' if outDir?
 if not fs.existsSync(outDir)
   mkdirp.sync(outDir)
@@ -62,5 +72,14 @@ unless fileName
   log 'No file specified'
   process.exit()
 
+banner()
 processFile(fileName,outDir.replace(/\/$/,''))
 
+if program.watch
+  watch=chokidar.watch(fileName)
+  watch.on('change',(path)->
+    resetBase()
+    printBuffer.clearBin()
+    banner()
+    processFile(fileName,outDir.replace(/\/$/,''))
+  )

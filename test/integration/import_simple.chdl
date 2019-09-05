@@ -19,12 +19,16 @@ class ImportSimple extends Module
       data_wire: wire(16)
     )
 
+    Channel(
+      up_signal: channel()
+      )
+
     @u0_cell1.bind(
-      bundle: channel 'up_signal'
+      bundle: @up_signal
     )
 
   build: ->
-    assign(@data_wire) => $ channel_wire('up_signal','din')+1
+    assign(@data_wire) => $ @up_signal.getWire('din')+1
 
     always =>
       assign(@data_latch) => $ @data_wire*2

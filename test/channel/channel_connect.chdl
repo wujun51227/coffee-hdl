@@ -31,12 +31,16 @@ class ChannelConn extends Module
   constructor: ->
     super()
 
+    Channel(
+      conn: channel()
+      )
+
     @u0_cell1.bind(
-      bundle: channel('conn')
+      bundle: @conn
     )
 
     @u0_cell2.bind(
-      bundle: channel('conn')
+      bundle: @conn
     )
 
 module.exports=ChannelConn

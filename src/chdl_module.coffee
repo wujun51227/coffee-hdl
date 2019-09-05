@@ -132,6 +132,7 @@ class Module
     @__specify=false
     @__specifyModuleName=null
     @__autoClock=true
+    @__pinAssign=[]
 
   __setParentNode: (node)->
     @__parentNode=node
@@ -291,10 +292,22 @@ class Module
         if dir=='input'
           if type=='Wire'
             wire.assign(->toSignal(net.elName))
+            @__pinAssign.push({
+              from: toSignal(net.elName)
+              to: wireName
+            })
           else
             wire.assign(->toSignal(newPath))
+            @__pinAssign.push({
+              from: toSignal(newPath)
+              to: wireName
+            })
         else if dir=='output'
           net.assign(->wire.elName)
+          @__pinAssign.push({
+            from: toSignal(wire.elName)
+            to: net.elName
+          })
 
     for i in @__bindChannels
       i.channel.portList.length=0
@@ -303,6 +316,40 @@ class Module
   __postElaboration: ->
     for i in @__postProcess
       @__channelExpand(i.type,i.elName,i.bindChannel)
+
+    getPort= (cell,path)->
+      for [name,port] in toFlatten(cell.__ports)
+        return port if _.isEqual(_.toPath(name),_.toPath(path))
+      return null
+    wireCache=[]
+    for [name,wire] in toFlatten(@__wires)
+      wireCache[name]=wire
+
+    for [name,channel] in toFlatten(@__channels)
+      if channel.attachPath?
+        attachPort={}
+        for obj in channel.portList
+          bindPort=getPort(obj.cell,obj.path)
+          attachPort[bindPort.getName()]=obj
+        for obj in channel.attachPath.parent.portList
+          bindPort=getPort(obj.cell,obj.path)
+          dir=bindPort.type
+          bindName=bindPort.getName()
+          if attachPort[bindName]?
+            pChannelName=channel.attachPath.parent.getName()
+            nodeList=_.toPath(channel.attachPath.parent.getName())
+            wireName=toSignal([pChannelName,obj.node...].join('.'))
+            attachObj=attachPort[bindName]
+            attachBindPort=getPort(attachObj.cell,attachObj.path)
+            attachDir=attachBindPort.type
+            attachWireName=toSignal([name,attachObj.node...].join('.'))
+            wireObj=wireCache[wireName] ? null
+            attachWireObj=wireCache[attachWireName] ? null
+            if wireObj? and attachWireObj?
+              if dir=='input'
+                wireObj.assign(-> attachWireName)
+              else if dir=='output'
+                attachWireObj.assign(-> wireName)
 
   __elaboration: ->
     for [name,port] in toFlatten(@__ports)
@@ -485,21 +532,43 @@ class Module
   _pinConnect: ->
     out=[]
     hitPorts={}
+    usedPorts={}
+    assignList=[]
     for i in @__bindChannels
       #console.log '>>>>',name  for [name,port] in toFlatten(i.port)
       for [name,port] in toFlatten(_.get(@__ports,i.portName))
         hitPorts[toSignal(port.elName)]=1
-        if name!=''
-          out.push "  .#{toSignal(port.elName)}( #{i.channel.elName}__#{toSignal(name)})"
+        if not usedPorts[toSignal(port.elName)]?
+          if name!=''
+            out.push "  .#{toSignal(port.elName)}( #{i.channel.elName}__#{toSignal(name)})"
+            usedPorts[toSignal(port.elName)]={
+              pin:"#{i.channel.elName}__#{toSignal(name)}"
+              port: port
+            }
+          else
+            out.push "  .#{toSignal(port.elName)}( #{i.channel.elName})"
+            usedPorts[toSignal(port.elName)]={
+              pin:"#{i.channel.elName}"
+              port:port
+            }
         else
-          out.push "  .#{toSignal(port.elName)}( #{i.channel.elName})"
+          if name!=''
+            thisPin="#{i.channel.elName}__#{toSignal(name)}"
+          else
+            thisPin="#{i.channel.elName}"
+          usedPort=usedPorts[toSignal(port.elName)]
+          if usedPort.port.type=='output'
+            assignList.push({from:usedPort.pin,to:thisPin})
+          else if usedPort.port.type=='input'
+            assignList.push({from:thisPin,to:usedPort.pin})
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.elName)
       if port.bindSignal?
         out.push "  .#{s}( #{port.bindSignal} )"
       else if not hitPorts[s]?
         out.push "  .#{s}( )"
-    return out
+
+    return [out,assignList]
 
   bind: (obj)->
     for port,channel of obj when _.get(@__ports,port)?

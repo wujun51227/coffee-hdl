@@ -8,6 +8,7 @@
     "test": "test"
   },
   "dependencies": {
+    "chokidar": "^3.0.2",
     "coffeescript": "^2.3.2",
     "commander": "^2.19.0",
     "directory-tree": "^2.1.0",
