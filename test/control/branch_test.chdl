@@ -35,7 +35,7 @@ class BranchTest extends Module
         $ @w2.w3+2
       $else =>
         0
-      $endif()
+      $endif
 
     assign(@w2.w5) =>
       $balance(@w2.w5.getWidth()) [
@@ -67,7 +67,7 @@ class BranchTest extends Module
         assign(@r1(3:1)) => $ @din(4:2)+0x100
       $elseif(@in1==hex(5,2)) =>
         assign(@r1(3:1)) => $ @din(4:2)+12\h200 + 12\h400
-      $endif()
+      $endif
 
 module.exports=BranchTest
 

@@ -17,7 +17,7 @@ class VecSimple extends Module
         assign(@mem.index(10)) => $ @in1
         assign(@mem.index(12)(3:2)) => $ @in1
         assign(@out1) => $ @mem.index(100)+ @mem.index(11)(15:0)
-      $endif()
+      $endif
 
 module.exports=VecSimple
 

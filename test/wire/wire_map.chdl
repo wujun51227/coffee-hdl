@@ -35,7 +35,7 @@ class WireMap extends Module
         for key,value of @group1.data
           list.push($ {value} + @group2.data[key])
         assign(@dout) => $ {list.join('+')}
-      $endif()
+      $endif
 
     assign(@addr) => $ @group1.addr + @group2.addr
 

@@ -29,7 +29,7 @@ class WireArray extends Module
           $ @w2[i] + @w3[i] + @din
         $else =>
           $ 0x1f
-        $endif()
+        $endif
 
 
 module.exports=WireArray

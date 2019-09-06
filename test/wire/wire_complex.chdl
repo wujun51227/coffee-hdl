@@ -38,7 +38,7 @@ class WireComplex extends Module
         $ {list.join(' + ')}
       $else =>
         0
-      $endif()
+      $endif
 
 module.exports=WireComplex
 

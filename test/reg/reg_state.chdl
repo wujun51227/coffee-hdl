@@ -32,7 +32,7 @@ class RegState extends Module
       $if(@ff1.isState('idle')) =>
         $if(@writeEnable) =>
           @ff1.setState('write')
-        $endif()
+        $endif
 
     always =>
       @ff1.stateSwitch(

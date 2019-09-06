@@ -489,6 +489,8 @@ extractLogic = (tokens)->
       list =[
         ['.', '.', {}]
         ['PROPERTY', '_endif', {}]
+        [ 'CALL_START',  '(',     { } ]
+        [ 'CALL_END',     ')',    { } ]
       ]
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1

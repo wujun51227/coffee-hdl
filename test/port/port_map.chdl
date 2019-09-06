@@ -20,7 +20,7 @@ class PortMap extends Module
         $ @bus.data.din
       $else =>
         $ 0
-      $endif()
+      $endif
 
 module.exports=PortMap
 
