@@ -18,8 +18,8 @@ class AssignInAlways extends Module
     )
 
   build: ->
-    always =>
-      assign(@r1(3:1)) => $ @din(4:2)+0x100
+    always
+      assign(@r1(3:1)) = $ @din(4:2)+0x100
 
 module.exports=AssignInAlways
 

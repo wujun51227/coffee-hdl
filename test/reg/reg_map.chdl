@@ -25,13 +25,13 @@ class RegMap extends Module
     )
 
   build: ->
-    always =>
-      $if(@group1.enable) =>
-        assign(@group2.data.addr) => $ @group1.data.addr
-        assign(@group2.data.din) => $ @group1.data.dout>>1
+    always
+      $if(@group1.enable)
+        assign(@group2.data.addr) = $ @group1.data.addr
+        assign(@group2.data.din) = $ @group1.data.dout>>1
 
-    always =>
-      assign(@group2.data.clk) => $ !@group2.data.clk
+    pass_always
+      assign(@group2.data.clk) = $ !@group2.data.clk
 
 module.exports=RegMap
 

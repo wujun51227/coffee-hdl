@@ -509,19 +509,18 @@ class Module
             plist.push "        ((#{cond})&(#{value}))"
       return plist.join('|\n')
 
-  _orderProcess: ()=>
-    return (list)=>
-      plist=[]
-      first=true
-      for {cond,value} in list[0]
-        if first
-          plist.push "(#{cond})?(#{value}):"
-          first=false
-        else
-          plist.push "        (#{cond})?(#{value}):"
+  _orderProcess: (list,defaultValue=0)=>
+    plist=[]
+    first=true
+    for {cond,value} in list
+      if first
+        plist.push "(#{cond})?(#{value}):"
+        first=false
+      else
+        plist.push "        (#{cond})?(#{value}):"
 
-      plist.push "        (#{list[1]})"
-      return plist.join('\n')
+    plist.push "        (#{defaultValue})"
+    return plist.join('\n')
       
   _if: (cond)->
     if @__assignWaiting

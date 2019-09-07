@@ -28,9 +28,9 @@ class RegState extends Module
       pending: 300
       )
 
-    always =>
-      $if(@ff1.isState('idle')) =>
-        $if(@writeEnable) =>
+    always
+      $if(@ff1.isState('idle'))
+        $if(@writeEnable)
           @ff1.setState('write')
         $endif
 

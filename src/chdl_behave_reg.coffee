@@ -28,13 +28,19 @@ class BehaveReg extends Reg
   getMsb: (n)=> @msb
   getLsb: (n)=> @lsb
 
-  setField: (name,msb=0,lsb=0)=>
+  setField: (name,msb=0,lsb=null)=>
     if _.isString(name)
-      @fieldMap[name]={msb:msb,lsb:lsb}
+      if lsb==null
+        @fieldMap[name]={msb:msb,lsb:msb}
+      else
+        @fieldMap[name]={msb:msb,lsb:lsb}
       return packEl('reg',this)
     else if _.isPlainObject(name)
       for k,v of name
-        @fieldMap[k]={msb:v[0],lsb:v[1]}
+        if _.isNumber(v)
+          @fieldMap[k]={msb:v,lsb:v}
+        else if _.isArray(v)
+          @fieldMap[k]={msb:v[0],lsb:v[1]}
       return packEl('reg',this)
     else
       return null

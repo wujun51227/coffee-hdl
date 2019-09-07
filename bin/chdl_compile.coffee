@@ -24,7 +24,10 @@ program
   .option('-w, --watch')
   .option('-p, --param_file <file name>')
   .option('-a, --autoClock')
+  .option('--debug')
   .parse(process.argv)
+
+debug = program.debug ? false
 
 cfg={
   autoClock:false
@@ -48,7 +51,7 @@ processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
   fs.readFile fileName, 'utf-8', (error, text) ->
     return if error
-    javascript=transToVerilog(text,false,programParam)
+    javascript=transToVerilog(text,debug,programParam)
     printBuffer.flush()
     for i,index in printBuffer.getBin()
       code= i.list.join("\n")

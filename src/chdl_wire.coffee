@@ -40,17 +40,23 @@ class Wire extends CircuitEl
     @value=v
     return this
 
-  defaultValue: (v)->
+  defaultValue: (v)=>
     @pendingValue=v
-    return this
+    return packEl('wire',this)
 
-  setField: (name,msb=0,lsb=0)=>
+  setField: (name,msb=0,lsb=null)=>
     if _.isString(name)
-      @fieldMap[name]={msb:msb,lsb:lsb}
+      if lsb==null
+        @fieldMap[name]={msb:msb,lsb:msb}
+      else
+        @fieldMap[name]={msb:msb,lsb:lsb}
       return packEl('wire',this)
     else if _.isPlainObject(name)
       for k,v of name
-        @fieldMap[k]={msb:v[0],lsb:v[1]}
+        if _.isNumber(v)
+          @fieldMap[k]={msb:v,lsb:v}
+        else if _.isArray(v)
+          @fieldMap[k]={msb:v[0],lsb:v[1]}
       return packEl('wire',this)
     else
       return null

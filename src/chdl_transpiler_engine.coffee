@@ -134,6 +134,70 @@ findIndentSlice=(tokens,index)->
     i++
   return [start,-1]
 
+findAssignBlock= (tokens,callEnd)->
+  if tokens[callEnd+1][0] is '=' and tokens[callEnd+2][0] isnt 'INDENT'
+    [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
+    tokens.splice(exprCallEnd,0,
+      ['CALL_END',')',{}]
+    )
+    tokens.splice(callEnd+1,1,
+      ['CALL_START','(',{}]
+      ['=>','=>',{}]
+    )
+    return 2
+  else if tokens[callEnd+1][0] is 'INDENT'
+    [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
+    tokens.splice(indentout+1,0,
+      ['CALL_END',')',{}]
+    )
+    tokens.splice(callEnd+1,0,
+      ['CALL_START','(',{}]
+      ['=>','=>',{}]
+    )
+    return 3
+  else
+    return 0
+
+findAlwaysBlock= (tokens,callEnd)->
+  if tokens[callEnd+1][0] is 'INDENT'
+    [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
+    tokens.splice(indentout+1,0,
+      ['CALL_END',')',{}]
+    )
+    tokens.splice(callEnd+1,0,
+      ['CALL_START','(',{}]
+      ['=>','=>',{}]
+    )
+    return 3
+  else
+    return 0
+
+findCondBlock= (tokens,callEnd)->
+  if tokens[callEnd+1][0] is 'CALL_START' and tokens[callEnd+2][0] isnt '=>'
+    [dummy,nextCallEnd]=findCallSlice(tokens,callEnd+1)
+    tokens.splice(nextCallEnd,0,
+      ['OUTDENT','2',{}]
+    )
+    tokens.splice(callEnd+2,0,
+      ['=>','=>',{}]
+      ['INDENT','2',{}]
+    )
+    return 3
+  else if tokens[callEnd+1][0] is 'INDENT'
+    [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
+    tokens.splice(indentout+1,0,
+      ['CALL_END',')',{}]
+    )
+    tokens.splice(callEnd+1,0,
+      ['CALL_START','(',{}]
+      ['=>','=>',{}]
+    )
+    return 3
+  else
+    return 0
+
+
+
 scanToken= (tokens,index)->
   ret=[]
   #console.log '>>>>>>tokens',index,tokens[index...]
@@ -244,15 +308,19 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_assignPipe', {}]
       ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      patchLength=findAssignBlock(tokens,callEnd)
       tokens.splice i, 1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='assign'
       list =[
         ['@', '@', {}]
         ['PROPERTY', '_assign', {}]
       ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      patchLength=findAssignBlock(tokens,callEnd)
       tokens.splice i, 1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='input'
       list =[
         ['IDENTIFIER', 'chdl_base', {}]
@@ -394,15 +462,17 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_always', {}]
       ]
+      patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='pass_always'
       list =[
         ['@', '@', {}]
         ['PROPERTY', '_passAlways', {}]
       ]
+      patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='pipeline'
       list =[
         ['@', '@', {}]
@@ -428,13 +498,7 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_orderProcess', {}]
       ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      #tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
+      tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$cond'
       list =[
@@ -460,8 +524,9 @@ extractLogic = (tokens)->
       list.push tokens[callStart]
       list.push extractSlice...
       list.push tokens[callEnd]
+      patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$elseif'
       list =[ ['.', '.', {}] ,['PROPERTY', '_elseif', {}]]
       if tokens[i-1][0]=='TERMINATOR'
@@ -473,8 +538,9 @@ extractLogic = (tokens)->
       list.push tokens[callStart]
       list.push extractSlice...
       list.push tokens[callEnd]
+      patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$else'
       list =[
         ['.', '.', {}]
@@ -483,8 +549,9 @@ extractLogic = (tokens)->
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
         i--
+      patchLength=findCondBlock(tokens,i)
       tokens.splice i, 1, list...
-      i+=list.length
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$endif'
       list =[
         ['.', '.', {}]

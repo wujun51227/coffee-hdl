@@ -26,11 +26,11 @@ class RegSimple extends Module
 
 
   build: ->
-    always =>
-      assign(@aa.bb.asreg) => $ 100
+    pass_always
+      assign(@aa.bb.asreg) = $ 100
 
-    always =>
-      assign(@ff5) => $ @aa.bb.asreg
+    pass_always
+      assign(@ff5) = $ @aa.bb.asreg
 
 module.exports=RegSimple
 
