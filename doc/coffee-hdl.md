@@ -74,10 +74,10 @@ class ImportSimple extends Module     #申明当前模块
     )
 
   build: ->                         #模块内部数字逻辑
-    assign(@data_wire) => $ channel_wire('up_signal','din')+1
+    assign(@data_wire) = $ channel_wire('up_signal','din')+1
 
-    always =>
-      assign(@data_latch) => $ @data_wire*2
+    always
+      assign(@data_latch) = $ @data_wire*2
 
 module.exports=ImportSimple
 ```
@@ -168,25 +168,25 @@ coffee-hdl采用“$”符号作为verilog组合电路表达式的前导符,凡�
 ```coffeescript
 build: ->
   data=100
-  assign(@out) => $ @sel ? {data+1} ":" hex(5,0x1f)
+  assign(@out) = $ @sel ? {data+1} ":" hex(5,0x1f)
 ```
 生成代码
 ```verilog
 assign out = sel?101:5'h1f;
 ```
 ## assign语句
-coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) => block, signal为申明的reg/wire,block为一个函数,函数的返回值必须是$表达式产生的verilog语句
+coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) = $ expr 或者 assign(signal) 缩进语句块, signal为申明的reg/wire,block为一个函数,函数的返回值必须是$表达式产生的verilog语句
 	
 在coffee-hdl中,可以写出如下代码表达组合电路信号传递
 
 示例代码 (test/control/branch_test.chdl)
 ```coffeescript
-assign(@dout) =>
-  $if(@sel1)     =>    $ @din+1
-  $elseif(@sel2) =>    $ @din+2
-  $elseif(@sel3) =>    $ @din+3
-  $else          =>    $ @din
-  $endif()
+assign(@dout)
+  $if(@sel1)         $ @din+1
+  $elseif(@sel2)     $ @din+2
+  $elseif(@sel3)     $ @din+3
+  $else              $ @din
+  $endif
 ```
 
 生成代码
@@ -202,7 +202,7 @@ dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 示例代码(test/control/branch_test.chdl)
 
 ```coffeescript
-assign(@out) =>
+assign(@out)
    $balance(@out.getWidth()) [                                      
     $cond(@cond1) => $ @data1                                           
     $cond(@cond2) => $ @data2                                           
@@ -218,7 +218,7 @@ assign out = (16{cond1}&(data1))|
 
 示例代码(test/control/branch_test.chdl)
 ```coffeescript
-assign(@w2.w6) =>
+assign(@w2.w6)
   $order() [[
     $cond(@in1(1)) => $ @w2.w3(9:7)
     $cond(@in1(2)) => $ @w2.w3(3:1)
@@ -294,8 +294,8 @@ constructor: ->
     )
     
 build:->
-  assign(@result.field('carry')) => $ 1
-  assign(@result.field('sum')) => $ hex(32,0x12345678)
+  assign(@result.field('carry')) = $ 1
+  assign(@result.field('sum')) = $ hex(32,0x12345678)
 ```
 生成代码
 ```verilog
@@ -313,7 +313,7 @@ Wire (
 )
 
 build: ->
-    assign(@out) => $ @in.reverse()
+    assign(@out) = $ @in.reverse()
 ```
 生成代码
 ```verilog
@@ -323,7 +323,7 @@ assign out = {in[0],in[1],in[2],in[3],in[4],in[5],in[6],in[7]};
 ```
 示例代码(test/wire/wire_simple.chdl)
 ```coffeescript
-assign(@out) => $ @in.select((i,bit)=> i%2==0)
+assign(@out) = $ @in.select((i,bit)=> i%2==0)
 ```
 生成代码
 ```verilog
@@ -341,7 +341,7 @@ coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包�
 add: (v1,v2) -> $ @in3+v1+v2
 mul: (v1,v2) -> $ v1*v2
 build: ->
-  assign(@out) => $ @add(@mul(10\h123,@in1),@in2)
+  assign(@out) = $ @add(@mul(10\h123,@in1),@in2)
 ```
 
 生成代码
@@ -489,7 +489,7 @@ _ff1 = ff1_write
 
 示例代码(test/reg/reg_state.chdl)
 ```coffeescript
-always =>
+always
   @ff1.stateSwitch(
     write:
       pending: => $ @stall==1
@@ -602,7 +602,7 @@ Port(
 把channel作为wire使用需要做显式转换,由于绑定的端口可能是数据结构,需要在参数当中指定数据结构成员
 
 ```coffeescript
-assign(@dout) => $ @cell2_port.din+('cell1_ch','din')(3:0)+@cell2_probe.din
+assign(@dout) = $ @cell2_port.din+('cell1_ch','din')(3:0)+@cell2_probe.din
 ```
 
 生成代码
@@ -619,13 +619,13 @@ assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
 pipeline('sync')  
 .next((pipe)=>
 	#level 1 pipe logic
-	assign_pipe(d1:32) => $ @din 
+	assign_pipe(d1:32) = $ @din 
 ).next((pipe)=>
 	#level 2 pipe logic
-	assign_pipe(d2:32) => $ {pipe.d1} 
+	assign_pipe(d2:32) = $ {pipe.d1} 
 ).final((pipe)=>
 	#some combo logic
-	assign(@dout) => $ (!{pipe.d1}) & {pipe.d2}
+	assign(@dout) = $ (!{pipe.d1}) & {pipe.d2}
 )
 ```
 
@@ -651,35 +651,35 @@ end
 ## 分支
 coffee-hdl 提供了能生成等价if else形式的verilog代码的能力,coffee-hdl的数字逻辑分支形式如下
 ```coffeescript
-$if(cond) =>
+$if(cond)
   block_code1
-$elseif(cond) =>
+$elseif(cond)
   block_code2
-$else =>
+$else
   block_code3
-$endif()
+$endif
 ```
 在assign环境下,分支语句块的返回值自动生成?:表达式,在always环境下,分支语句生成if elseif形式的组合逻辑.
 示例代码(test/branch/branch_test.chdl)
 ```coffeescript
-assign(@w2.w4) =>
-  $if(@in1==hex(5,1)) =>
+assign(@w2.w4)
+  $if(@in1==hex(5,1))
     $ @w2.w3+1
-  $elseif(@in1==hex(5,2)) =>
+  $elseif(@in1==hex(5,2))
     $ @w2.w3+2
-  $endif()
+  $endif
 
-assign(@w2.w4) =>
+assign(@w2.w4)
   $balance(@w2.w4.getWidth()) [
     $cond(@in1(1)) => $ @w2.w4
     $cond(@in1(2)) => $ @w2.w5
   ]
 
-always =>
-  $if(@in1==hex(5,1)) =>
-    assign(@r1(3,1)) => $ @din(4,2)+0x100
-  $elseif(@in1==hex(5,2)) =>
-    assign(@r1(3,1)) => $ @din(4,2)+0x200
+always
+  $if(@in1==hex(5,1))
+    assign(@r1(3,1)) = $ @din(4,2)+0x100
+  $elseif(@in1==hex(5,2))
+    assign(@r1(3,1)) = $ @din(4,2)+0x200
   $endif()
 ```
 生成代码
@@ -739,13 +739,12 @@ class HubSimple extends Module
 ## 关键字
 操作符
 
-* assign(signal) =>
-* assign_pipe(reg_name:string,width:number)=>
-* always =>
-* pipeline(pipe_name,property) =>
+* assign(signal) = or block
+* assign_pipe(reg_name:string,width:number) = or block
+* always block
+* pipeline(pipe_name,property).next(func)
 * cat(signal1,signal2...)
 * op_reduce(list,operator)
-* get_channel(channel_name)
 
 类型
 
@@ -754,7 +753,7 @@ class HubSimple extends Module
 * vec(width:number,depth:number)
 * bind(name:string)
 * reg(width:number)
-* channel(name:string)
+* channel()
 * wire(width:number)
 * hex(width:number,value:number)
 * oct(width:number,value:number)
@@ -764,12 +763,12 @@ class HubSimple extends Module
 
 电路生成
 
-* $if(expr) =>
-* $elseif(expr) =>
-* $else =>
-* $endif()
-* $balance(number:number) =>
-* $order(expr) =>
+* $if(expr)
+* $elseif(expr)
+* $else
+* $endif
+* $balance(number:number) list:array
+* $order(list:array,default_expr)
 * $cond(expr) =>
 * $ expr
 
@@ -790,7 +789,7 @@ class HubSimple extends Module
 * @moduleParameter(parameter_list)
 * @instParameter(parameter_list)
 * @verilog(verilog_string:string)
-* @initial(list:string[])
+* @initial(list:array)
 
 ## 感谢
 powelljin,lizhousun两位对本项目提的意见以及小白鼠工作
