@@ -66,6 +66,16 @@ class Channel extends CircuitEl
         pinPath.splice(0,pathList.length,@elName)
         @portList.push {node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
 
+  wireList: ->
+    out=[]
+    for i in @portList
+      port=_.get(i.cell,i.path)
+      width=port.getWidth()
+      wire=Wire.create(width)
+      wire.link(@cell,toSignal(@elName+'.'+i.node.join('.')))
+      out.push {net:packEl('wire',wire),dir:port.getType(),path:i.node.join('.')}
+    return out
+
   signal: (path)->
     if path?.constructor.name=='Expr'
       result=_.find(@portList,(i)=>
@@ -73,7 +83,7 @@ class Channel extends CircuitEl
       )
       width=_.get(result.cell,result.path).getWidth()
       wire=Wire.create(width)
-      wire.link(@cell,@elName+'__'+path.str)
+      wire.link(@cell,toSignal(@elName+'.'+path.str))
       return packEl('wire',wire)
     else if _.isString(path)
       #console.log '++++',path,@portList
@@ -82,14 +92,14 @@ class Channel extends CircuitEl
       )
       width=_.get(result.cell,result.path).getWidth()
       wire=Wire.create(width)
-      wire.link(@cell,@elName+'__'+path)
+      wire.link(@cell,toSignal(@elName+'.'+path))
       return packEl('wire',wire)
     else if path==null
       result=_.find(@portList,(i)=> i.path==@bindPortPath)
       #console.log @portList,@bindPortPath
       width=_.get(result.cell,result.path).getWidth()
       wire=Wire.create(width)
-      wire.link(@cell,@elName)
+      wire.link(@cell,toSignal(@elName))
       return packEl('wire',wire)
 
   getWire: (path=null)=>

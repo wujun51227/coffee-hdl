@@ -1,4 +1,4 @@
-cell1 = importDesign('./cell1.chdl')
+cell1 = importDesign('./import_cell.chdl')
 
 class ImportSimple extends Module
   u0_cell1: new cell1()
@@ -28,7 +28,7 @@ class ImportSimple extends Module
     )
 
   build: ->
-    assign(@data_wire) => $ @up_signal.getWire('din')+1
+    assign(@data_wire) => $ @up_signal.getWire('layer.din')+1
 
     always =>
       assign(@data_latch) => $ @data_wire*2

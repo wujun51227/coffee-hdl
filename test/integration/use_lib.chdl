@@ -1,0 +1,69 @@
+{bundleClone,bundleUniOp,bundleReduceOp,createSigArray,createChannelArray,channelMux,mirrorPort}= require 'chdl_lib'
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        sub:
+          din: input(16)
+          dout: output(16)
+    )
+
+  build: ->
+
+class UseLib extends Module
+  u0_cell1 : new cell1()
+  u0_cell2 : new cell1()
+  u0_cell3 : new cell1()
+  constructor: ->
+    super()
+
+    a={
+      b:
+        c: input()
+        d: [
+          output(5)
+          input(6)
+          ]
+    }
+    Port(
+      in: createSigArray(input,10,10)
+      a: a
+      t:mirrorPort(a)
+    )
+
+    template={
+      e:
+        f: [wire(),wire()]
+    }
+
+    Wire(
+      w: createSigArray(wire,10,32)
+      select: wire(3)
+      d: bundleClone(template)
+      g: bundleClone(template)
+      h: bundleClone(template)
+    )
+
+    Channel(
+      x: createChannelArray(10)
+    )
+
+    @u0_cell1.bind(
+      bundle: @x[0]
+    )
+
+    @u0_cell2.bind(
+      bundle: @x[1]
+    )
+
+    @u0_cell3.bind(
+      bundle: @x[2]
+    )
+
+  build: ->
+    channelMux(@select,@x[0],@x[1],@x[2])
+    bundleUniOp('~',@g,@d)
+    bundleReduceOp('+',@d,[@g,@h])
+
+module.exports=UseLib

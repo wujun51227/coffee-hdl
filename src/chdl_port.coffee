@@ -19,6 +19,7 @@ class Port extends Wire
     return port
 
   setType: (t)=> @type=t
+  getType: => @type
   setBindChannel: (c)=> @bindChannel=c
   setBindSignal: (c)=> @bindSignal=c
   isBinded: => @bindChannel? or @bindSignal?

@@ -142,9 +142,11 @@ class Wire extends CircuitEl
       @staticAssign=true
     @cell.__assignWaiting=false
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
-    @depNames.push(ElementSets.get())
+    @depNames.push(ElementSets.get()...)
 
   getDepNames: => @depNames
+
+  pushDepNames: (n...)=> @depNames.push(n...)
 
   verilogDeclare: ->
     list=[]

@@ -1,0 +1,16 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        layer:
+          din: input(16)
+          dout: output(16)
+    )
+
+  build: ->
+
+module.exports=cell1
