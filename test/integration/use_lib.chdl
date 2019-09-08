@@ -1,4 +1,4 @@
-{bundleClone,bundleUniOp,bundleReduceOp,createSigArray,createChannelArray,channelMux,mirrorPort}= require 'chdl_lib'
+{bundleClone,bundleUniOp,bundleReduceOp,createSigArray,createChannelArray,channelMux,mirrorPort}= require 'chdl_primitive_lib'
 class cell1 extends Module
   constructor: ->
     super()
