@@ -12,6 +12,10 @@ uuid  = require 'uuid/v1'
 class Module
   @create: (args...)-> new this(args...)
 
+  _mixin: (obj) ->
+    for fname in _.functions obj
+      @[fname] = obj[fname]
+
   __instName: ''
 
   __signature:{}

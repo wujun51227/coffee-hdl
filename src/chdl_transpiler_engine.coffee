@@ -457,6 +457,14 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='importLib'
+      list =[
+        ['IDENTIFIER', 'chdl_base', {}]
+        [ '.',     '.',  { } ]
+        ['PROPERTY', 'importDesign', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='always'
       list =[
         ['@', '@', {}]
@@ -465,6 +473,13 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='Mixin'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_mixin', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='pass_always'
       list =[
         ['@', '@', {}]
@@ -696,8 +711,7 @@ transToJs= (text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   text = head + text
-  text+="\n__dut__=module.exports"
-  text+="\nreturn __dut__"
+  text+="\nreturn module.exports"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"
@@ -721,7 +735,10 @@ transToJs= (text,debug=false) ->
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
   try
-    return eval(javaScript)
+    evalRet=eval(javaScript)
+    if not evalRet._expr?
+      evalRet._expr = (s)-> s.str
+    return evalRet
   catch e
     console.log e
     return null

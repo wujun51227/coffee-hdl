@@ -1,4 +1,3 @@
-{bundleClone,bundleUniOp,bundleReduceOp,createSigArray,createChannelArray,channelMux,mirrorPort}= require 'chdl_primitive_lib'
 class cell1 extends Module
   constructor: ->
     super()
@@ -18,6 +17,9 @@ class UseLib extends Module
   constructor: ->
     super()
 
+    Mixin importLib('chdl_primitive_lib.chdl')
+    @yyy=importLib('chdl_primitive_lib.chdl')
+
     a={
       b:
         c: input()
@@ -27,9 +29,9 @@ class UseLib extends Module
           ]
     }
     Port(
-      in: createSigArray(input,10,10)
+      in: @yyy.createSigArray(input,10,10)
       a: a
-      t:mirrorPort(a)
+      t:@mirrorPort(a)
     )
 
     template={
@@ -38,15 +40,16 @@ class UseLib extends Module
     }
 
     Wire(
-      w: createSigArray(wire,10,32)
+      w: @createSigArray(wire,10,32)
       select: wire(3)
-      d: bundleClone(template)
-      g: bundleClone(template)
-      h: bundleClone(template)
+      d: @bundleClone(template)
+      g: @bundleClone(template)
+      h: @bundleClone(template)
+      ttt: wire()
     )
 
     Channel(
-      x: createChannelArray(10)
+      x: @createChannelArray(10)
     )
 
     @u0_cell1.bind(
@@ -62,8 +65,9 @@ class UseLib extends Module
     )
 
   build: ->
-    channelMux(@select,@x[0],@x[1],@x[2])
-    bundleUniOp('~',@g,@d)
-    bundleReduceOp('+',@d,[@g,@h])
+    @channelMux(@select,@x[0],@x[1],@x[2])
+    @bundleUniOp('~',@g,@d)
+    @bundleReduceOp('+',@d,[@g,@h])
+    assign(@ttt) = $ @yyy.hello(@select)
 
 module.exports=UseLib

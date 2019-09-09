@@ -271,7 +271,7 @@ behave_reg= (width=1)-> packEl('reg', new BehaveReg(width))
 
 wire= (width=1)->packEl('wire', Wire.create(width))
 
-op_reduce = (list,op)-> list.join(op)
+op_reduce = (list,op)-> _.map(list,(i)-> '('+i+')').join(op)
 
 vec= (width,depth)-> Vec.create(width,depth)
 channel= (path=null)-> Channel.create(path)
