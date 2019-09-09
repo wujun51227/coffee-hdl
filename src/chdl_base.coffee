@@ -10,14 +10,11 @@ Wire    = require('chdl_wire')
 Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
-{getPaths,transToJs} = require 'chdl_transpiler_engine'
 {packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
 
 moduleCache={}
-
-projectDir=''
 
 config={
   autoClock: false
@@ -276,19 +273,6 @@ op_reduce = (list,op)-> _.map(list,(i)-> '('+i+')').join(op)
 vec= (width,depth)-> Vec.create(width,depth)
 channel= (path=null)-> Channel.create(path)
 
-importDesign=(path)->
-  list=process.env.NODE_PATH.split(/:/)
-  list.push(process.cwd())
-  list.push(projectDir)
-  list.push(getPaths()...)
-  for i in list
-    name = path.replace(/\.chdl$/,'')
-    if fs.existsSync(i+'/'+name+'.chdl')
-      text=fs.readFileSync(i+'/'+name+'.chdl', 'utf-8')
-      return transToJs(text,false)
-  console.log "Cant find file "+name+".chdl"
-
-
 instEnv= do ->
   inst=null
   return {
@@ -333,9 +317,7 @@ module.exports.channel_wire = instEnv.getWire
 module.exports.channel_exist = instEnv.hasChannel
 module.exports.infer        = instEnv.infer
 module.exports.cell         = instEnv.cell
-module.exports.importDesign = importDesign
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.resetBase   =(path)->
   moduleCache={}
   moduleIndex=0
-  projectDir=path

@@ -1,4 +1,5 @@
 RecursiveIterator = require 'recursive-iterator'
+_ = require 'lodash'
 
 module.exports={
   createSigArray: (type,number,width=1)->

@@ -68,6 +68,5 @@ class UseLib extends Module
     @channelMux(@select,@x[0],@x[1],@x[2])
     @bundleUniOp('~',@g,@d)
     @bundleReduceOp('+',@d,[@g,@h])
-    assign(@ttt) = $ @yyy.hello(@select)
 
 module.exports=UseLib

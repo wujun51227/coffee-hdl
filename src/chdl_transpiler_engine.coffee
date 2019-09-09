@@ -6,8 +6,10 @@ do ->
 
 coffee = require 'coffeescript'
 _ = require 'lodash'
+fs = require 'fs'
 log = require 'fancy-log'
 {printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'
+chdl_base = require 'chdl_base'
 
 debugExpr=''
 
@@ -449,19 +451,17 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
-      list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'importDesign', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
+    #else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
+    #  list =[
+    #    ['IDENTIFIER', 'chdl_transpiler_engine', {}]
+    #    [ '.',     '.',  { } ]
+    #    ['PROPERTY', 'importDesign', {}]
+    #  ]
+    #  tokens.splice i, 1, list...
+    #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='importLib'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'importDesign', {}]
+        ['IDENTIFIER', 'importDesign', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -671,13 +671,12 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-transToVerilog= (text,debug=false,param=null) ->
+transToVerilog= (fullFileName,text,debug=false,param=null) ->
   head = "chdl_base = require 'chdl_base'\n"
+  head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
+  head += "{importDesign}= require 'chdl_transpiler_engine'\n"
   text = head + text
-  #console.log ">>>>",module.paths
-  text+="\n__dut__=module.exports"
-  text+="\nchdl_base.toVerilog(new __dut__(#{JSON.stringify(param)}))"
   tokens = coffee.tokens text
   if debug
     log ">>>>>>origin Tokens\n"
@@ -701,14 +700,15 @@ transToVerilog= (text,debug=false,param=null) ->
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
   printBuffer.reset()
-  try
-    eval javaScript
-  catch e
-    console.log e
-  return javaScript
+  fileBaseName=require('path').basename(fullFileName)
+  fs.writeFileSync("./build/#{fileBaseName}.js", javaScript,'utf8')
+  design = require("build/#{fileBaseName}")
+  chdl_base.toVerilog(new design())
+  return
 
-transToJs= (text,debug=false) ->
+transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
+  head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   text = head + text
   text+="\nreturn module.exports"
@@ -734,19 +734,25 @@ transToJs= (text,debug=false) ->
   for fragment in fragments
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
-  try
-    evalRet=eval(javaScript)
-    if not evalRet._expr?
-      evalRet._expr = (s)-> s.str
-    return evalRet
-  catch e
-    console.log e
-    return null
+  fileBaseName=require('path').basename(fullFileName)
+  fs.writeFileSync("./build/#{fileBaseName}.js", javaScript,'utf8')
+  return require("build/#{fileBaseName}")
+
+importDesign=(path)->
+  list=process.env.NODE_PATH.split(/:/)
+  list.push(process.cwd())
+  list.push(module.paths...)
+  for i in list
+    name = path.replace(/\.chdl$/,'')
+    if fs.existsSync(i+'/'+name+'.chdl')
+      text=fs.readFileSync(i+'/'+name+'.chdl', 'utf-8')
+      return transToJs(path,text,false)
+  console.log "Cant find file "+name+".chdl"
 
 module.exports.transToVerilog = transToVerilog
 module.exports.transToJs= transToJs
 module.exports.setPaths= (paths)=>
   module.paths=(i for i in paths)
-module.exports.getPaths= ()=> module.paths
+module.exports.importDesign= importDesign
 
 

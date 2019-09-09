@@ -28,10 +28,10 @@ class ImportSimple extends Module
     )
 
   build: ->
-    assign(@data_wire) => $ @up_signal.getWire('layer.din')+1
+    assign(@data_wire) = $ @up_signal.getWire('layer.din')+1
 
-    always =>
-      assign(@data_latch) => $ @data_wire*2
+    always
+      assign(@data_latch) = $ @data_wire*2
 
 module.exports=ImportSimple
 

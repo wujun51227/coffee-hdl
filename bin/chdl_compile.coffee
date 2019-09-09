@@ -51,25 +51,39 @@ processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
   fs.readFile fileName, 'utf-8', (error, text) ->
     return if error
-    javascript=transToVerilog(text,debug,programParam)
-    printBuffer.flush()
-    for i,index in printBuffer.getBin()
-      code= i.list.join("\n")
-      do ->
-        fname= do ->
-          if outDir?
-            outDir+'/'+i.name
-          else
-            i.name
-        fs.writeFile fname+'.v', code, (err) =>
-          throw err if err
-          log "generate code",fname+".v"
+    try
+      transToVerilog(fileName,text,debug,programParam)
+      printBuffer.flush()
+      for i,index in printBuffer.getBin()
+        code= i.list.join("\n")
+        do ->
+          fname= do ->
+            if outDir?
+              outDir+'/'+i.name
+            else
+              i.name
+          fs.writeFile fname+'.v', code, (err) =>
+            throw err if err
+            log "generate code",fname+".v"
+    catch e
+      log.error e
+      if (e instanceof TypeError) or (e instanceof ReferenceError)
+        lines=e.stack.toString().split(/\s+at\s+/)
+        if lines.length>1
+          m=lines[1].match(/\((.*)\)/)
+          if m?
+            [jsfile,lineno]=m[1].split(/:/)
+            log.error 'Error at "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"'
+
 
 fileName = program.args[0]
 outDir= program.output ? './'
 log 'Generate code to directory "'+outDir+'"' if outDir?
 if not fs.existsSync(outDir)
   mkdirp.sync(outDir)
+
+if not fs.existsSync('./build')
+  mkdirp.sync('./build')
 
 unless fileName
   log 'No file specified'
