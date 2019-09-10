@@ -10,7 +10,7 @@ path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
-{transToVerilog,setPaths}=require 'chdl_transpiler_engine'
+{buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
@@ -52,7 +52,7 @@ processFile= (fileName,outDir) ->
   fs.readFile fileName, 'utf-8', (error, text) ->
     return if error
     try
-      transToVerilog(fileName,text,debug,programParam)
+      buildCode(fileName,text,debug,programParam)
       printBuffer.flush()
       for i,index in printBuffer.getBin()
         code= i.list.join("\n")

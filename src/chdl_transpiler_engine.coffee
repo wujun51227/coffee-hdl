@@ -671,45 +671,17 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-transToVerilog= (fullFileName,text,debug=false,param=null) ->
-  head = "chdl_base = require 'chdl_base'\n"
-  head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
-  head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
-  head += "{importDesign}= require 'chdl_transpiler_engine'\n"
-  text = head + text
-  tokens = coffee.tokens text
-  if debug
-    log ">>>>>>origin Tokens\n"
-    for token in tokens
-      log token[0],token[1]
-  extractLogic(tokens)
-  options={
-    referencedVars : ( token[1] for token in tokens when token[0] is 'IDENTIFIER')
-    bare:false
-  }
-
-  if debug
-    log ">>>>>>extract Tokens\n"
-    for token in tokens
-      log token[0],token[1]
-    log '>>>>>expr ',debugExpr
-  nodes = coffee.nodes tokens
-  fragments=nodes.compileToFragments options
-  javaScript = ''
-  for fragment in fragments
-    javaScript += fragment.code
-  log ">>>>>>Javascript\n",javaScript if debug
+buildCode= (fullFileName,text,debug=false,param=null) ->
   printBuffer.reset()
-  fileBaseName=require('path').basename(fullFileName)
-  fs.writeFileSync("./build/#{fileBaseName}.js", javaScript,'utf8')
-  design = require("build/#{fileBaseName}")
-  chdl_base.toVerilog(new design())
+  design=transToJs(fullFileName,text,debug)
+  chdl_base.toVerilog(new design(param))
   return
 
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
+  head += "{importDesign}= require 'chdl_transpiler_engine'\n"
   text = head + text
   text+="\nreturn module.exports"
   tokens = coffee.tokens text
@@ -749,7 +721,7 @@ importDesign=(path)->
       return transToJs(path,text,false)
   console.log "Cant find file "+name+".chdl"
 
-module.exports.transToVerilog = transToVerilog
+module.exports.buildCode= buildCode
 module.exports.transToJs= transToJs
 module.exports.setPaths= (paths)=>
   module.paths=(i for i in paths)
