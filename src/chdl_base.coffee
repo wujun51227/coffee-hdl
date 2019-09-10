@@ -20,6 +20,7 @@ moduleCache={}
 config={
   autoClock: false
   tree: false
+  info: false
 }
 
 getCellList= (inst)->
@@ -30,6 +31,7 @@ getCellList= (inst)->
   return _.sortBy(list,['name'])
 
 cell_build = (inst) =>
+  inst.__setConfig(config)
   inst.__elaboration()
   for i in getCellList(inst)
     i.inst.__link(i.name)
@@ -322,6 +324,7 @@ module.exports.channel_exist = instEnv.hasChannel
 module.exports.infer        = instEnv.infer
 module.exports.cell         = instEnv.cell
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
+module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   =(path)->
   moduleCache={}
   moduleIndex=0

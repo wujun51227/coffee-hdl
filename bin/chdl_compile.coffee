@@ -25,6 +25,7 @@ program
   .option('-p, --param_file <file name>')
   .option('-a, --autoClock')
   .option('-t, --tree')
+  .option('-i, --info')
   .option('--debug')
   .parse(process.argv)
 
@@ -33,6 +34,7 @@ debug = program.debug ? false
 cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
+  info: program.info ? false
 }
 
 configBase(cfg)

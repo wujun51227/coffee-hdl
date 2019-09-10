@@ -19,6 +19,8 @@ class Module
 
   __instName: ''
 
+  __config:{}
+
   __signature:{}
 
   _cellmap: (v) ->
@@ -30,6 +32,8 @@ class Module
     for k,v of p when typeof(v)=='object' and v instanceof Module
       return v if k==name
     return _.find(@__cells,{name:name})
+
+  __setConfig: (v) -> @__config=v
 
   _reg: (obj) ->
     for k,v of obj
@@ -376,7 +380,7 @@ class Module
         @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
-    if list.length>2
+    if list.length>2 and @__config.info
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,wire] in toFlatten(@__wires)
       #log 'elaboration wire',this.constructor.name,name,wire.elName
@@ -389,7 +393,7 @@ class Module
       #log 'elaboration reg',this.constructor.name,name
       reg.link(this,toSignal(name))
       list.push([toSignal(name),reg.getWidth()])
-    if list.length>2
+    if list.length>2 and @__config.info
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,vec] in toFlatten(@__vecs)
       #log 'elaboration vec',this.constructor.name,name
