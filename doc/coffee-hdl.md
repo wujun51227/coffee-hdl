@@ -219,12 +219,12 @@ assign out = (16{cond1}&(data1))|
 示例代码(test/control/branch_test.chdl)
 ```coffeescript
 assign(@w2.w6)
-  $order() [[
+  $order([
     $cond(@in1(1)) => $ @w2.w3(9:7)
     $cond(@in1(2)) => $ @w2.w3(3:1)
     ],
     $ @w2.w3(6:4)
-  ]
+  )
 ```
 
 生成代码
