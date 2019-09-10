@@ -515,6 +515,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='$reduce'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_reduce', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$cond'
       list =[
         ['@', '@', {}]

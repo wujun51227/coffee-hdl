@@ -535,6 +535,15 @@ class Module
             plist.push "        ((#{cond})&(#{value}))"
       return plist.join('|\n')
 
+  _reduce: (list,func)=>
+    out=null
+    for i in list
+      if out?
+        out= func(out,i)
+      else
+        out= i
+    return out
+
   _orderProcess: (list,defaultValue=0)=>
     plist=[]
     first=true

@@ -15,6 +15,8 @@ class FuncTest extends Module
       w1: wire(5)
       w2: wire(15)
       w3: wire(15)
+      w4:
+        w5: wire(10)
     )
 
     Reg(
@@ -26,17 +28,18 @@ class FuncTest extends Module
   mul: (v1,v2) -> $ {v1}*{v2}
 
   build: ->
-    assign(@w1) => $ @add(@mul(hex(10,0x123),@in1),@in2)
-    assign(@w2) => $ cat(@in1,@in2,@w1)
+    assign(@w1) = $ @add(@mul(hex(10,0x123),@in1),@in2)
+    assign(@w2) = $ cat(@in1,@in2,@w1)
     list=[@w1,@w2,hex(5,0x1f)]
-    assign(@w3) => $ cat(list)
+    assign(@w3) = $ cat(list)
     @initial([
       "w1 = 0"
     ])
-    always =>
-      assign(@r1) =>
+    always
+      assign(@r1)
         @verilog('$display("data is %d",ff1);')
         $ 100
+    assign(@w3) = $reduce([@w1,@w2,@w3,@w4.w5],(a,b)=> $ a + b * 2)
 
 module.exports=FuncTest
 
