@@ -1,4 +1,4 @@
-cell1 = importDesign('./import_cell.chdl')
+cell1 = importDesign('./some_dir/import_cell.chdl')
 
 class ImportSimple extends Module
   u0_cell1: new cell1()

@@ -1,4 +1,5 @@
 instTable= require 'instTable'
+_ = require 'lodash'
 
 class riscv32i_decoder extends Module
 

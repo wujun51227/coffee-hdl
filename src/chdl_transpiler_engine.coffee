@@ -675,13 +675,13 @@ buildCode= (fullFileName,text,debug=false,param=null) ->
   printBuffer.reset()
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
-  return
 
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
   head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
   head += "{importDesign}= require 'chdl_transpiler_engine'\n"
+  head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text
   text+="\nreturn module.exports"
   tokens = coffee.tokens text
@@ -706,23 +706,25 @@ transToJs= (fullFileName,text,debug=false) ->
   for fragment in fragments
     javaScript += fragment.code
   log ">>>>>>Javascript\n",javaScript if debug
-  fileBaseName=require('path').basename(fullFileName)
-  fs.writeFileSync("./build/#{fileBaseName}.js", javaScript,'utf8')
-  return require("build/#{fileBaseName}")
+  fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
+  return require("#{fullFileName}.js")
 
 importDesign=(path)->
-  list=process.env.NODE_PATH.split(/:/)
-  list.push(process.cwd())
-  list.push(module.paths...)
-  for i in list
-    name = path.replace(/\.chdl$/,'')
-    if fs.existsSync(i+'/'+name+'.chdl')
-      text=fs.readFileSync(i+'/'+name+'.chdl', 'utf-8')
-      return transToJs(path,text,false)
-  console.log "Cant find file "+name+".chdl"
+  if path.match(/^\./)
+    for i in module.paths
+      fullName = require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+      if fs.existsSync(fullName)
+        text=fs.readFileSync(fullName, 'utf-8')
+        return transToJs(fullName,text,false)
+    throw new Error("Cant find file "+fullName)
+  else
+    fullName= require('path').resolve(path.replace(/\.chdl$/,'')+'.chdl')
+    if fs.existsSync(fullName)
+      text=fs.readFileSync(fullName, 'utf-8')
+      return transToJs(fullName,text,false)
+    throw new Error("Cant find file "+fullName)
 
 module.exports.buildCode= buildCode
-module.exports.transToJs= transToJs
 module.exports.setPaths= (paths)=>
   module.paths=(i for i in paths)
 module.exports.importDesign= importDesign

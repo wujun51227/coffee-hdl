@@ -32,5 +32,13 @@ class RegSimple extends Module
     pass_always
       assign(@ff5) = $ @aa.bb.asreg
 
+    always
+      assign(@ff5)
+        $if(@ff2)
+          $ @aa.bb.asreg
+        $else
+          $ @aa.bb.asreg+1
+        $endif
+
 module.exports=RegSimple
 

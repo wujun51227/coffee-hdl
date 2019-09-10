@@ -24,16 +24,17 @@ program
   .option('-w, --watch')
   .option('-p, --param_file <file name>')
   .option('-a, --autoClock')
+  .option('-t, --tree')
   .option('--debug')
   .parse(process.argv)
 
 debug = program.debug ? false
 
 cfg={
-  autoClock:false
+  autoClock: program.autoClock ? false
+  tree: program.tree ? false
 }
-if program.autoClock
-  cfg.autoClock=true
+
 configBase(cfg)
 
 programParam=null
@@ -50,7 +51,9 @@ if program.param_file?
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
   fs.readFile fileName, 'utf-8', (error, text) ->
-    return if error
+    if error
+      log.error error
+      return
     try
       buildCode(fileName,text,debug,programParam)
       printBuffer.flush()
@@ -82,8 +85,8 @@ log 'Generate code to directory "'+outDir+'"' if outDir?
 if not fs.existsSync(outDir)
   mkdirp.sync(outDir)
 
-if not fs.existsSync('./build')
-  mkdirp.sync('./build')
+#if not fs.existsSync('./build')
+#  mkdirp.sync('./build')
 
 unless fileName
   log 'No file specified'

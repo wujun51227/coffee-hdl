@@ -47,7 +47,14 @@ class PipeTest extends Module
       assign_pipe(d1:32) = $ @in1
     ).next((pipe)=>
       #level 2 pipe logic
-      assign_pipe(d2:32) = $ pipe.d1
+      $if(@dout1==0)
+        assign_pipe(d2:32)
+          $if(@in1)
+            $ pipe.d1
+          $else
+            $ 32\h100
+          $endif
+      $endif
     ).final((pipe)=>
       #some combo logic
       assign(@dout2) = $ (!pipe.d1) & pipe.d2

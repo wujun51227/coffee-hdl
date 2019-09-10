@@ -4,6 +4,7 @@ Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
 ElementSets = require 'chdl_el_sets'
+{table} = require 'table'
 {packEl,toSignal,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
@@ -65,10 +66,10 @@ class Module
   _probe: (obj) ->
     for k,v of obj
       @__channels[k]=Channel.create(v)
-      if this[k]?
-        throw new Error('Channel name conflicted '+k)
-      else
-        this[k]=@__channels[k]
+      #if this[k]?
+      #  throw new Error('Channel name conflicted '+k)
+      #else
+      #  this[k]=@__channels[k]
 
   _port: (obj) ->
     for k,v of obj
@@ -284,15 +285,20 @@ class Module
           net.link(this,toSignal(newPath))
           netEl=packEl('port',net)
           #log 'set port',newPath,obj.path
+          if _.get(this,newPath)?
+            throw new Error "Error: #{newPath} is conflict"
           _.set(this,newPath,netEl)
           _.set(@__ports,newPath,netEl)
           _.set(@__wires,newPath,netEl)
         else
-          net=Wire.create(width)
-          net.link(this,toSignal(newPath))
-          netEl=packEl('wire',net)
-          _.set(this,newPath,netEl)
-          _.set(@__wires,newPath,netEl)
+          if not _.get(this,newPath)?
+            net=Wire.create(width)
+            net.link(this,toSignal(newPath))
+            netEl=packEl('wire',net)
+            _.set(this,newPath,netEl)
+            _.set(@__wires,newPath,netEl)
+          else
+            net=_.get(this,newPath)
         if dir=='input'
           if type=='Wire'
             wire.assign(->toSignal(net.elName))
@@ -356,6 +362,9 @@ class Module
                 attachWireObj.assign(-> wireName)
 
   __elaboration: ->
+    console.log('Name:',@__instName,@constructor.name)
+    list=    [['Port name','dir'  ,'width']]
+    list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
       port.link(this,toSignal(name))
       if port.isReg
@@ -365,14 +374,23 @@ class Module
       #log 'elaboration port',this.constructor.name,name,port.elName
       if port.type==null
         @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
+      else
+        list.push([toSignal(name),port.getType(),port.getWidth()])
+    if list.length>2
+      console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,wire] in toFlatten(@__wires)
       #log 'elaboration wire',this.constructor.name,name,wire.elName
       wire.link(this,toSignal(name))
       #if wire.width==0
       #  @__postProcess.push {type:'wire',elName:wire.elName,bindChannel:wire.bindChannel}
+    list=    [['register name','width']]
+    list.push(['-------------','-----'])
     for [name,reg] in toFlatten(@__regs)
       #log 'elaboration reg',this.constructor.name,name
       reg.link(this,toSignal(name))
+      list.push([toSignal(name),reg.getWidth()])
+    if list.length>2
+      console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,vec] in toFlatten(@__vecs)
       #log 'elaboration vec',this.constructor.name,name
       vec.link(this,toSignal(name))

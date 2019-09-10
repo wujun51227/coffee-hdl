@@ -1,3 +1,5 @@
+someLib = require './somelib.json'
+
 class cell1 extends Module
   constructor: ->
     super()

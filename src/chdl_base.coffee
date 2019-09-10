@@ -10,6 +10,7 @@ Wire    = require('chdl_wire')
 Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
+{stringifyTree} = require "stringify-tree"
 {packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
@@ -18,6 +19,7 @@ moduleCache={}
 
 config={
   autoClock: false
+  tree: false
 }
 
 getCellList= (inst)->
@@ -253,6 +255,8 @@ toVerilog=(inst)->
       inst.__addPort('_resetn','input',1)
   cell_build(inst)
   code_gen(inst)
+  if config.tree
+    console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   inst._clean()
 
 input=(width=1)->packEl('port',Port.in(width))

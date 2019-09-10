@@ -237,6 +237,7 @@ class Reg extends CircuitEl
 
   assign: (assignFunc)=>
     ElementSets.clear()
+    @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     if @cell.__pipeName? or @isMem
       @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
@@ -245,6 +246,7 @@ class Reg extends CircuitEl
       @cell.__updateWires.push({type:'reg',name:@elName})
     else
       @cell.__wireAssignList.push "assign _#{@refName()} = #{assignFunc()};"
+    @cell.__assignWaiting=false
     @depNames.push(ElementSets.get())
 
   getDepNames: => @depNames
