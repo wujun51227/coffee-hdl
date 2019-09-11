@@ -150,8 +150,8 @@ module.exports={
         $ sum|(expand(width,item.cond)&(item.value))
         )
 
-  $doubleSync: (sigIn)->
-    pipeline(sigIn,{defaultReset:true}).next((pipe)=>
+  $doubleSync: (sigIn,clock=null)->
+    pipeline(sigIn,{clock:clock}).next((pipe)=>
       assign_pipe('d1',sigIn.getWidth()) = $ sigIn
     ).next( (pipe)=>
       assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
@@ -159,8 +159,8 @@ module.exports={
       $ pipe.d2
     )
 
-  $tripleSync: (sigIn)->
-    pipeline(sigIn,{defaultReset:true}).next((pipe)=>
+  $tripleSync: (sigIn,clock=null)->
+    pipeline(sigIn,{clock:clock}).next((pipe)=>
       assign_pipe('d1',sigIn.getWidth()) = $ sigIn
     ).next( (pipe)=>
       assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1

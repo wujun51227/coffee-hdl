@@ -12,6 +12,7 @@ class BranchTest extends Module
       enable: input()
       clock: input().asClock()
       rstn: input().asReset()
+      clock1: input().asClock()
     )
 
     Wire(
@@ -78,7 +79,7 @@ class BranchTest extends Module
         assign(@r1(3:1)) = $ @din(4:2)+12\h200 + 12\h400
       $endif
 
-    assign(@syncOut) = $doubleSync(@syncIn)
+    assign(@syncOut) = $doubleSync(@syncIn,@clock1)
     assign(@r2) = $ @syncOut + 1
 
     $bundleAssign(@a,@b)
