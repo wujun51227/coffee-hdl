@@ -1,9 +1,3 @@
-do ->
-  libEnv= require('process').env.CHDL_LIB
-  if libEnv?
-    list=libEnv.split(/:/)
-    module.paths.push list...
-
 coffee = require 'coffeescript'
 _ = require 'lodash'
 fs = require 'fs'
@@ -721,9 +715,12 @@ importLib=(path)->
       return transToJs(fullName,text,false)
     throw new Error("Cant find file "+fullName)
   else
-    list=process.env.NODE_PATH.split(/:/)
+    list=[]
     list.push(process.cwd())
     list.push(module.paths...)
+    if process.env.CHDL_LIB?
+      list.push(process.env.CHDL_LIB.split(/:/)...)
+    list.push(process.env.NODE_PATH.split(/:/)...)
     for i in list
       fullName= require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
       if fs.existsSync(fullName)
