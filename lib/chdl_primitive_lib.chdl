@@ -141,6 +141,16 @@ module.exports={
           $ sum | item
     )
 
+  $opUni: (op,sig)->
+    if op=='-'
+      $  - item
+    else if op=='^'
+      $  ^ item
+    else if op=='&'
+      $  & item
+    else if op=='|'
+      $  | item
+
   $balance: (list,width=null) ->
     width=width ? @__assignWidth
     return $reduce(list,(sum,item,first,last)=>
