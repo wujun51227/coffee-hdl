@@ -296,7 +296,7 @@ extractLogic = (tokens)->
   while token = tokens[i]
     #console.log '>>>>>',token[0],token[1]
     if token[0] is 'IDENTIFIER' and token[1]=='$'
-      list =[ ['@', '@', {}] ,['PROPERTY', '_expr', {}]]
+      list =[['IDENTIFIER', '_expr', {}]]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)
       exprExpand(extractSlice)
@@ -451,17 +451,9 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    #else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
-    #  list =[
-    #    ['IDENTIFIER', 'chdl_transpiler_engine', {}]
-    #    [ '.',     '.',  { } ]
-    #    ['PROPERTY', 'importDesign', {}]
-    #  ]
-    #  tokens.splice i, 1, list...
-    #  i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='importLib'
+    else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
       list =[
-        ['IDENTIFIER', 'importDesign', {}]
+        ['IDENTIFIER', 'importLib', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -480,6 +472,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    #else if token[0] is 'IDENTIFIER' and token[1]=='MixinAs'
+    #  list =[
+    #    ['@', '@', {}]
+    #    ['PROPERTY', '_mixinas', {}]
+    #  ]
+    #  tokens.splice i, 1, list...
+    #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='pass_always'
       list =[
         ['@', '@', {}]
@@ -494,46 +493,6 @@ extractLogic = (tokens)->
         ['PROPERTY', '_pipeline', {}]
       ]
       tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$balance'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_caseProcess', {}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      #tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$order'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_orderProcess', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$reduce'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_reduce', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$cond'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_cond', {}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if'
       list =[
@@ -584,6 +543,27 @@ extractLogic = (tokens)->
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
         i--
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='$cond'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_cond', {}]
+      ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      extractSlice=tokens.slice(callStart+1,callEnd)
+      tokenExpand(extractSlice,true)
+      list.push tokens[callStart]
+      list.push extractSlice...
+      list.push tokens[callEnd]
+      tokens.splice i, callEnd-i+1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1].match(/^\$/)
+      m=token[1].match(/^\$(.*)/)
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_'+m[1], {}]
+      ]
       tokens.splice i, 1, list...
       i+=list.length
     else if findstartPos and token[0] is 'CALL_START'
@@ -683,11 +663,14 @@ buildCode= (fullFileName,text,debug=false,param=null) ->
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
 
+buildLib= (fullFileName,text,debug=false,param=null) ->
+  transToJs(fullFileName,text,debug)
+
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
-  head +="{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
-  head += "{op_reduce,channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
-  head += "{importDesign}= require 'chdl_transpiler_engine'\n"
+  head +="{_expr,printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
+  head += "{channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
+  head += "{importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text
   text+="\nreturn module.exports"
@@ -716,7 +699,7 @@ transToJs= (fullFileName,text,debug=false) ->
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
   return require("#{fullFileName}.js")
 
-importDesign=(path)->
+importLib=(path)->
   if path.match(/^\./)
     for i in module.paths
       fullName = require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
@@ -724,16 +707,28 @@ importDesign=(path)->
         text=fs.readFileSync(fullName, 'utf-8')
         return transToJs(fullName,text,false)
     throw new Error("Cant find file "+fullName)
-  else
+  else if path.match(/\//)
     fullName= require('path').resolve(path.replace(/\.chdl$/,'')+'.chdl')
     if fs.existsSync(fullName)
       text=fs.readFileSync(fullName, 'utf-8')
       return transToJs(fullName,text,false)
     throw new Error("Cant find file "+fullName)
+  else
+    list=process.env.NODE_PATH.split(/:/)
+    list.push(process.cwd())
+    list.push(module.paths...)
+    for i in list
+      fullName= require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+      if fs.existsSync(fullName)
+        text=fs.readFileSync(fullName, 'utf-8')
+        return transToJs(fullName,text,false)
+    throw new Error("Cant find file "+path)
+
 
 module.exports.buildCode= buildCode
+module.exports.buildLib= buildLib
 module.exports.setPaths= (paths)=>
   module.paths=(i for i in paths)
-module.exports.importDesign= importDesign
+module.exports.importLib= importLib
 
 

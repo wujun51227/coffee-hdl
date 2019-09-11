@@ -21,10 +21,19 @@ class BranchTest extends Module
         w4: wire(32)
         w5: wire(32)
         w6: wire(32)
+      syncIn: wire()
+      syncOut: wire()
     )
 
     Reg(
       r1: reg(5).init(0)
+      r2: reg(5).init(0)
+      a:
+        b:
+          c: reg(10)
+      b:
+        b:
+          c: reg(10)
     )
 
   build: ->
@@ -38,16 +47,16 @@ class BranchTest extends Module
       $endif
 
     assign(@w2.w5)
-      $balance(@w2.w5.getWidth()) [
+      $balance [
         $cond(@in1(1)) => $ @w2.w4
         $cond(@in1(2)) => $ @w2.w5
       ]
 
     assign(@w2.w5)
-      $balance(12) [
+      $balance [
         $cond(@in1(1)) => $ @w2.w4
         $cond(@in1(2)) => $ @w2.w5
-      ]
+      ], 11
 
     assign(@w2.w6)
       $order(
@@ -68,6 +77,15 @@ class BranchTest extends Module
       $elseif(@in1==hex(5,2))
         assign(@r1(3:1)) = $ @din(4:2)+12\h200 + 12\h400
       $endif
+
+    assign(@syncOut) = $doubleSync(@syncIn)
+    assign(@r2) = $ @syncOut + 1
+
+    $bundleAssign(@a,@b)
+
+    console.log @r2.getDepNames()
+    console.log @syncOut.getDepNames()
+    console.log @w2.w4.getDepNames()
 
 module.exports=BranchTest
 

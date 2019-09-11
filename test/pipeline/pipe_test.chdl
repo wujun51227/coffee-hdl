@@ -11,7 +11,9 @@ class PipeTest extends Module
       dout1: output()
       dout2: output()
       clk: input().asClock()
+      clk1: input().asClock()
       reset: input().asReset()
+      reset1: input().asReset()
     )
 
     Wire(
@@ -20,7 +22,7 @@ class PipeTest extends Module
 
 
   doSync: (sigIn,sigOut)->
-    pipeline(sigIn,{hasReset:'reset'}).next((pipe)=>
+    pipeline(sigIn,{reset:@reset1,clock:@clk1}).next((pipe)=>
       assign_pipe('d1',sigIn.getWidth()) = $ sigIn
     ).next( (pipe)=>
       assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
@@ -31,7 +33,7 @@ class PipeTest extends Module
   build: ->
     @doSync(@in1,@sync_sig)
 
-    pipeline('doubleSync',{hasReset:'reset'}).next((pipe)=>
+    pipeline('doubleSync',{defaultReset:true}).next((pipe)=>
       assign_pipe('d1',5) = $ @in1
     ).next( (pipe)=>
       assign_pipe('d2',5) = $ pipe.d1+@enable

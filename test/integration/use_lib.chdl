@@ -1,4 +1,5 @@
 someLib = require './somelib.json'
+_ = require 'lodash'
 
 class cell1 extends Module
   constructor: ->
@@ -19,7 +20,6 @@ class UseLib extends Module
   constructor: ->
     super()
 
-    Mixin importLib('chdl_primitive_lib.chdl')
     @yyy=importLib('chdl_primitive_lib.chdl')
 
     a={
@@ -67,8 +67,8 @@ class UseLib extends Module
     )
 
   build: ->
-    @channelMux(@select,@x[0],@x[1],@x[2])
-    @bundleUniOp('~',@g,@d)
-    @bundleReduceOp('+',@d,[@g,@h])
+    $channelMux(@select,@x[0],@x[1],@x[2])
+    $bundleUniOp('~',@g,@d)
+    $bundleReduceOp('+',@d,[@g,@h])
 
 module.exports=UseLib

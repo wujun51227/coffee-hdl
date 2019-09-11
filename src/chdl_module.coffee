@@ -15,7 +15,16 @@ class Module
 
   _mixin: (obj) ->
     for fname in _.functions obj
-      @[fname] = obj[fname]
+      if fname.match(/^\$/)
+        m=fname.match(/^\$(.*)/)
+        @['_'+m[1]] = obj[fname]
+      else
+        @[fname] = obj[fname]
+
+  _mixinas: (name,obj) ->
+    @[name]={}
+    for fname in _.functions obj
+      @[name][fname] = (args...)=>obj[fname].call(this,args...)
 
   __instName: ''
 
@@ -142,6 +151,7 @@ class Module
     @__specifyModuleName=null
     @__autoClock=true
     @__pinAssign=[]
+    @_mixin require('chdl_primitive_lib.chdl.js')
 
   __setParentNode: (node)->
     @__parentNode=node
@@ -169,7 +179,7 @@ class Module
     console.log 'Module',@__instName
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.elName)
-      console.log '  port',s
+     console.log '  port',s
 
   __addWire: (name,width)->
     wire= Wire.create(width)
@@ -366,7 +376,8 @@ class Module
                 attachWireObj.assign(-> wireName)
 
   __elaboration: ->
-    console.log('Name:',@__instName,@constructor.name)
+    if @__config.info
+      console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
     list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
@@ -449,8 +460,6 @@ class Module
 
   #logic: (expressFunc)=> expressFunc().str
 
-  _expr: (s)=> s.str
-
   build: ->
 
   _getSpace: ->
@@ -516,47 +525,30 @@ class Module
         return str
     }
 
-  _caseProcess: (w)=>
-    width=w.str
-    return (list)=>
-      plist=[]
-      first=true
-      for {cond,value} in list
-        if first
-          if width>1
-            plist.push "({#{width}{#{cond}}}&(#{value}))"
-          else
-            plist.push "((#{cond})&(#{value}))"
-          first=false
-        else
-          if width>1
-            plist.push "        ({#{width}{#{cond}}}&(#{value}))"
-          else
-            plist.push "        ((#{cond})&(#{value}))"
-      return plist.join('|\n')
-
   _reduce: (list,func)=>
     out=null
-    for i in list
-      if out?
-        out= func(out,i)
-      else
-        out= i
+    for i,index in list
+      first=false
+      last=false
+      if index==0
+        first=true
+      if index==list.length-1
+        last=true
+      out= func(out,i,first,last)
     return out
 
-  _orderProcess: (list,defaultValue=0)=>
-    plist=[]
-    first=true
-    for {cond,value} in list
-      if first
-        plist.push "(#{cond})?(#{value}):"
-        first=false
-      else
-        plist.push "        (#{cond})?(#{value}):"
+  _reduceRight: (list,func)=>
+    out=null
+    for i,index in _.clone(list).reverse()
+      first=false
+      last=false
+      if index==0
+        first=true
+      if index==list.length-1
+        last=true
+      out= func(out,i,first,last)
+    return out
 
-    plist.push "        (#{defaultValue})"
-    return plist.join('\n')
-      
   _if: (cond)->
     if @__assignWaiting
       return @_wireProcess()._if(cond)
@@ -653,8 +645,9 @@ class Module
         @__pipeAlways(func)
         return @_pipeline(name,null,index+1)
       final: (func)=>
-        func(@__pipe)
+        ret = func(@__pipe)
         @__pipeName=null
+        ret
     }
 
   _clean: ->

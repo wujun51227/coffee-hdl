@@ -320,3 +320,4 @@ module.exports.cat= (args...)->
 module.exports.expand= (num,sig)->
   return "{#{getValue(num)}{#{getValue(sig)}}}"
 
+module.exports._expr= (s) -> s.str

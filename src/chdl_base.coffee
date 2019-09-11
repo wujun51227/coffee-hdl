@@ -167,16 +167,27 @@ code_gen= (inst)=>
   for i in inst.__pipeAlwaysList when i.list? and i.list.length>0
     item=_.find(inst.__pipeRegs,(n)=>n.name==i.name)
     hasReset=false
-    if 'hasReset' in Object.keys(item.opt)
-      if item.opt.hasReset?
-        printBuffer.add "always @(posedge #{inst.__defaultClock} or negedge #{item.opt.hasReset}) begin"
-        printBuffer.add "  if(#{item.opt.hasReset}==1'b0) begin"
-        for regName in i.regs
-          printBuffer.add "    #{regName}=0;"
-        printBuffer.add "  end"
-        hasReset=true
-      else if inst.__defaultReset?
-        printBuffer.add "always @(posedge #{inst.__defaultClock} or negedge #{inst.__defaultReset}) begin"
+    pipeClock=inst.__defaultClock
+    if item.opt.clock?
+      if _.isString(item.opt.clock)
+        pipeClock=item.opt.clock
+      else
+        pipeClock=item.opt.clock.refName()
+
+    if item.opt.reset?
+      if _.isString(item.opt.reset)
+        pipeReset=item.opt.reset
+      else
+        pipeReset=item.opt.reset.refName()
+      printBuffer.add "always @(posedge #{pipeClock} or negedge #{pipeReset}) begin"
+      printBuffer.add "  if(#{pipeReset}==1'b0) begin"
+      for regName in i.regs
+        printBuffer.add "    #{regName}=0;"
+      printBuffer.add "  end"
+      hasReset=true
+    else if item.opt.defaultReset
+      if inst.__defaultReset?
+        printBuffer.add "always @(posedge #{pipeClock} or negedge #{inst.__defaultReset}) begin"
         printBuffer.add "  if(#{inst.__defaultReset}==1'b0) begin"
         for regName in i.regs
           printBuffer.add "    #{regName}=0;"
@@ -184,9 +195,10 @@ code_gen= (inst)=>
         hasReset=true
       else
         throw new Error('Can not find reset in module')
-        printBuffer.add "always @(posedge #{inst.__defaultClock}) begin"
+        printBuffer.add "always @(posedge #{pipeClock}) begin"
     else
-      printBuffer.add "always @(posedge #{inst.__defaultClock}) begin"
+      printBuffer.add "always @(posedge #{pipeClock}) begin"
+
     if hasReset
       printBuffer.add '  else begin'
     for assign in i.list
@@ -274,8 +286,6 @@ behave_reg= (width=1)-> packEl('reg', new BehaveReg(width))
 
 wire= (width=1)->packEl('wire', Wire.create(width))
 
-op_reduce = (list,op)-> _.map(list,(i)-> '('+i+')').join(op)
-
 vec= (width,depth)-> Vec.create(width,depth)
 channel= (path=null)-> Channel.create(path)
 
@@ -299,26 +309,18 @@ instEnv= do ->
         return number
   }
 
-#module.exports.Wire      = Wire
 module.exports.Module    = Module
-#module.exports.Port      = Port
-#module.exports.Channel   = Channel
-#module.exports.Reg       = Reg
 module.exports.Expr      = Expr
-#module.exports.Vec       = Vec
 module.exports.toVerilog   = toVerilog
-#module.exports.assign      = assign
-#module.exports.assignState = assignState
 module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind
-module.exports.probe       = probe
+#module.exports.probe       = probe
 module.exports.channel     = channel
 module.exports.reg         = reg
 module.exports.behave_reg  = behave_reg
 module.exports.wire        = wire
 module.exports.vec         = vec
-module.exports.op_reduce    = op_reduce
 module.exports.channel_wire = instEnv.getWire
 module.exports.channel_exist = instEnv.hasChannel
 module.exports.infer        = instEnv.infer

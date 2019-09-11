@@ -144,7 +144,7 @@ class Wire extends CircuitEl
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     @depNames.push(ElementSets.get()...)
 
-  getDepNames: => @depNames
+  getDepNames: => _.uniq(@depNames)
 
   pushDepNames: (n...)=> @depNames.push(n...)
 

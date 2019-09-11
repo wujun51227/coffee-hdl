@@ -247,7 +247,7 @@ class Reg extends CircuitEl
     else
       @cell.__wireAssignList.push "assign _#{@refName()} = #{assignFunc()};"
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get())
+    @depNames.push(ElementSets.get()...)
 
   getDepNames: => @depNames
 

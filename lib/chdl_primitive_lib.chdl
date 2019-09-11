@@ -4,9 +4,11 @@ _ = require 'lodash'
 module.exports={
   createSigArray: (type,number,width=1)->
     return (type(width) for i in [0...number])
+
   createChannelArray: (number)->
     return (channel() for i in [0...number])
-  channelMux:(select,outChannel,inChannelList...)->
+
+  $channelMux:(select,outChannel,inChannelList...)->
     for dst in outChannel.wireList()
       list=[]
       width=dst.net.getWidth()
@@ -55,7 +57,7 @@ module.exports={
       item = iterator.next()
     return out
 
-  bundleUniOp:(op,o,i)->
+  $bundleUniOp:(op,o,i)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -63,16 +65,18 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='wire' or state.node.__type=='reg' or state.node.__type=='port'
           inWire=_.get(i,state.path)
-          assign(state.node) =>
+          assign(state.node)
             if op=='&'
-              $ '&' inWire
+              $ {op} (inWire)
             else if op=='|'
-              $ '|' inWire
+              $ {op} (inWire)
             else if op=='~'
-              $ '~' inWire
+              $ {op} (inWire)
+            else if op=='^'
+              $ {op} (inWire)
       item = iterator.next()
 
-  bundleReduceOp:(op,o,list)->
+  $bundleReduceOp:(op,o,list)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -82,6 +86,99 @@ module.exports={
           sigList=[]
           for i in list
             sigList.push _.get(i,state.path).refName()
-          assign(state.node) = $ op_reduce(sigList,op)
+          assign(state.node)
+            $reduce(sigList,(sum,item,first,last)=>
+              if first
+                $ item
+              else
+                if op=='+'
+                  $ sum + item
+                else if op=='-'
+                  $ sum - item
+                else if op=='*'
+                  $ sum * item
+                else if op=='^'
+                  $ sum ^ item
+            )
+      item = iterator.next()
+
+  $order: (list,defaultValue=0)->
+    plist=[]
+    for {cond,value} in list
+      plist.push [cond,value]
+    plist.push(defaultValue)
+    return $reduceRight(plist,(sum,item,first,last)=>
+      if first
+        $ item
+      else
+        $if(item[0])
+          $ item[1]
+        $else
+          $ sum
+        $endif
+    )
+
+  $opJoin: (op,list)->
+    return $reduce(list,(sum,item,first,last)=>
+      if first
+        $ item
+      else
+        if op=='+'
+          $ sum + item
+        else if op=='-'
+          $ sum - item
+        else if op=='*'
+          $ sum * item
+        else if op=='^'
+          $ sum ^ item
+        else if op=='&&'
+          $ sum && item
+        else if op=='||'
+          $ sum || item
+        else if op=='&'
+          $ sum & item
+        else if op=='|'
+          $ sum | item
+    )
+
+  $balance: (list,width=null) ->
+    width=width ? @__assignWidth
+    return $reduce(list,(sum,item,first,last)=>
+      if(first)
+        $ (expand(width,item.cond)&(item.value))
+      else
+        $ sum|(expand(width,item.cond)&(item.value))
+        )
+
+  $doubleSync: (sigIn)->
+    pipeline(sigIn,{defaultReset:true}).next((pipe)=>
+      assign_pipe('d1',sigIn.getWidth()) = $ sigIn
+    ).next( (pipe)=>
+      assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
+    ).final( (pipe)=>
+      $ pipe.d2
+    )
+
+  $tripleSync: (sigIn)->
+    pipeline(sigIn,{defaultReset:true}).next((pipe)=>
+      assign_pipe('d1',sigIn.getWidth()) = $ sigIn
+    ).next( (pipe)=>
+      assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
+    ).next( (pipe)=>
+      assign_pipe('d3',sigIn.getWidth()) = $ pipe.d2
+    ).final( (pipe)=>
+      $ pipe.d3
+    )
+
+  $bundleAssign:(from,to)->
+    iterator=new RecursiveIterator(from)
+    item=iterator.next()
+    out={}
+    while !item.done
+      state = item.value
+      if state.node.constructor.name=='Function'
+        if state.node.__type=='port' or state.node.__type=='wire' or state.node.__type=='reg'
+          toPoint=_.get(to,state.path)
+          assign(state.node) = $ toPoint
       item = iterator.next()
 }

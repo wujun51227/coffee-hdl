@@ -5,6 +5,7 @@
 class FuncTest extends Module
   constructor: ->
     super()
+
     Port(
       in1: input(5)
       in2: input(5)
@@ -39,7 +40,33 @@ class FuncTest extends Module
       assign(@r1)
         @verilog('$display("data is %d",ff1);')
         $ 100
-    assign(@w3) = $reduce([@w1,@w2,@w3,@w4.w5],(a,b)=> $ a + b * 2)
+    assign(@w3) = $reduce([@w1,@w2,@w3,@w4.w5],(a,b,first,last)=>
+      if first
+        $ b
+      else
+        $ a + b * 2
+    )
+
+    #assign(@w3) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
+    assign(@w3) = $order(
+      [
+        $cond(@w1==2) => $ @w2
+        $cond(@w3>1)  => $ @w4.w5
+      ]
+    ,0)
+
+    assign(@w3) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
+      if first
+        $ a
+      else
+        $if(a[0])
+          $ a[1]
+        $else
+          $ sum
+        $endif
+    )
+
+    console.log @w3.getDepNames()
 
 module.exports=FuncTest
 
