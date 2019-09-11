@@ -85,7 +85,7 @@ class Port extends Wire
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     @depNames.push(ElementSets.get()...)
 
-  getDepNames: => @depNames
+  getDepNames: => _.uniq(@depNames)
 
   fromReg: (name)=>
     if @type=='output'

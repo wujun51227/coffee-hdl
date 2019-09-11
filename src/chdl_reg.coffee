@@ -249,7 +249,7 @@ class Reg extends CircuitEl
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
 
-  getDepNames: => @depNames
+  getDepNames: => _.uniq(@depNames)
 
   stateIsValid: (name)->
     for i in @states

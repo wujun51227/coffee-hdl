@@ -141,15 +141,17 @@ module.exports={
           $ sum | item
     )
 
-  $opUni: (op,sig)->
+  $opPrefix: (op,sig)->
     if op=='-'
-      $  - item
+      $  {op}(sig)
     else if op=='^'
-      $  ^ item
+      $  {op}(sig)
     else if op=='&'
-      $  & item
+      $  {op}(sig)
     else if op=='|'
-      $  | item
+      $  {op}(sig)
+    else
+      throw new Error("Unknow op #{op}")
 
   $balance: (list,width=null) ->
     width=width ? @__assignWidth

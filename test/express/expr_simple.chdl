@@ -4,11 +4,20 @@ class ExprSimple extends Module
     Port(
       out: input(5)
       sel: input()
+      out1: input()
+      out2: input()
+      out3: input()
     )
 
   build: ->
     data=100
-    assign(@out) => $ @sel ? {data+1} ":" hex(5,0x1f)
+    aaa = $opPrefix('^',@sel)
+    assign(@out) = $ @sel ? {data+1} ":" hex(5,0x1f)
+    assign(@out1) = $ {$opPrefix('^',@sel)} + 1
+    assign(@out2) = $ aaa + 1
+    assign(@out3) = $opPrefix('^',@sel)
+
+    console.log @out1.getDepNames()
 
 module.exports=ExprSimple
 

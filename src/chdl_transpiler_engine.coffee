@@ -215,14 +215,21 @@ scanToken= (tokens,index)->
     i=index
     cnt=0
     list=[]
+    removeCnt=0
     while token = tokens[i]
-      list.push token
+      removeCnt+=1
+      if token[0]=='IDENTIFIER' and token[1].match(/^\$/)
+        m=token[1].match(/^\$(.*)/)
+        list.push( ['@', '@', {}])
+        list.push( ['PROPERTY', '_'+m[1], {}])
+      else
+        list.push token
       if token[0]=='{'
         cnt++
       else if token[0]=='}'
         cnt--
         if cnt==0
-          return [list.length,list.slice(1,list.length-1)]
+          return [removeCnt,list.slice(1,list.length-1)]
       i++
   else if isHex or isOct or isBin or isDec
     token=tokens[index]
