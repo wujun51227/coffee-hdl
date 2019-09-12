@@ -10,6 +10,8 @@ _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
 
+localCnt=0
+
 class Module
   @create: (args...)-> new this(args...)
 
@@ -124,6 +126,7 @@ class Module
     @__regs           =  {}
     @__pipeRegs       =  []
     @__wires          =  {}
+    @__local_wires      =  []
     @__vecs           =  {}
     @__channels       =  {}
     @__ports          =  {}
@@ -602,6 +605,16 @@ class Module
         @__bindChannels.push {portName:port, channel: channel}
 
   __link: (name)-> @__instName=name
+
+  _localWire: (width=1)->
+    pWire=Wire.create(Number(width))
+    pWire.cell=this
+    pWire.setLocal()
+    pWire.elName=toSignal(['__t',localCnt].join('.'))
+    localCnt+=1
+    ret = packEl('wire',pWire)
+    @__local_wires.push(ret)
+    return ret
 
   _assignPipe: (obj,w=1)->
     if _.isString(obj)

@@ -35,6 +35,11 @@ class Wire extends CircuitEl
     @bindChannel=null
     @fieldMap={}
     @depNames=[]
+    @local=false
+
+  setLocal: =>
+    @local=true
+    return packEl('wire',this)
 
   init: (v)->
     @value=v
@@ -138,7 +143,13 @@ class Wire extends CircuitEl
         @firstCondAssign=false
       @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
     else
-      @cell.__wireAssignList.push "assign #{@refName()} = #{assignFunc()};"
+      if @local
+        if @width==1
+          @cell.__wireAssignList.push "wire #{@refName()} = #{assignFunc()};"
+        else
+          @cell.__wireAssignList.push "wire [#{@width-1}:0] #{@refName()} = #{assignFunc()};"
+      else
+        @cell.__wireAssignList.push "assign #{@refName()} = #{assignFunc()};"
       @staticAssign=true
     @cell.__assignWaiting=false
     @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})

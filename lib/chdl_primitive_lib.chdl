@@ -193,4 +193,13 @@ module.exports={
           toPoint=_.get(to,state.path)
           assign(state.node) = $ toPoint
       item = iterator.next()
+
+  $grayNextCode: (code_word)->
+    width = code_word.getWidth()
+    w= LocalWire(width)
+    assign(w) = $ code_word + 1
+    grey_code=new Array(width-1)
+    for i in [0...width-1]
+      grey_code[i]=$ w(i+1) ^ w(i)
+    return $ cat(w(width-1),grey_code.reverse()...)
 }
