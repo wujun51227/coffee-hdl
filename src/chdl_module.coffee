@@ -355,7 +355,7 @@ class Module
     list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
       if port.type==null
-        @__postProcess.push {type:'port',elName:name,bindChannel:port.bindChannel}
+        @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
     if list.length>2 and @__config.info
@@ -367,7 +367,7 @@ class Module
     if list.length>2 and @__config.info
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,channel] in toFlatten(@__channels)
-      if channel.probeChannel?
+      if channel.probeChannel?  # probe dont have elName
         @__postProcess.push {type:'channel',elName:name,bindChannel:channel.probeChannel}
 
     for i in @__bindChannels
@@ -559,13 +559,16 @@ class Module
         for [name,sig] in toFlatten(portInst)
           #console.log name,sig
           net=Wire.create(sig.getWidth())
-          wireName=channel.elName+'__'+name
-          net.link(channel.cell,wireName)
-          netEl=packEl('wire',net)
           if name
-            _.set(channel.port,name,netEl)
+            wireName=channel.elName+'__'+name
+            net.link(channel.cell,wireName)
+            netEl=packEl('wire',net)
+            _.set(channel.Port,name,netEl)
           else
-            channel.port=netEl
+            wireName=channel.elName
+            net.link(channel.cell,wireName)
+            netEl=packEl('wire',net)
+            channel.Port=netEl
 
   __link: (name)-> @__instName=name
 

@@ -35,7 +35,7 @@ class cell2 extends Module
   build: ->
 
 
-class ChanelBindExtend extends Module
+class ChannelBindExtend extends Module
   u0_cell2: new cell2()
 
   constructor: ->
@@ -55,5 +55,5 @@ class ChanelBindExtend extends Module
 
   build: ->
 
-module.exports=ChanelBindExtend
+module.exports=ChannelBindExtend
 

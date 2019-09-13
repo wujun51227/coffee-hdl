@@ -23,11 +23,6 @@ class Channel extends CircuitEl
   #    ret+=i.port.width
   #  return ret
 
-  getPort: (cell,path)->
-    for [name,port] in toFlatten(cell.__ports)
-      return port if _.isEqual(_.toPath(name),_.toPath(path))
-    return null
-
   verilogDeclare: ->
     return '' if @portList.length==0
     list=[]
@@ -35,7 +30,7 @@ class Channel extends CircuitEl
     for line in @portList
       #for [k,v] in toFlatten(line.cell.__ports)
       #  console.log '+++++++++++',k,v.width
-      port=@getPort(line.cell,line.path)
+      port=line.port
       sigName=toSignal(line.pin)
       if not cache[sigName]?
         cache[sigName]=true
