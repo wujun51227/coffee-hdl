@@ -6,10 +6,7 @@ class CircuitEl
 
   link: (cell,name)->
     @cell=cell
-    @elName=name
-
-  getName:()=>
-    return @elName
+    @elName=name  # this name is flatten name
 
   getPath: ->
     list=[@elName]

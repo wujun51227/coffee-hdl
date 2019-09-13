@@ -207,7 +207,7 @@ class Reg extends CircuitEl
       if @enableSignal?
         enableSig=_.get(@cell,@enableSignal)
         if enableSig?
-          list.push "  else if(#{enableSig.getName()}==#{@enableValue} )  begin"
+          list.push "  else if(#{enableSig.elName}==#{@enableValue} )  begin"
         else
           throw new Error("cant not find enable signal #{@enableSignal}")
       else
@@ -218,7 +218,7 @@ class Reg extends CircuitEl
       if @enableSignal?
         enableSig=_.get(@cell,@enableSignal)
         if enableSig?
-          list.push "  if(#{enableSig.getName()}==#{@enableValue} )  begin"
+          list.push "  if(#{enableSig.elName}==#{@enableValue} )  begin"
           list.push "    "+@elName+" <= #`UDLY _"+@elName+";"
           list.push "  end"
         else

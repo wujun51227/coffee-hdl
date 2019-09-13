@@ -3,8 +3,9 @@ _ =require 'lodash'
 
 toSignal= (i)->
   a=i.replace(/^\$\./,'')
-  b=a.replace(/\./g,'__')
-  return b
+  b=a.replace(/\.$/,'')
+  c=b.replace(/\./g,'__')
+  return c
 
 module.exports.toSignal=toSignal
 

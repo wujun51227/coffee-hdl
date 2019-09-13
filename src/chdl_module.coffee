@@ -53,6 +53,8 @@ class Module
         throw new Error('Register name conflicted '+k)
       else
         this[k]=v
+        for [name,inst] in toFlatten(v)
+          inst.link(this,toSignal(k+'.'+name))
 
   _wire: (obj) ->
     for k,v of obj
@@ -61,6 +63,8 @@ class Module
         throw new Error('Wire name conflicted '+k)
       else
         this[k]=v
+        for [name,inst] in toFlatten(v)
+          inst.link(this,toSignal(k+'.'+name))
 
   _mem: (obj) ->
     for k,v of obj
@@ -69,6 +73,8 @@ class Module
         throw new Error('Vec name conflicted '+k)
       else
         this[k]=v
+        for [name,inst] in toFlatten(v)
+          inst.link(this,toSignal(k+'.'+name))
 
   _channel: (obj) ->
     for k,v of obj
@@ -76,6 +82,8 @@ class Module
       if this[k]?
         throw new Error('Channel name conflicted '+k)
       else
+        for [name,inst] in toFlatten(v)
+          inst.link(this,toSignal(k+'.'+name))
         this[k]=v
 
   _probe: (obj) ->
@@ -94,11 +102,18 @@ class Module
         throw new Error('Port name conflicted '+k)
       else
         this[k]=v
-        for [name,port] in toFlatten({[k]:v})
-          if port.isClock
-            @__setDefaultClock(name)
-          if port.isReset
-            @__setDefaultReset(name)
+        for [name,inst] in toFlatten(v)
+          sigName=toSignal(k+'.'+name)
+          inst.link(this,sigName)
+          if inst.isClock
+            @__setDefaultClock(sigName)
+          if inst.isClock
+            @__setDefaultReset(sigName)
+          if inst.isReg
+            createReg=new Reg(inst.getWidth())
+            createReg.config(inst.isRegConfig)
+            @__regs[sigName]=createReg
+            createReg.link(this,sigName)
 
   __overrideModuleName: (name)-> @__moduleName=name
   getModuleName: -> @__moduleName
@@ -210,11 +225,6 @@ class Module
       @__wires[name]=port
       return port
 
-  __addChannel: (name)->
-    channel=Channel.create()
-    channel.link(this,name)
-    @__channels[name]=channel
-
   __dragPort: (inst,dir,width,pathList,portName)->
     nextInst=_.get(inst,pathList[0])
     if nextInst? and nextInst instanceof Module
@@ -276,12 +286,6 @@ class Module
       if localport?.width==0
         @__removeNode(nodeList) if channelType!='hub'
 
-    getPort= (cell,path)->
-      for [name,port] in toFlatten(cell.__ports)
-        return port if _.isEqual(_.toPath(name),_.toPath(path))
-      return null
-
-
     if _.isString(channelInfo)
       channel=@__findChannel(this,_.toPath(channelInfo))
       channelName=channelInfo
@@ -289,7 +293,7 @@ class Module
       channel=channelInfo
       channelName=channelInfo.elName
     for obj in channel.portList
-      bindPort=getPort(obj.cell,obj.path)
+      bindPort=obj.port
       dir=bindPort.type
       width=bindPort.width
       @__dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
@@ -344,79 +348,27 @@ class Module
     for i in @__postProcess
       @__channelExpand(i.type,i.elName,i.bindChannel)
 
-    getPort= (cell,path)->
-      for [name,port] in toFlatten(cell.__ports)
-        return port if _.isEqual(_.toPath(name),_.toPath(path))
-      return null
-    wireCache=[]
-    for [name,wire] in toFlatten(@__wires)
-      wireCache[name]=wire
-
-    for [name,channel] in toFlatten(@__channels)
-      if channel.attachPath?
-        attachPort={}
-        for obj in channel.portList
-          bindPort=getPort(obj.cell,obj.path)
-          attachPort[bindPort.getName()]=obj
-        for obj in channel.attachPath.parent.portList
-          bindPort=getPort(obj.cell,obj.path)
-          dir=bindPort.type
-          bindName=bindPort.getName()
-          if attachPort[bindName]?
-            pChannelName=channel.attachPath.parent.getName()
-            nodeList=_.toPath(channel.attachPath.parent.getName())
-            wireName=toSignal([pChannelName,obj.node...].join('.'))
-            attachObj=attachPort[bindName]
-            attachBindPort=getPort(attachObj.cell,attachObj.path)
-            attachDir=attachBindPort.type
-            attachWireName=toSignal([name,attachObj.node...].join('.'))
-            wireObj=wireCache[wireName] ? null
-            attachWireObj=wireCache[attachWireName] ? null
-            if wireObj? and attachWireObj?
-              if dir=='input'
-                wireObj.assign(-> attachWireName)
-              else if dir=='output'
-                attachWireObj.assign(-> wireName)
-
   __elaboration: ->
     if @__config.info
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
     list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
-      port.link(this,toSignal(name))
-      if port.isReg
-        createReg=new Reg(port.getWidth())
-        createReg.config(port.isRegConfig)
-        @__regs[toSignal(name)]=createReg
-      #log 'elaboration port',this.constructor.name,name,port.elName
       if port.type==null
-        @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
+        @__postProcess.push {type:'port',elName:name,bindChannel:port.bindChannel}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
     if list.length>2 and @__config.info
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
-    for [name,wire] in toFlatten(@__wires)
-      #log 'elaboration wire',this.constructor.name,name,wire.elName
-      wire.link(this,toSignal(name))
-      #if wire.width==0
-      #  @__postProcess.push {type:'wire',elName:wire.elName,bindChannel:wire.bindChannel}
     list=    [['register name','width']]
     list.push(['-------------','-----'])
     for [name,reg] in toFlatten(@__regs)
-      #log 'elaboration reg',this.constructor.name,name
-      reg.link(this,toSignal(name))
       list.push([toSignal(name),reg.getWidth()])
     if list.length>2 and @__config.info
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
-    for [name,vec] in toFlatten(@__vecs)
-      #log 'elaboration vec',this.constructor.name,name
-      vec.link(this,toSignal(name))
     for [name,channel] in toFlatten(@__channels)
-      #log 'elaboration channel',this.constructor.name,name
-      channel.link(this,toSignal(name))
-      if channel.aliasPath?
-        @__postProcess.push {type:'channel',elName:name,bindChannel:channel.aliasPath}
+      if channel.probeChannel?
+        @__postProcess.push {type:'channel',elName:name,bindChannel:channel.probeChannel}
 
     for i in @__bindChannels
       #log 'elaboration bind',this.constructor.name,i.portName
@@ -603,6 +555,17 @@ class Module
     for port,channel of obj when _.get(@__ports,port)?
       if channel instanceof Channel
         @__bindChannels.push {portName:port, channel: channel}
+        portInst = _.get(@__ports,port)
+        for [name,sig] in toFlatten(portInst)
+          #console.log name,sig
+          net=Wire.create(sig.getWidth())
+          wireName=channel.elName+'__'+name
+          net.link(channel.cell,wireName)
+          netEl=packEl('wire',net)
+          if name
+            _.set(channel.port,name,netEl)
+          else
+            channel.port=netEl
 
   __link: (name)-> @__instName=name
 
@@ -646,7 +609,7 @@ class Module
     if _.isString(name_in)
       name=name_in
     else
-      name=name_in.getName()
+      name=name_in.elName
     if index==0
       @__pipeName=name
       @__pipe={}

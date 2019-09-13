@@ -8,12 +8,12 @@ class Channel extends CircuitEl
   constructor: (path)->
     super()
     @bindPortPath=null
+    @Port={}
     @portList= []
-    @attachPath=null
     if path!=null
-      @aliasPath=path
+      @probeChannel=path
     else
-      @aliasPath=null
+      @probeChannel=null
 
   @create: (path)-> new Channel(path)
 
@@ -48,12 +48,9 @@ class Channel extends CircuitEl
             throw new Error('Channel width unkown')
     return list.join("\n")
 
-  attach: (parent,path)->
-    @attachPath={parent,path}
-
   bindPort: (moduleInst,bindPortPath)->
-    if @aliasPath?
-      throw new Error('This channel has been aliased '+@aliasPath)
+    if @probeChannel?
+      throw new Error('This channel has been aliased '+@probeChannel)
     else
       portBundle=_.get(moduleInst.__ports,bindPortPath)
       @bindPortPath=bindPortPath
@@ -64,7 +61,7 @@ class Channel extends CircuitEl
         #pinPath[0]=@elName
         node=pinPath[pathList.length..]
         pinPath.splice(0,pathList.length,@elName)
-        @portList.push {node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
+        @portList.push {port:port,node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
 
   wireList: ->
     out=[]
@@ -105,13 +102,13 @@ class Channel extends CircuitEl
   getWire: (path=null)=>
     if @bindPortPath?
       return @signal(path)
-    else if @aliasPath?
+    else if @probeChannel?
       wireName=@elName+'.'+path
       for [name,wireEl] in toFlatten(@cell.__wires)
         #console.log 'get wire',name,wireName
         if wireName==name
           return wireEl
-      throw new Error('Can not find aliasPath wire:'+@elName+' '+path)
+      throw new Error('Can not find probeChannel wire:'+@elName+' '+path)
     else
       throw new Error('Channel should bind to a port')
 
