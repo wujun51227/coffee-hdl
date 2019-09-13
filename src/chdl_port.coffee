@@ -82,7 +82,10 @@ class Port extends Wire
       @cell.__wireAssignList.push "assign #{@refName()} = #{assignFunc()};"
       @staticAssign=true
     @cell.__assignWaiting=false
-    @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
+    if @isReg
+      @cell.__updateWires.push({type:'wire',name:@elName,pending:@elName})
+    else
+      @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
