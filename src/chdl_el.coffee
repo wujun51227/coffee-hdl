@@ -8,6 +8,8 @@ class CircuitEl
     @cell=cell
     @elName=name  # this name is flatten name
 
+  getName: -> @elName
+
   getPath: ->
     list=[@elName]
     cell=@cell

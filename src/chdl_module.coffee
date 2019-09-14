@@ -196,7 +196,7 @@ class Module
   __dumpPorts: ->
     console.log 'Module',@__instName
     for [name,port] in toFlatten(@__ports)
-      s=toSignal(port.elName)
+      s=toSignal(port.getName())
      console.log '  port',s
 
   __addWire: (name,width)->
@@ -291,7 +291,7 @@ class Module
       channelName=channelInfo
     else
       channel=channelInfo
-      channelName=channelInfo.elName
+      channelName=channelInfo.getName()
     for obj in channel.portList
       bindPort=obj.port
       dir=bindPort.type
@@ -322,9 +322,9 @@ class Module
             net=_.get(this,newPath)
         if dir=='input'
           if type=='Wire'
-            wire.assign(->toSignal(net.elName))
+            wire.assign(->toSignal(net.getName()))
             @__pinAssign.push({
-              from: toSignal(net.elName)
+              from: toSignal(net.getName())
               to: wireName
             })
           else
@@ -334,10 +334,10 @@ class Module
               to: wireName
             })
         else if dir=='output'
-          net.assign(->wire.elName)
+          net.assign(->wire.getName())
           @__pinAssign.push({
-            from: toSignal(wire.elName)
-            to: net.elName
+            from: toSignal(wire.getName())
+            to: net.getName()
           })
 
     for i in @__bindChannels
@@ -346,7 +346,7 @@ class Module
 
   __postElaboration: ->
     for i in @__postProcess
-      @__channelExpand(i.type,i.elName,i.bindChannel)
+      @__channelExpand(i.type,i.getName(),i.bindChannel)
 
   __elaboration: ->
     if @__config.info
@@ -355,7 +355,7 @@ class Module
     list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
       if port.type==null
-        @__postProcess.push {type:'port',elName:port.elName,bindChannel:port.bindChannel}
+        @__postProcess.push {type:'port',elName:port.getName(),bindChannel:port.bindChannel}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
     if list.length>2 and @__config.info
@@ -518,32 +518,32 @@ class Module
     for i in @__bindChannels
       #console.log '>>>>',name  for [name,port] in toFlatten(i.port)
       for [name,port] in toFlatten(_.get(@__ports,i.portName))
-        hitPorts[toSignal(port.elName)]=1
-        if not usedPorts[toSignal(port.elName)]?
+        hitPorts[toSignal(port.getName())]=1
+        if not usedPorts[toSignal(port.getName())]?
           if name!=''
-            out.push "  .#{toSignal(port.elName)}( #{i.channel.elName}__#{toSignal(name)})"
-            usedPorts[toSignal(port.elName)]={
-              pin:"#{i.channel.elName}__#{toSignal(name)}"
+            out.push "  .#{toSignal(port.getName())}( #{i.channel.getName()}__#{toSignal(name)})"
+            usedPorts[toSignal(port.getName())]={
+              pin:"#{i.channel.getName()}__#{toSignal(name)}"
               port: port
             }
           else
-            out.push "  .#{toSignal(port.elName)}( #{i.channel.elName})"
-            usedPorts[toSignal(port.elName)]={
-              pin:"#{i.channel.elName}"
+            out.push "  .#{toSignal(port.getName())}( #{i.channel.getName()})"
+            usedPorts[toSignal(port.getName())]={
+              pin:"#{i.channel.getName()}"
               port:port
             }
         else
           if name!=''
-            thisPin="#{i.channel.elName}__#{toSignal(name)}"
+            thisPin="#{i.channel.getName()}__#{toSignal(name)}"
           else
-            thisPin="#{i.channel.elName}"
-          usedPort=usedPorts[toSignal(port.elName)]
+            thisPin="#{i.channel.getName()}"
+          usedPort=usedPorts[toSignal(port.getName())]
           if usedPort.port.type=='output'
             assignList.push({from:usedPort.pin,to:thisPin})
           else if usedPort.port.type=='input'
             assignList.push({from:thisPin,to:usedPort.pin})
     for [name,port] in toFlatten(@__ports)
-      s=toSignal(port.elName)
+      s=toSignal(port.getName())
       if port.bindSignal?
         out.push "  .#{s}( #{port.bindSignal} )"
       else if not hitPorts[s]?
@@ -560,12 +560,12 @@ class Module
           #console.log name,sig
           net=Wire.create(sig.getWidth())
           if name
-            wireName=channel.elName+'__'+name
+            wireName=channel.getName()+'__'+name
             net.link(channel.cell,wireName)
             netEl=packEl('wire',net)
             _.set(channel.Port,name,netEl)
           else
-            wireName=channel.elName
+            wireName=channel.getName()
             net.link(channel.cell,wireName)
             netEl=packEl('wire',net)
             channel.Port=netEl
@@ -582,25 +582,15 @@ class Module
     @__local_wires.push(ret)
     return ret
 
-  _assignPipe: (obj,w=1)->
-    if _.isString(obj)
-      name=obj
-      width=w
-      pReg=Reg.create(Number(width))
-      pReg.cell=this
-      pReg.elName=toSignal([@__pipeName,'_'+name].join('.'))
-      @__pipe[name]=packEl('reg',pReg)
-      @__pipeNewRegs.push(pReg.elName)
-    else if _.isPlainObject(obj)
-      name=Object.keys(obj)[0]
-      width=obj[name]
-      pReg=Reg.create(Number(width))
-      pReg.cell=this
-      pReg.elName=toSignal([@__pipeName,'_'+name].join('.'))
-      @__pipe[name]=packEl('reg',pReg)
-      @__pipeNewRegs.push(pReg.elName)
-    return (block)=>
-      pReg.assign(block)
+  _localReg: (obj)->
+    for [name,inst] in toFlatten(obj)
+      inst.cell=this
+      inst.elName=toSignal([@__pipeName,'_'+name].join('.'))
+      if _.get(@__pipe,name)?
+        throw new Error('Local Register name conflicted '+name)
+      _.set(@__pipe,name,packEl('reg',inst))
+      @__pipeNewRegs.push(inst.getName())
+    return @__pipe
 
   initial: (list)->
     @__initialList.push list
@@ -612,7 +602,7 @@ class Module
     if _.isString(name_in)
       name=name_in
     else
-      name=name_in.elName
+      name=name_in.getName()
     if index==0
       @__pipeName=name
       @__pipe={}

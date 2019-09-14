@@ -306,15 +306,6 @@ extractLogic = (tokens)->
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='assign_pipe'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_assignPipe', {}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      patchLength=findAssignBlock(tokens,callEnd)
-      tokens.splice i, 1, list...
-      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='assign'
       list =[
         ['@', '@', {}]
@@ -372,6 +363,13 @@ extractLogic = (tokens)->
       list =[
         ['@', '@', {}]
         ['PROPERTY', '_localWire', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='LocalReg'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_localReg', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length

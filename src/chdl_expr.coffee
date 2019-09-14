@@ -41,7 +41,7 @@ class Expr
       ElementSets.add(n)
       @str+= n
     else if s.constructor?.name=='Channel'
-      @str+= s.elName
+      @str+= s.getName()
     else if s instanceof Expr
       @str+=s.str
     else if _.isPlainObject(s)

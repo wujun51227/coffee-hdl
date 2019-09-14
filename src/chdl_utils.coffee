@@ -122,14 +122,14 @@ module.exports.toFlatten = toFlatten
 module.exports.portDeclare= (type,inst)->
   if type=='input'
     if inst.width==1
-      "input "+toSignal(inst.elName)
+      "input "+toSignal(inst.getName())
     else
-      "input ["+(inst.width-1)+":0] "+toSignal(inst.elName)
+      "input ["+(inst.width-1)+":0] "+toSignal(inst.getName())
   else if type=='output'
     if inst.width==1
-      "output "+inst.elName
+      "output "+inst.getName()
     else
-      "output ["+(inst.width-1)+":0] "+inst.elName
+      "output ["+(inst.width-1)+":0] "+inst.getName()
 
 dumpInfo= (elList)->
   ret={}
@@ -218,6 +218,7 @@ module.exports.packEl = (type,bin)->
     else
       return bin.slice(msb+lsb-1,msb)
   ret.__type=type
+  ret.getName= -> bin.getName()
   for i in Object.keys(bin) when typeof bin[i] == 'function'
     ret[i]=bin[i]
   return ret
