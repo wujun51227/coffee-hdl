@@ -16,7 +16,7 @@ module.exports={
         eq=$ (select==index)
         list.push($ expand(width,eq) & src.getWire(dst.path))
       if dst.dir=='input'
-        assign(dst.net) = $ op_reduce(list,"|")
+        assign(dst.net) = $opJoin('|',list)
       else if dst.dir=='output'
         for src,index in inChannelList
           assign(src.getWire(dst.path)) = $ dst.net
@@ -163,21 +163,28 @@ module.exports={
         )
 
   $doubleSync: (sigIn,clock=null)->
+    width=sigIn.getWidth()
     pipeline(sigIn,{clock:clock}).next((pipe)=>
-      assign_pipe('d1',sigIn.getWidth()) = $ sigIn
+      r=LocalReg(d1:reg(width))
+      assign(r.d1) = $ sigIn
     ).next( (pipe)=>
-      assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
+      r=LocalReg(d2:reg(width))
+      assign(r.d2) = $ pipe.d1
     ).final( (pipe)=>
       $ pipe.d2
     )
 
   $tripleSync: (sigIn,clock=null)->
+    width=sigIn.getWidth()
     pipeline(sigIn,{clock:clock}).next((pipe)=>
-      assign_pipe('d1',sigIn.getWidth()) = $ sigIn
+      r=LocalReg(d1:reg(width))
+      assign(r.d1) = $ sigIn
     ).next( (pipe)=>
-      assign_pipe('d2',sigIn.getWidth()) = $ pipe.d1
+      r=LocalReg(d2:reg(width))
+      assign(r.d2) = $ pipe.d1
     ).next( (pipe)=>
-      assign_pipe('d3',sigIn.getWidth()) = $ pipe.d2
+      r=LocalReg(d3:reg(width))
+      assign(r.d3) = $ pipe.d2
     ).final( (pipe)=>
       $ pipe.d3
     )
@@ -216,4 +223,24 @@ module.exports={
     for i in [0...len]
       list.push({cond:$(i==select),value:array[i]})
     $balance(list)
+
+  $oneHot: (sig)->
+    pipeline(sig).next((pipe)=>
+      r=LocalReg(d1:reg(1))
+      assign(r.d1) = $ sig
+    ).final( (pipe)=>
+      $ sig & !pipe.d1
+    )
+
+  $divider: (clk,n)->
+    width=Math.ceil(Math.log2(n))
+    pipeline(clk,{clock:clk,defaultReset:true}).next((pipe)=>
+      r=LocalReg(cnt:reg(width))
+      assign(r.cnt)
+        $if(r.cnt=={n-1}) => $ 0
+        $else => $ r.cnt+1
+        $endif
+    ).final( (pipe)=>
+      $ pipe.cnt=={n-1}
+    )
 }

@@ -237,19 +237,9 @@ __v=(width,number)->
       m=number.match(/^0b(.*)/)
       return "#{width}'b#{m[1]}"
     else
-      if width=='1' or width==1
-        return "1'b#{number}"
-      else if width==''
-        return "#{number}"
-      else
-        return "#{number}"
+      return "#{number}"
   else if _.isNumber(Number(number))
-    if width==''
-      return "#{number}"
-    else if width=='1' or width==1
-      return "1'b#{number}"
-    else
-      return "#{number}"
+    return "#{number}"
   else
     throw new Error("const value error")
 

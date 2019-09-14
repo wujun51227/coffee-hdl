@@ -107,7 +107,7 @@ class Module
           inst.link(this,sigName)
           if inst.isClock
             @__setDefaultClock(sigName)
-          if inst.isClock
+          if inst.isReset
             @__setDefaultReset(sigName)
           if inst.isReg
             createReg=new Reg(inst.getWidth())
