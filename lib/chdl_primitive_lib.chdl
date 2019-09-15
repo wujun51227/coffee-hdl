@@ -165,11 +165,11 @@ module.exports={
   $doubleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
     pipeline(sigIn,{clock:clock}).next((pipe)=>
-      r=LocalReg(d1:reg(width))
-      assign(r.d1) = $ sigIn
+      pipe_reg(d1:reg(width))
+      assign(pipe.d1) = $ sigIn
     ).next( (pipe)=>
-      r=LocalReg(d2:reg(width))
-      assign(r.d2) = $ pipe.d1
+      pipe_reg(d2:reg(width))
+      assign(pipe.d2) = $ pipe.d1
     ).final( (pipe)=>
       $ pipe.d2
     )
@@ -177,14 +177,14 @@ module.exports={
   $tripleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
     pipeline(sigIn,{clock:clock}).next((pipe)=>
-      r=LocalReg(d1:reg(width))
-      assign(r.d1) = $ sigIn
+      pipe_reg(d1:reg(width))
+      assign(pipe.d1) = $ sigIn
     ).next( (pipe)=>
-      r=LocalReg(d2:reg(width))
-      assign(r.d2) = $ pipe.d1
+      pipe_reg(d2:reg(width))
+      assign(pipe.d2) = $ pipe.d1
     ).next( (pipe)=>
-      r=LocalReg(d3:reg(width))
-      assign(r.d3) = $ pipe.d2
+      pipe_reg(d3:reg(width))
+      assign(pipe.d3) = $ pipe.d2
     ).final( (pipe)=>
       $ pipe.d3
     )
@@ -202,8 +202,8 @@ module.exports={
       item = iterator.next()
 
   $grayNextCode: (code_word)->
-    width = code_word.getWidth()
-    w= LocalWire(width)
+    width = code_word.getWidth()+1
+    w= local_wire(width)
     assign(w) = $ code_word + 1
     grey_code=new Array(width-1)
     for i in [0...width-1]
@@ -226,8 +226,8 @@ module.exports={
 
   $oneHot: (sig)->
     pipeline(sig).next((pipe)=>
-      r=LocalReg(d1:reg(1))
-      assign(r.d1) = $ sig
+      pipe_reg(d1:reg(1))
+      assign(pipe.d1) = $ sig
     ).final( (pipe)=>
       $ sig & !pipe.d1
     )
@@ -235,10 +235,10 @@ module.exports={
   $divider: (clk,n)->
     width=Math.ceil(Math.log2(n))
     pipeline(clk,{clock:clk,defaultReset:true}).next((pipe)=>
-      r=LocalReg(cnt:reg(width))
-      assign(r.cnt)
-        $if(r.cnt=={n-1}) => $ 0
-        $else => $ r.cnt+1
+      pipe_reg(cnt:reg(width))
+      assign(pipe.cnt)
+        $if(pipe.cnt=={n-1}) => $ 0
+        $else => $ pipe.cnt+1
         $endif
     ).final( (pipe)=>
       $ pipe.cnt=={n-1}

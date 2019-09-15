@@ -582,7 +582,7 @@ class Module
     @__local_wires.push(ret)
     return ret
 
-  _localReg: (obj)->
+  _pipeReg: (obj)->
     for [name,inst] in toFlatten(obj)
       inst.cell=this
       inst.elName=toSignal([@__pipeName,name].join('.'))

@@ -359,17 +359,17 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='LocalWire'
+    else if token[0] is 'IDENTIFIER' and token[1]=='local_wire'
       list =[
         ['@', '@', {}]
         ['PROPERTY', '_localWire', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='LocalReg'
+    else if token[0] is 'IDENTIFIER' and token[1]=='pipe_reg'
       list =[
         ['@', '@', {}]
-        ['PROPERTY', '_localReg', {}]
+        ['PROPERTY', '_pipeReg', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
