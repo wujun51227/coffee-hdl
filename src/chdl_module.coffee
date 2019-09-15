@@ -346,7 +346,7 @@ class Module
 
   __postElaboration: ->
     for i in @__postProcess
-      @__channelExpand(i.type,i.getName(),i.bindChannel)
+      @__channelExpand(i.type,i.elName,i.bindChannel)
 
   __elaboration: ->
     if @__config.info
@@ -585,7 +585,7 @@ class Module
   _localReg: (obj)->
     for [name,inst] in toFlatten(obj)
       inst.cell=this
-      inst.elName=toSignal([@__pipeName,'_'+name].join('.'))
+      inst.elName=toSignal([@__pipeName,name].join('.'))
       if _.get(@__pipe,name)?
         throw new Error('Local Register name conflicted '+name)
       _.set(@__pipe,name,packEl('reg',inst))
@@ -604,6 +604,8 @@ class Module
     else
       name=name_in.getName()
     if index==0
+      name+='___'+localCnt
+      localCnt+=1
       @__pipeName=name
       @__pipe={}
       @__pipeRegs.push {name:name,opt:opt,pipe:@__pipe}
