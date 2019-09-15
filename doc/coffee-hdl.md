@@ -161,18 +161,18 @@ coffee-hdl采用“$”符号作为verilog组合电路表达式的前导符,凡�
 * 可以用 @name 的方式直接引用模块内部的wire,reg等资源
 * 需有求值的部分必须放在{}中,比如局部变量,原生数据计算等等
 * 除此以外的符号都按照字面量生成在verilog表达式当中
-* 三目运算符的:符号无法支持,必须使用双引号以":"的方式保留
+* 三目运算符的: 通过$if $else 结构代替
 * 由于{}符号作为求值运算符存在,verilog原生的{}运算符的使用cat()函数代替 
 
 示例代码 (test/express/expr_simple.chdl)
 ```coffeescript
 build: ->
   data=100
-  assign(@out) = $ @sel ? {data+1} ":" hex(5,0x1f)
+  assign(@out) = $  {data+1} + hex(5,0x1f)
 ```
 生成代码
 ```verilog
-assign out = sel?101:5'h1f;
+assign out = 101+5'h1f;
 ```
 ## assign语句
 coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) = $ expr 或者 assign(signal) 缩进语句块, signal为申明的reg/wire,block为一个函数,函数的返回值必须是$表达式产生的verilog语句
@@ -203,10 +203,10 @@ dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 
 ```coffeescript
 assign(@out)
-   $balance(@out.getWidth()) [                                      
+   $balance([                                      
     $cond(@cond1) => $ @data1                                           
     $cond(@cond2) => $ @data2                                           
-  ] 
+  ] , 16)
 ```
 生成代码
 ```verilog
@@ -587,7 +587,7 @@ endmodule
   或者
 ```coffeescript
 Probe(
-  channel_name: channel('cell.channel_name')
+  channel_name: 'cell.channel_name'
 )
 ```  
 前一种形式代表从cell pin绑定channel,
@@ -599,10 +599,10 @@ Port(
   some_port: bind('channel_name')
 )
 ```
-把channel作为wire使用需要做显式转换,由于绑定的端口可能是数据结构,需要在参数当中指定数据结构成员
+把channel作为wire使用时候，直接存取channel的Port成员下的路径
 
 ```coffeescript
-assign(@dout) = $ @cell2_port.din+('cell1_ch','din')(3:0)+@cell2_probe.din
+assign(@dout) = $ @cell2_port.din+@cell1_ch.Port.din(3:0)+@cell2_probe.din
 ```
 
 生成代码
@@ -619,17 +619,19 @@ assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
 pipeline('sync')  
 .next((pipe)=>
 	#level 1 pipe logic
-	assign_pipe(d1:32) = $ @din 
+	pipe_reg(d1:reg(32)
+	assign(pipe.d1) = $ @din 
 ).next((pipe)=>
 	#level 2 pipe logic
-	assign_pipe(d2:32) = $ {pipe.d1} 
+	pipe_reg(d2:reg(32))
+	assign(pipe.d2) = $ pipe.d1 
 ).final((pipe)=>
 	#some combo logic
-	assign(@dout) = $ (!{pipe.d1}) & {pipe.d2}
+	assign(@dout) = $ (!pipe.d1) & pipe.d2
 )
 ```
 
-在使用pipe模式的时候,需要指定流水线的名字,此处为'sync', 如果有需要可以在第二个参数设定pipeline相关属性,然后在.next参数中放入每级pipeline需要执行的电路,每级pipeline所需要暂存数据的寄存器通过assign_pipe自动生成,参数是(名字:位宽)形式的对象,默认情况下assign_pipe生成的寄存器不需要复位,需要复位的话可以通过第二个参数设定.
+在使用pipe模式的时候,需要指定流水线的名字,此处为'sync', 如果有需要可以在第二个参数设定pipeline相关属性,然后在.next参数中放入每级pipeline需要执行的电路,每级pipeline所需要暂存数据的寄存器通过pipe_reg自动生成,默认情况下pipe_reg生成的寄存器不需要复位,需要复位的话可以通过第二个参数设定.
 
 每一级next语句代表了pipeline的一拍,next参数是一个回调函数,函数的参数(示例中起名叫pipe)是生成的pipeline对象,引用流水线中的寄存器的时候,使用{ pipe.name }符号.当流水线结束的时候,使用.final函数,.final参数中放入的是组合逻辑,对输出信号赋值.通常可以把pipe电路封装成函数,把名字,输入信号,输出信号作为函数参数,可以极大提高代码的的复用.以上示例代码生成的verilog如下
 		
@@ -646,7 +648,10 @@ always @(clock) begin
 end
 ```	
 当前property_obj支持的属性
-* hasReset: 值为reset信号名,如果值为null,使用模块缺省reset信号
+
+* reset: reset_name:string
+* clock: clock_name:string
+* defaultClock: boolean
 
 ## 分支
 coffee-hdl 提供了能生成等价if else形式的verilog代码的能力,coffee-hdl的数字逻辑分支形式如下
@@ -670,10 +675,10 @@ assign(@w2.w4)
   $endif
 
 assign(@w2.w4)
-  $balance(@w2.w4.getWidth()) [
+  $balance([
     $cond(@in1(1)) => $ @w2.w4
     $cond(@in1(2)) => $ @w2.w5
-  ]
+  ],@w2.w4.getWidth())
 
 always
   $if(@in1==hex(5,1))
@@ -767,7 +772,7 @@ class HubSimple extends Module
 * $elseif(expr)
 * $else
 * $endif
-* $balance(number:number) list:array
+* $balance(list:array,number?)
 * $order(list:array,default_expr)
 * $cond(expr) =>
 * $ expr
@@ -780,7 +785,9 @@ class HubSimple extends Module
 * Mem()
 * Reg()
 * Hub()
-
+* local_wire()
+* pipe_reg()
+ 
 模块自带方法
 
 * @setBlackBox()
