@@ -637,7 +637,7 @@ class Module
       @__getPath(cell.__parentNode,list)
 
   _assign: (signal)=>
-    if _.isPlainObject(signal)
+    if _.isPlainObject(signal) or _.isArray(signal)
       return (block)=>
         if _.isFunction(block)
           obj=block()

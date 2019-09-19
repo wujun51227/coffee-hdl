@@ -44,6 +44,14 @@ findCallSlice=(tokens,index)->
     i++
   return [start,-1]
 
+findBreak=(tokens,index)->
+  i=index
+  while token = tokens[i]
+    if token[0]=='TERMINATOR' or token[0]=='OUTDENT'
+      return i
+    i+=1
+  return -1
+
 findCallBound=(tokens,index)->
   i=index
   cnt=0
@@ -131,16 +139,27 @@ findIndentSlice=(tokens,index)->
   return [start,-1]
 
 findAssignBlock= (tokens,callEnd)->
-  if tokens[callEnd+1][0] is '=' and tokens[callEnd+2][0] isnt 'INDENT'
-    [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
-    tokens.splice(exprCallEnd,0,
-      ['CALL_END',')',{}]
-    )
-    tokens.splice(callEnd+1,1,
-      ['CALL_START','(',{}]
-      ['=>','=>',{}]
-    )
-    return 2
+  if tokens[callEnd+1][0] is '='
+    if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1] is '$'
+      [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
+      tokens.splice(exprCallEnd,0,
+        ['CALL_END',')',{}]
+      )
+      tokens.splice(callEnd+1,1,
+        ['CALL_START','(',{}]
+        ['=>','=>',{}]
+      )
+      return 2
+    else
+      termEnd=findBreak(tokens,callEnd)
+      tokens.splice(termEnd,0,
+        ['CALL_END',')',{}]
+      )
+      tokens.splice(callEnd+1,1,
+        ['CALL_START','(',{}]
+        ['=>','=>',{}]
+      )
+      return 2
   else if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
