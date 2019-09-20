@@ -1,0 +1,107 @@
+RecursiveIterator = require 'recursive-iterator'
+_ = require 'lodash'
+
+module.exports={
+  $fifo: (depth,din,push,pop,clear)->
+    width=din.getWidth()
+    addrWidth = Math.ceil(Math.log2(depth))
+    Exponential_Full_Flag= depth==(2**addrWidth)
+    level      = local_reg(addrWidth+1,'level')
+    full       = local_reg(1,'full')
+    raddr      = local_reg(addrWidth,'raddr')
+    waddr      = local_reg(addrWidth,'waddr')
+    empty_flag = local_reg().init(1)
+    prefetched = local_reg()
+    fifoUnit = (w)=> local_reg(w,'rff')
+    rff_data= @createSigArray(fifoUnit,depth,width)
+    rd_data= local_reg(width,'rd_data')
+
+    read = local_wire(1,'read')
+    assign(read)  = $ !empty_flag && (pop || !prefetched)
+
+    empty = $ !prefetched
+    dout = $ rd_data
+
+    next_level= local_wire(addrWidth+1,'next_level')
+    pass_always
+      $if(pop==0&&push==1)
+        assign(next_level) = $ level+1
+      $elseif(pop==1&&push==0)
+        assign(next_level) = $ level-1
+      $else
+        assign(next_level) = $ level
+      $endif
+
+    always
+      $if(clear)
+        assign(empty_flag) = $ 1
+        assign(prefetched) = $ 0
+      $else
+        assign(empty_flag) = $ !next_level
+        assign(prefetched)
+          $if(cat(pop,read)==2\b01) => $ 1
+          $elseif(cat(pop,read)==2\b10) => $ 0
+          $else => $ prefetched
+          $endif
+      $endif
+
+    rdata= local_wire(width,'rdata')
+
+    assign(rdata) = $arrayDecode(rff_data,raddr)
+
+    always
+      $if(read)
+        assign(rd_data) = $ rdata
+      $endif
+      $if(push)
+        $arrayMuxSet(rff_data,waddr,din)
+      $endif
+
+    if(Exponential_Full_Flag)
+      always
+        $if(clear)
+          assign(waddr) = $ 0
+          assign(raddr) = $ 0
+          assign(level) = $ 0
+          assign(full) = $ 0
+        $else
+          assign(level) = $ next_level
+          assign(full) = $ next_level(addrWidth)
+          $if(push)
+            assign(waddr) = $ waddr+1
+          $endif
+          $if(read)
+            assign(raddr) = $ raddr+1
+          $endif
+        $endif
+    else
+      always
+        $if(clear)
+          assign(waddr) = $ 0
+          assign(raddr) = $ 0
+          assign(level) = $ 0
+          assign(full) = $ 0
+        $else
+          assign(full) = $ depth==next_level
+          $if(push)
+            assign(waddr)
+              $if((config.depth-1)==waddr) => $ 0
+              $else => $ waddr+1
+              $endif
+          $endif
+          $if(read)
+            assign(raddr)
+              $if((config.depth-1)==raddr) => $ 0
+              $else => $ raddr+1
+              $endif
+          $endif
+        $endif
+
+    return {
+      empty: $ empty
+      full: $ full
+      dout: $ dout
+      level: $ level
+    }
+
+}

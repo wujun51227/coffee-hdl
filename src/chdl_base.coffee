@@ -123,6 +123,10 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogDeclare()
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
+  for [name,reg] in toFlatten(inst.__local_regs)
+    printBuffer.add reg.verilogDeclare()
+    printBuffer.add reg.verilogUpdate()
+    printBuffer.blank()
   printBuffer.blank('//pipeline declare')
   for i in inst.__pipeRegs
     for [name,reg] in toFlatten(i.pipe)

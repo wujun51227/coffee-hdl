@@ -1,0 +1,28 @@
+_ = require 'lodash'
+
+
+class UseComponent extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('chdl_component_lib.chdl')
+
+    Port(
+    )
+
+    Wire(
+      din: wire(8)
+      push: wire()
+      pop: wire()
+      clear:wire()
+      dout: wire(8)
+      empty:wire()
+      full:wire()
+    )
+
+
+  build: ->
+    assign({empty:@empty,full:@full}) = $fifo(8,@din,@push,@pop,@clear)
+
+
+module.exports=UseComponent

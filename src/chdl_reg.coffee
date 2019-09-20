@@ -23,6 +23,11 @@ class Reg extends CircuitEl
     @fieldMap={}
     @needInitial=false
     @depNames=[]
+    @local=false
+
+  setLocal: =>
+    @local=true
+    return packEl('reg',this)
 
   setMem: -> @isMem=true
 

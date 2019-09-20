@@ -217,12 +217,12 @@ module.exports={
         assign(array[i]) = $ din
       $endif
 
-  $arrayDecode: (array,select)->
+  $arrayDecode: (array,select,width=null)->
     len=array.length
     list=[]
     for i in [0...len]
       list.push({cond:$(i==select),value:array[i]})
-    $balance(list)
+    $balance(list,width)
 
   $oneHot: (sig)->
     pipeline(sig).next((pipe)=>

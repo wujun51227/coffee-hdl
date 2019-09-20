@@ -142,6 +142,7 @@ class Module
     @__pipeRegs       =  []
     @__wires          =  {}
     @__local_wires      =  []
+    @__local_regs      =  []
     @__vecs           =  {}
     @__channels       =  {}
     @__ports          =  {}
@@ -572,11 +573,11 @@ class Module
 
   __link: (name)-> @__instName=name
 
-  _localWire: (width=1)->
+  _localWire: (width=1,name='')->
     pWire=Wire.create(Number(width))
     pWire.cell=this
     pWire.setLocal()
-    pWire.elName=toSignal(['__t',localCnt].join('.'))
+    pWire.elName=toSignal(['__t'+localCnt,name].join('.'))
     localCnt+=1
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
@@ -588,9 +589,20 @@ class Module
       inst.elName=toSignal([@__pipeName,name].join('.'))
       if _.get(@__pipe,name)?
         throw new Error('Local Register name conflicted '+name)
-      _.set(@__pipe,name,packEl('reg',inst))
+      regPack=packEl('reg',inst)
+      _.set(@__pipe,name,regPack)
       @__pipeNewRegs.push(inst.getName())
     return @__pipe
+
+  _localReg: (width=1,name='')=>
+    pReg=Reg.create(Number(width))
+    pReg.cell=this
+    pReg.setLocal()
+    pReg.elName=toSignal(['__r'+localCnt,name].join('.'))
+    localCnt+=1
+    ret = packEl('reg',pReg)
+    @__local_regs.push(ret)
+    return ret
 
   initial: (list)->
     @__initialList.push list
@@ -646,10 +658,11 @@ class Module
         list=toFlatten(obj)
         for [path,item] in list
           el=_.get(signal,path)
-          if _.isFunction(item)
-            el.assign(item)
-          else
-            el.assign(->item)
+          if el?
+            if _.isFunction(item)
+              el.assign(item)
+            else
+              el.assign(->item)
     else if _.isFunction(signal)
       return (block)->
         if _.isFunction(block)
