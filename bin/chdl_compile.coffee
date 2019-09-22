@@ -67,9 +67,9 @@ processFile= (fileName,outDir) ->
               outDir+'/'+i.name
             else
               i.name
-          fs.writeFile fname+'.v', code, (err) =>
+          fs.writeFile fname+'.sv', code, (err) =>
             throw err if err
-            log "generate code",fname+".v"
+            log "generate code",fname+".sv"
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)

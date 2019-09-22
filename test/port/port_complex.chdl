@@ -16,8 +16,8 @@ class PortComplex extends Module
 
 
   build: ->
-    tmp=@bus[1].din
-    assign(@bus[0].dout) => $ @bus[1].din+@bus[2]
+    tmp= $ @bus[0].enable
+    assign(@bus[0].dout) = $ @bus[1].din+@bus[0].enable + tmp
 
 
 module.exports=PortComplex

@@ -72,7 +72,7 @@ class riscv32i_decoder extends Module
             for checkItem in instTable.checkList when i[checkItem]?
               cond.push($ @slice[checkItem]==bin(@fieldWidth(checkItem),i[checkItem]))
             if cond.length>0
-              setCond=$opJoin(cond,'&&')
+              setCond=$opJoin('&&',cond)
               $if(setCond)
                 @opLatch.setState i.name
               $endif
