@@ -11,7 +11,7 @@ class WireArray extends Module
     )
 
     Wire(
-      w1: wire(16) for i in [0...5]
+      w1: (wire(16) for i in [0...5])
       w2: Array.from({ length: 5 }, () => wire(5))
       w3: [
         wire(5)

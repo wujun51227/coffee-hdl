@@ -20,6 +20,8 @@ class Reg extends CircuitEl
     @assertHigh=false
     @enableSignal=null
     @enableValue=null
+    @clearSignal=null
+    @clearValue=null
     @fieldMap={}
     @needInitial=false
     @depNames=[]
@@ -135,6 +137,18 @@ class Reg extends CircuitEl
       reg.isMem=@isMem
       return packEl('reg',reg)
 
+  fromMsb: (n)=>
+    if(n<=@width)
+      @slice(@width-1,@width-n)
+    else
+      throw new Error("Slice width #{n} can not great than #{@width}")
+
+  fromLsb: (n)=>
+    if(n<=@width)
+      @slice(n-1,0)
+    else
+      throw new Error("Slice width #{n} can not great than #{@width}")
+
   slice: (n,m)->
     if n.constructor?.name=='Expr'
       reg= Reg.create(toNumber(n.str)-toNumber(m.str)+1)
@@ -165,12 +179,6 @@ class Reg extends CircuitEl
   set: (v)-> @value=v
 
   @create: (width=1)-> new Reg(width)
-
-  @create_array: (num,width=1)->
-    ret = []
-    for i in [0...num]
-      ret.push (new Reg(width))
-    return ret
 
   verilogDeclare: (pipe=false)->
     list=[]
@@ -209,10 +217,19 @@ class Reg extends CircuitEl
 
       list.push "    "+@elName+" <= #`UDLY "+@resetValue+";"
       list.push "  end"
+      if @clearSignal?
+        enableSig=_.get(@cell,@clearSignal)
+        if enableSig?
+          console.log enableSig
+          list.push "  else if(#{enableSig.getName()}==#{@clearValue} )  begin"
+          list.push "    "+@elName+" <= #`UDLY "+@resetValue+";"
+          list.push "  end"
+        else
+          throw new Error("cant not find enable signal #{@clearSignal}")
       if @enableSignal?
         enableSig=_.get(@cell,@enableSignal)
         if enableSig?
-          list.push "  else if(#{enableSig.elName}==#{@enableValue} )  begin"
+          list.push "  else if(#{enableSig.getName()}==#{@enableValue} )  begin"
         else
           throw new Error("cant not find enable signal #{@enableSignal}")
       else
@@ -309,6 +326,11 @@ class Reg extends CircuitEl
   enable: (s,value=1)=>
     @enableSignal=s
     @enableValue=value
+    return packEl('reg',this)
+
+  clear: (s,value=1)=>
+    @clearSignal=s
+    @clearValue=value
     return packEl('reg',this)
 
 module.exports=Reg

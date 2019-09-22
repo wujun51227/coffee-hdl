@@ -16,12 +16,6 @@ class Wire extends CircuitEl
 
   @create: (width=1)-> new Wire(width)
 
-  @create_array: (num,width=1)->
-    ret = []
-    for i in [0...num]
-      ret.push (new Wire(width))
-    return ret
-
   constructor: (width)->
     super()
     @width=width
@@ -92,6 +86,18 @@ class Wire extends CircuitEl
       wire.setLsb(n)
       wire.setMsb(n)
       return packEl('wire',wire)
+
+  fromMsb: (n)=>
+    if(n<=@width)
+      @slice(@width-1,@width-n)
+    else
+      throw new Error("Slice width #{n} can not great than #{@width}")
+
+  fromLsb: (n)=>
+    if(n<=@width)
+      @slice(n-1,0)
+    else
+      throw new Error("Slice width #{n} can not great than #{@width}")
 
   slice: (n,m)->
     if n.constructor.name=='Expr'

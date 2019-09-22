@@ -97,11 +97,15 @@ code_gen= (inst)=>
   printBuffer.add '`endif'
   printBuffer.add 'module '+buildName+'('
   printBuffer.add _.map(toFlatten(inst.__ports), (i)=>
-    "  "+i[1].portDeclare()
+    "  "+i[1].getName()
   ).join(",\n")
   printBuffer.add ');'
   printBuffer.blank('//parameter declare')
   printBuffer.add inst.__parameterDeclare()
+  printBuffer.blank('//port declare')
+  _.map(toFlatten(inst.__ports), (i)=>
+    printBuffer.add i[1].portDeclare()+";"
+  )
   printBuffer.blank('//channel declare')
   for [name,channel] in toFlatten(inst.__channels)
     code=channel.verilogDeclare()
