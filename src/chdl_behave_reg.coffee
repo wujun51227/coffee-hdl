@@ -100,7 +100,7 @@ class BehaveReg extends Reg
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
     list.push "initial begin"
-    list.push "  #{@elName} = #{@width}'h#{@resetValue};"
+    list.push "  #{@elName} = #{hex(@width,@resetValue)};"
     list.push "end"
     return list.join("\n")
 
@@ -113,6 +113,5 @@ class BehaveReg extends Reg
         @cell.__pureAlwaysList.push "  #{@elName} = #{assignFunc()};"
       else
         @cell.__pureAlwaysList.push "  ##{delay} #{@elName} = #{assignFunc()};"
-
 
 module.exports=BehaveReg
