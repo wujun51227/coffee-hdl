@@ -150,6 +150,8 @@ module.exports={
       $  {op}(sig)
     else if op=='|'
       $  {op}(sig)
+    else if op=='~'
+      $  {op}(sig)
     else
       throw new Error("Unknow op #{op}")
 
@@ -205,10 +207,10 @@ module.exports={
     width = code_word.getWidth()+1
     w= local_wire(width)
     assign(w) = $ code_word + 1
-    grey_code=new Array(width-1)
+    gray_code=new Array(width-1)
     for i in [0...width-1]
-      grey_code[i]=$ w(i+1) ^ w(i)
-    return $ cat(w(width-1),grey_code.reverse()...)
+      gray_code[i]=$ w(i+1) ^ w(i)
+    return $ cat(w(width-1),gray_code.reverse()...)
 
   $arrayMuxSet: (array,select,din)->
     len=array.length

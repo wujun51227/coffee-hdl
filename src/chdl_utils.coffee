@@ -179,6 +179,7 @@ printBuffer= do ->
     dump: dump
     dumpAll: ->
       allBin=(i for i in bin).reverse()
+      modules=[]
       outList=[]
       outList.push '//*******************************************'
       outList.push "// Generate from coffee-hdl"
@@ -189,10 +190,12 @@ printBuffer= do ->
         outList.push '//**************************'
         outList.push "// Module #{item.name} "
         outList.push '//**************************'
+        modules.push item.name
         for line in item.list
           outList.push line
       return {
         name: name
+        modules: modules
         list: outList
         info:
           ports: dumpInfo(inst.__ports)

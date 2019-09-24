@@ -30,6 +30,33 @@ class Wire extends CircuitEl
     @fieldMap={}
     @depNames=[]
     @local=false
+    @clockName=null
+    @resetName=null
+
+  attach:(clock,reset)=>
+    if _.isString(clock)
+      @clockName=clock
+    else
+      @clockName=clock.getName()
+
+    if _.isString(reset)
+      @resetName=reset
+    else
+      @resetName=reset.getName()
+
+    return packEl('wire',this)
+
+  getClock: =>
+    if @clockName?
+      @clockName
+    else
+      null
+
+  getReset: =>
+    if @resetName?
+      @resetName
+    else
+      null
 
   setLocal: =>
     @local=true

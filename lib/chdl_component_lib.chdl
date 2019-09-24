@@ -4,7 +4,7 @@ _ = require 'lodash'
 module.exports={
   $fifo: (depth,din,push,pop,clear)->
     width=din.getWidth()
-    addrWidth = Math.ceil(Math.log2(depth))
+    addrWidth = Math.floor(Math.log2(depth))+1
     Exponential_Full_Flag= depth==(2**addrWidth)
     level      = local_reg(addrWidth+1,'level')
     full       = local_reg(1,'full')
@@ -85,13 +85,13 @@ module.exports={
           assign(full) = $ depth==next_level
           $if(push)
             assign(waddr)
-              $if((config.depth-1)==waddr) => $ 0
+              $if((depth-1)==waddr) => $ 0
               $else => $ waddr+1
               $endif
           $endif
           $if(read)
             assign(raddr)
-              $if((config.depth-1)==raddr) => $ 0
+              $if((depth-1)==raddr) => $ 0
               $else => $ raddr+1
               $endif
           $endif
@@ -102,6 +102,106 @@ module.exports={
       full: $ full
       dout: $ dout
       level: $ level
+    }
+
+  $asyncFifo: (depth,din,push,pop)->
+    width=din.getWidth()
+    addrWidth = Math.floor(Math.log2(depth))+1
+    clkw=push.getClock()
+    rstw=push.getReset()
+    clkr=pop.getClock()
+    rstr=pop.getReset()
+    if clkw==null or rstw==null
+      throw new Error("Please attch clock/reset to #{push.getName()}")
+    if clkr==null or rstr==null
+      throw new Error("Please attch clock/reset to #{pop.getName()}")
+
+    prefetched = local_reg(1,'prefetched').clock(clkr).asyncReset(rstr)
+    empty_flag = local_reg(1,'empty_flag').clock(clkr).asyncReset(rstr)
+    read = local_wire(1,'read')
+
+    assign(read) = $ !empty_flag && ( pop || !prefetched)
+    empty = $ !prefetched
+
+    w={
+      code: local_reg(addrWidth+1,'w_code').clock(clkw).asyncReset(rstw)
+      rd_s1: local_reg(addrWidth+1,'rd_s1').clock(clkw).asyncReset(rstw)
+      rd_s0: local_reg(addrWidth+1,'rd_s0').clock(clkw).asyncReset(rstw)
+    }
+
+    r={
+      code: local_reg(addrWidth+1,'r_code').clock(clkr).asyncReset(rstr)
+      wr_s1: local_reg(addrWidth+1,'wr_s1').clock(clkr).asyncReset(rstr)
+      wr_s0: local_reg(addrWidth+1,'wr_s0').clock(clkr).asyncReset(rstr)
+    }
+
+    next_rd = local_wire(addrWidth+1,'next_rd')
+    next_wr = local_wire(addrWidth+1,'next_wr')
+
+    succeeding_code_rd = local_wire(addrWidth+1)
+    succeeding_code_wr = local_wire(addrWidth+1)
+
+    assign(succeeding_code_rd)
+      $if(read) => $ next_rd
+      $else => $ r.code
+      $endif
+
+    assign(succeeding_code_wr)
+      $if(push) => $ next_wr
+      $else => $ w.code
+      $endif
+
+    rd_addr = local_wire(addrWidth,'rd_addr')
+    assign(rd_addr) = $ cat({$opPrefix('^',r.code.fromMsb(2))} , r.code.fromLsb(addrWidth-1))
+
+    wr_addr = local_wire(addrWidth,'wr_addr')
+    bbb = $opPrefix('^',w.code.fromMsb(2))
+    assign(wr_addr) = $ cat( bbb , w.code.fromLsb(addrWidth-1))
+
+    always
+      $if(cat(pop,read)==2\b01)
+        assign(prefetched) = $ 1
+      $elseif(cat(pop,read)==2\b10)
+        assign(prefetched) = $ 0
+      $endif
+
+    assign(empty_flag) = $ succeeding_code_rd == r.wr_s1
+
+    assign(r.wr_s1) = $ r.wr_s0
+    assign(r.wr_s0) = $ w.code
+    assign(r.code) = $ succeeding_code_rd
+
+    assign(w.rd_s1) = $ w.rd_s0
+    assign(w.rd_s0) = $ r.code
+    assign(w.code) = $ succeeding_code_wr
+
+    full = local_reg(1,'full').clock(clkw).asyncReset(rstw)
+    ccc =$opPrefix('~',w.rd_s1.fromMsb(2))
+    assign(full) = $ succeeding_code_wr == cat(ccc,w.rd_s1.fromLsb(addrWidth-1))
+
+    assign(next_rd) = $grayNextCode(r.code)
+    assign(next_wr) = $grayNextCode(w.code)
+
+    aff_data = (local_reg(width,'aff').clock(clkw).noReset() for i in [0...depth])
+
+    rdata= local_reg(width,'rdata').clock(clkr).noReset()
+
+    assign(rdata)
+      $if(read)
+        $arrayDecode(aff_data,rd_addr)
+      $else
+        $ rdata
+      $endif
+
+    always
+      $if(push)
+        $arrayMuxSet(aff_data,wr_addr,din)
+      $endif
+
+    return {
+      dout: $ rdata
+      empty: $ empty
+      full: $ full
     }
 
 }

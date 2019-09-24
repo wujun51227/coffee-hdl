@@ -18,11 +18,20 @@ class UseComponent extends Module
       dout: wire(8)
       empty:wire()
       full:wire()
+      clk1:wire()
+      clk2:wire()
+      rst1:wire()
+      rst2:wire()
     )
 
 
   build: ->
-    assign({empty:@empty,full:@full}) = $fifo(8,@din,@push,@pop,@clear)
+    #assign({empty:@empty,full:@full}) = $fifo(8,@din,@push,@pop,@clear)
+
+    @push.attach(@clk1,@rst1)
+    @pop.attach(@clk2,@rst2)
+
+    assign({empty:@empty,full:@full}) = $asyncFifo(8,@din,@push,@pop)
 
 
 module.exports=UseComponent

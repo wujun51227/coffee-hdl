@@ -108,13 +108,13 @@ class Reg extends CircuitEl
     else
       return null
 
-  getClock: ->
+  getClock: =>
     if @bindClockName?
       @bindClockName
     else
       @cell.__defaultClock
 
-  getReset: ->
+  getReset: =>
     if @resetMode?
       if @resetName?
         @resetName
