@@ -152,11 +152,10 @@ module.exports={
       $endif
 
     rd_addr = local_wire(addrWidth,'rd_addr')
-    assign(rd_addr) = $ cat({$opPrefix('^',r.code.fromMsb(2))} , r.code.fromLsb(addrWidth-1))
+    assign(rd_addr) = $ cat($opPrefix('^',r.code.fromMsb(2)) , r.code.fromLsb(addrWidth-1))
 
     wr_addr = local_wire(addrWidth,'wr_addr')
-    bbb = $opPrefix('^',w.code.fromMsb(2))
-    assign(wr_addr) = $ cat( bbb , w.code.fromLsb(addrWidth-1))
+    assign(wr_addr) = $ cat( $opPrefix('^',w.code.fromMsb(2)) , w.code.fromLsb(addrWidth-1))
 
     always
       $if(cat(pop,read)==2\b01)
@@ -176,8 +175,7 @@ module.exports={
     assign(w.code) = $ succeeding_code_wr
 
     full = local_reg(1,'full').clock(clkw).asyncReset(rstw)
-    ccc =$opPrefix('~',w.rd_s1.fromMsb(2))
-    assign(full) = $ succeeding_code_wr == cat(ccc,w.rd_s1.fromLsb(addrWidth-1))
+    assign(full) = $ succeeding_code_wr == cat($opPrefix('~',w.rd_s1.fromMsb(2)) ,w.rd_s1.fromLsb(addrWidth-1))
 
     assign(next_rd) = $grayNextCode(r.code)
     assign(next_wr) = $grayNextCode(w.code)

@@ -231,12 +231,7 @@ scanToken= (tokens,index)->
     removeCnt=0
     while token = tokens[i]
       removeCnt+=1
-      if token[0]=='IDENTIFIER' and token[1].match(/^\$/)
-        m=token[1].match(/^\$(.*)/)
-        list.push( ['@', '@', {}])
-        list.push( ['PROPERTY', '_'+m[1], {}])
-      else
-        list.push token
+      list.push token
       if token[0]=='{'
         cnt++
       else if token[0]=='}'
@@ -307,6 +302,18 @@ exprNext= (n...) ->
   debugExpr+='.next('+str+')'
   return [dot,method,callStart,filter...,callEnd]
 
+expandOp=(tokens)->
+  out=[]
+  for i in tokens
+    if i[0]=='IDENTIFIER' and i[1].match(/^\$/)
+      m=i[1].match(/^\$(.*)/)
+      out.push( ['@', '@', {}])
+      out.push( ['PROPERTY', '_'+m[1], {}])
+    else
+      out.push(i)
+  return out
+
+
 extractLogic = (tokens)->
   i = 0
   logicCallPair=[]
@@ -319,6 +326,7 @@ extractLogic = (tokens)->
       list =[['IDENTIFIER', '_expr', {}]]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)
+      extractSlice=expandOp(extractSlice)
       exprExpand(extractSlice)
       list.push tokens[callStart]
       list.push extractSlice...
