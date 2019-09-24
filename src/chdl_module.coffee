@@ -562,12 +562,12 @@ class Module
           net=Wire.create(sig.getWidth())
           if name
             wireName=channel.getName()+'__'+name
-            net.link(channel.cell,wireName)
+            net.link(channel.cell,toSignal(wireName))
             netEl=packEl('wire',net)
             _.set(channel.Port,name,netEl)
           else
             wireName=channel.getName()
-            net.link(channel.cell,wireName)
+            net.link(channel.cell,toSignal(wireName))
             netEl=packEl('wire',net)
             channel.Port=netEl
 
