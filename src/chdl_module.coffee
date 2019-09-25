@@ -692,7 +692,10 @@ class Module
     }
 
   verilog: (s)->
-    @__regAssignList.push s
+    if @__assignInInitial
+      @__initialAssignList.push s
+    else
+      @__regAssignList.push s
 
   _pipeline: (name_in,opt={},index=0)->
     if _.isString(name_in)

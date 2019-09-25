@@ -154,7 +154,8 @@ code_gen= (inst)=>
       for initSegment in initSegmentList
         item = initSegment
         if item.type=='delay'
-          printBuffer.add "  ##{item.delay}"
+          if _.isNumber(item.delay)
+            printBuffer.add "  ##{item.delay}"
         if item.type=='posedge'
           printBuffer.add "  @posedge(#{item.signal.getName()});"
         if item.type=='negedge'

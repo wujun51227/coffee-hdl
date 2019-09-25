@@ -32,7 +32,8 @@ class InitSimple extends Module
       ).end()
 
     a=@_sequence('delay')
-      .delay(10,()=>
+      .delay(null,()=>
+        @verilog("aaaa")
         assign(@aa) = $ 1
       )
       .delay(10,()=>
