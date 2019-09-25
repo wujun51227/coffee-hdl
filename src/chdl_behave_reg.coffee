@@ -1,7 +1,7 @@
 CircuitEl = require 'chdl_el'
 Reg = require 'chdl_reg'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{packEl,toNumber,hex}=require 'chdl_utils'
 
 class BehaveReg extends Reg
   value: 0
@@ -13,6 +13,7 @@ class BehaveReg extends Reg
     @lsb= -1
     @msb= -1
     @fieldMap={}
+    @assignDelay=null
 
   @create: (width=1)-> new BehaveReg(width)
 
@@ -93,7 +94,7 @@ class BehaveReg extends Reg
 
   set: (v)-> @value=v
 
-  verilogDeclare: (pipe=false)->
+  verilogDeclare: ->
     list=[]
     if @width==1
       list.push "reg "+@elName+";"
@@ -106,12 +107,21 @@ class BehaveReg extends Reg
 
   verilogUpdate: ->
 
-  delay: (delay=0)=>
-    return (assignFunc) =>
-      @cell.__assignWidth=@width
-      if delay==0
-        @cell.__pureAlwaysList.push "  #{@elName} = #{assignFunc()};"
-      else
-        @cell.__pureAlwaysList.push "  ##{delay} #{@elName} = #{assignFunc()};"
+  delay: (v=0)=>
+    @assignDelay = v
+
+  assign: (assignFunc)=>
+    @cell.__assignWaiting=true
+    @cell.__assignWidth=@width
+    delay=@assignDelay
+    if delay==null
+      delay = "##{delay}"
+    if @cell.__assignInInitial
+      @cell.__initialAssignList.push @getSpace()+"#{@refName()} = ##{delay} #{assignFunc()};"
+    else if @cell.__assignInAlways
+      @cell.__pureAlwaysList.push @getSpace()+"##{delay} #{@refName()} = #{assignFunc()};"
+    else
+      @cell.__wireAssignList.push "assign #{@refName()} = ##{delay} #{assignFunc()};"
+    @cell.__assignWaiting=false
 
 module.exports=BehaveReg

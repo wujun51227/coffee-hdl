@@ -158,10 +158,14 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
+    @__initialAssignList=[]
+    @__seqMap={}
+    @__trigMap={}
     @__assignWidth=null
     @__updateWires=[]
     @__assignWaiting=false
     @__assignInAlways=false
+    @__assignInInitial=false
     @__parentNode=null
     @__indent=0
     @__postProcess=[]
@@ -180,6 +184,12 @@ class Module
 
   __setDefaultReset: (reset)->
     @__defaultReset=reset if @__defaultReset==null
+
+  setDefaultClock: (clock)=>
+    @__defaultClock=clock
+
+  setDefaultReset: (reset)=>
+    @__defaultReset=reset
 
   setBlackBox: ()=> @__isBlackBox=true
 
@@ -604,8 +614,86 @@ class Module
     @__local_regs.push(ret)
     return ret
 
-  initial: (list)->
-    @__initialList.push list
+  initial: (block)->
+    ret=block()
+    if _.isArray(ret)
+      out = []
+      for i in ret
+        if _.isString(i)
+          bin=@__seqMap[i]
+        else
+          bin=i.bin
+        #i.seqName
+        for item in bin
+          out.push(item)
+      @__initialList.push(out)
+    else
+      out = []
+      i = ret
+      #i.seqName
+      if _.isString(i)
+        bin=@__seqMap[i]
+      else
+        bin=i.bin
+      for item in bin
+        out.push(item)
+      @__initialList.push(out)
+
+  _sequence: (name,bin=[])->
+    return {
+      delay: (delay,func)=>
+        @__assignInInitial=true
+        @__initialAssignList=[]
+        func()
+        bin.push({type:'delay',delay:delay,list:@__initialAssignList})
+        @__assignInInitial=false
+        @__initialAssignList=[]
+        return @_sequence(name,bin)
+      repeat: (num)=>
+        repeatItem=_.last(bin)
+        for i in [0...num]
+          bin.push(repeatItem)
+        return @_sequence(name,bin)
+      event: (trigName)=>
+        @__trigMap[trigName]=1
+        bin.push({type:'event',event:trigName,list:[]})
+        return @_sequence(name,bin)
+      trigger: (signal,func)=>
+        @__assignInInitial=true
+        @__initialAssignList=[]
+        func()
+        bin.push({type:'trigger',signal:signal,list:@__initialAssignList})
+        @__assignInInitial=false
+        @__initialAssignList=[]
+        return @_sequence(name,bin)
+      posedge: (signal,func)=>
+        @__assignInInitial=true
+        @__initialAssignList=[]
+        func()
+        bin.push({type:'posedge',signal:signal,list:@__initialAssignList})
+        @__assignInInitial=false
+        @__initialAssignList=[]
+        return @_sequence(name,bin)
+      negedge: (signal,func)=>
+        @__assignInInitial=true
+        @__initialAssignList=[]
+        func()
+        bin.push({type:'negedge',signal:signal,list:@__initialAssignList})
+        @__assignInInitial=false
+        @__initialAssignList=[]
+        return @_sequence(name,bin)
+      wait: (expr,func)=>
+        @__assignInInitial=true
+        @__initialAssignList=[]
+        func()
+        bin.push({type:'wait',expr:expr,list:@__initialAssignList})
+        @__assignInInitial=false
+        @__initialAssignList=[]
+        return @_sequence(name,bin)
+      end: ()=>
+        @__seqMap[name]=bin
+        {seqName:name,bin:bin}
+    }
 
   verilog: (s)->
     @__regAssignList.push s

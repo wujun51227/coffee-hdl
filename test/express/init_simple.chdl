@@ -1,0 +1,58 @@
+class InitSimple extends Module
+  constructor: ->
+    super()
+    Port(
+      out: input(5)
+      sel: input()
+      out1: input()
+      out2: input()
+      out3: input()
+    )
+
+    Reg(
+      aa: behave_reg()
+    )
+
+  build: ->
+    @aa.delay(10)
+
+    always
+      assign(@aa) = $ !@aa
+
+    a=@_sequence('delay')
+      .delay(10,()=>
+        assign(@aa) = $ 1
+      )
+      .delay(10,()=>
+        assign(@aa) = $ 1
+      )
+      .delay(10,()=>
+        assign(@aa) = $ 1
+      )
+      .event('hello')
+      .end()
+
+    b=@_sequence('write')
+      .posedge(@sel,()=>
+        assign(@aa) = $ @out1
+      )
+      .negedge(@sel,()=>
+        assign(@aa) = $ @out2
+      )
+      .negedge(@sel,()=>
+      )
+      .repeat(10)
+      .trigger('hello',()=>
+        assign(@aa) = $ @out2
+      )
+      .wait($(@sel==1),()=>
+        assign(@aa) = $ @out2
+      ).end()
+
+
+    #@initial =>
+    #  ['delay','write']
+
+    @initial => [a,b]
+module.exports=InitSimple
+
