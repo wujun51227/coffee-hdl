@@ -145,24 +145,28 @@ code_gen= (inst)=>
   for name in Object.keys(inst.__trigMap)
     printBuffer.add "event #{name};"
   printBuffer.blank('//initial statement') if inst.__initialList.length>0
-  for initSegmentList in inst.__initialList when initSegmentList.length>0
+  for seqList in inst.__initialList when seqList.length>0
     printBuffer.add "initial begin"
-    for initSegment in initSegmentList
-      item = initSegment
-      if item.type=='delay'
-        printBuffer.add "  ##{item.delay}"
-      if item.type=='posedge'
-        printBuffer.add "  @posedge(#{item.signal.getName()});"
-      if item.type=='negedge'
-        printBuffer.add "  @negedge(#{item.signal.getName()});"
-      if item.type=='wait'
-        printBuffer.add "  wait(#{item.expr})"
-      if item.type=='event'
-        printBuffer.add "  -> #{item.event};"
-      if item.type=='trigger'
-        printBuffer.add "  @(#{item.signal});"
-      for e in item.list
-        printBuffer.add "  #{e}"
+    for seq in seqList
+      initSegmentList = seq.bin
+      seqName= seq.name
+      printBuffer.add "  $display(\"start sequence #{seqName}\");"
+      for initSegment in initSegmentList
+        item = initSegment
+        if item.type=='delay'
+          printBuffer.add "  ##{item.delay}"
+        if item.type=='posedge'
+          printBuffer.add "  @posedge(#{item.signal.getName()});"
+        if item.type=='negedge'
+          printBuffer.add "  @negedge(#{item.signal.getName()});"
+        if item.type=='wait'
+          printBuffer.add "  wait(#{item.expr})"
+        if item.type=='event'
+          printBuffer.add "  -> #{item.event};"
+        if item.type=='trigger'
+          printBuffer.add "  @(#{item.signal});"
+        for e in item.list
+          printBuffer.add "  #{e}"
     printBuffer.add "end"
     printBuffer.blank()
 

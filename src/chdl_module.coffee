@@ -148,6 +148,7 @@ class Module
     @__ports          =  {}
     @__wireAssignList =  []
     @__initialList=[]
+    @__initialBlock=null
     @__cells      =[]
 
     @__pipe={}
@@ -615,29 +616,22 @@ class Module
     return ret
 
   initial: (block)->
-    ret=block()
-    if _.isArray(ret)
-      out = []
-      for i in ret
+    @__initialBlock=[]
+    block()
+    @__initialList.push(@__initialBlock)
+    @__initialBlock=null
+
+  series: (list...)->
+    if _.isArray(@__initialBlock)
+      for i in list
         if _.isString(i)
-          bin=@__seqMap[i]
+          seq=@__seqMap[i]
+          if seq?
+            @__initialBlock.push(seq)
+          else
+            throw new Error("Can not find sequence name #{i}")
         else
-          bin=i.bin
-        #i.seqName
-        for item in bin
-          out.push(item)
-      @__initialList.push(out)
-    else
-      out = []
-      i = ret
-      #i.seqName
-      if _.isString(i)
-        bin=@__seqMap[i]
-      else
-        bin=i.bin
-      for item in bin
-        out.push(item)
-      @__initialList.push(out)
+          @__initialBlock.push(i)
 
   _sequence: (name,bin=[])->
     return {
@@ -691,8 +685,10 @@ class Module
         @__initialAssignList=[]
         return @_sequence(name,bin)
       end: ()=>
-        @__seqMap[name]=bin
-        {seqName:name,bin:bin}
+        @__seqMap[name]={name:name,bin:bin}
+        if _.isArray(@__initialBlock)
+          @__initialBlock.push {name:name,bin:bin}
+        return {name:name,bin:bin}
     }
 
   verilog: (s)->

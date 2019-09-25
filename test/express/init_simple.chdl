@@ -19,6 +19,18 @@ class InitSimple extends Module
     always
       assign(@aa) = $ !@aa
 
+    write=(addr,data)=>
+      @_sequence('do_write')
+      .posedge(@sel,()=>
+        assign(@aa) = $ @out1
+      )
+      .negedge(@sel,()=>
+        assign(@aa) = $ @out2
+      )
+      .wait($(@sel==1),()=>
+        assign(@aa) = $ @out2
+      ).end()
+
     a=@_sequence('delay')
       .delay(10,()=>
         assign(@aa) = $ 1
@@ -50,9 +62,8 @@ class InitSimple extends Module
       ).end()
 
 
-    #@initial =>
-    #  ['delay','write']
-
-    @initial => [a,b]
+    @initial =>
+      @series(a,'write')
+      write()
 module.exports=InitSimple
 
