@@ -113,15 +113,16 @@ class BehaveReg extends Reg
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    delay=@assignDelay
-    if delay==null
-      delay = "##{delay}"
-    if @cell.__assignInInitial
-      @cell.__initialAssignList.push @getSpace()+"#{@refName()} = ##{delay} #{assignFunc()};"
-    else if @cell.__assignInAlways
-      @cell.__pureAlwaysList.push @getSpace()+"##{delay} #{@refName()} = #{assignFunc()};"
+    if @assignDelay!=null
+      delay = "##{@assignDelay}"
     else
-      @cell.__wireAssignList.push "assign #{@refName()} = ##{delay} #{assignFunc()};"
+      delay = ""
+    if @cell.__assignInInitial
+      @cell.__initialAssignList.push @getSpace()+"#{@refName()} = #{delay} #{assignFunc()};"
+    else if @cell.__assignInAlways
+      @cell.__pureAlwaysList.push @getSpace()+"#{delay} #{@refName()} = #{assignFunc()};"
+    else
+      @cell.__wireAssignList.push "assign #{@refName()} = #{delay} #{assignFunc()};"
     @cell.__assignWaiting=false
 
 module.exports=BehaveReg
