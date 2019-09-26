@@ -40,17 +40,26 @@ class Reg extends CircuitEl
     return packEl('reg',this)
 
   clock:(clock)=>
-    @bindClockName=clock
+    if _.isString(clock)
+      @bindClockName=clock
+    else
+      @bindClockName=clock.getName()
     return packEl('reg',this)
 
   syncReset: (reset)=>
     @resetMode='sync'
-    @resetName=reset
+    if _.isString(reset)
+      @resetName=reset
+    else
+      @resetName=reset.getName()
     return packEl('reg',this)
 
   asyncReset: (reset=null)=>
     @resetMode='async'
-    @resetName=reset
+    if _.isString(reset)
+      @resetName=reset
+    else
+      @resetName=reset.getName()
     return packEl('reg',this)
 
   config: (data)=>
@@ -180,17 +189,17 @@ class Reg extends CircuitEl
 
   @create: (width=1)-> new Reg(width)
 
-  verilogDeclare: (pipe=false)->
+  verilogDeclare: ->
     list=[]
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
     if @width==1
       list.push "reg "+@elName+";"
-      list.push "reg _"+@elName+";" unless pipe
+      list.push "reg _"+@elName+";"
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
-      list.push "reg ["+(@width-1)+":0] _"+@elName+";" unless pipe
+      list.push "reg ["+(@width-1)+":0] _"+@elName+";"
 
     if @needInitial
       list.push "initial begin"
@@ -261,7 +270,7 @@ class Reg extends CircuitEl
     ElementSets.clear()
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    if @cell.__pipeName? or @isMem
+    if @isMem
       @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
     else if @cell.__assignInAlways
       @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"

@@ -23,51 +23,27 @@ class PipeTest extends Module
 
   doSync: (sigIn,sigOut)->
     width=sigIn.getWidth()
-    pipeline(sigIn,{reset:@reset1,clock:@clk1}).next((pipe)=>
-      pipe_reg(d1: reg(width))
-      assign(pipe.d1) = $ sigIn
-    ).next( (pipe)=>
-      pipe_reg(d2: reg(width))
-      assign(pipe.d2) = $ pipe.d1
-    ).final( (pipe)=>
-      assign(sigOut) = $ pipe.d2
-    )
+    d1 = local_reg(width,'sync').clock(@clk1).asyncReset(@reset1)
+    d2 = local_reg(width,'sync').clock(@clk1).asyncReset(@reset1)
+    assign(d1) = $ sigIn
+    assign(d2) = $ d1
+    assign(sigOut) = $ d2
 
   build: ->
     @doSync(@in1,@sync_sig)
 
-    pipeline('doubleSync',{defaultReset:true}).next((pipe)=>
-      pipe_reg(d1: reg(5))
-      assign(pipe.d1) = $ @in1
-    ).next( (pipe)=>
-      pipe_reg(d2: reg(5))
-      assign(pipe.d2) = $ pipe.d1+@enable
-    ).next( (pipe)=>
-      pipe_reg(d3: reg(5))
-      assign(pipe.d3) = $ pipe.d2
-    ).final( (pipe)=>
-      tmp = $ pipe.d3(10:8)
-      assign(@dout1) = $ pipe.d1(3:1) & pipe.d2 + tmp
-    )
-
-    pipeline('sync').next((pipe)=>
-      pipe_reg(d1: reg(32))
-      assign(pipe.d1) = $ @in1
-    ).next((pipe)=>
-      #level 2 pipe logic
-      pipe_reg(d2: reg(32))
+    ff={
+      d1: local_reg(32)
+      d2: local_reg(32)
+    }
+    assign(ff.d1) = $ @in1
+    assign(ff.d2)
       $if(@dout1==0)
-        assign(pipe.d2)
-          $if(@in1)
-            $ pipe.d1
-          $else
-            $ 32\h100
-          $endif
+        $if(@in1) => $ ff.d1
+        $else => $ 32\h100
+        $endif
       $endif
-    ).final((pipe)=>
-      #some combo logic
-      assign(@dout2) = $ (!pipe.d1) & pipe.d2
-    )
+    assign(@dout2) = $ (!ff.d1) & ff.d2
 
 module.exports=PipeTest
 

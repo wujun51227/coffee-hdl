@@ -137,9 +137,7 @@ class Module
 
     @__alwaysList     =  []
     @__pureAlwaysList     =  []
-    @__pipeAlwaysList =  []
     @__regs           =  {}
-    @__pipeRegs       =  []
     @__wires          =  {}
     @__local_wires      =  []
     @__local_regs      =  []
@@ -151,9 +149,6 @@ class Module
     @__initialBlock=null
     @__cells      =[]
 
-    @__pipe={}
-    @__pipeNewRegs=[]
-    @__pipeName=null
     @__bindChannels=[]
     @__defaultClock=null
     @__defaultReset=null
@@ -406,14 +401,6 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
-  __pipeAlways: (block)=>
-    @__assignInAlways=true
-    @__regAssignList=[]
-    block(@__pipe)
-    @__pipeAlwaysList.push({name:@__pipeName, list:@__regAssignList,regs:@__pipeNewRegs})
-    @__assignInAlways=false
-    @__regAssignList=[]
-
   eval: =>
     for evalFunc in @__alwaysList
       evalFunc()
@@ -594,17 +581,6 @@ class Module
     @__local_wires.push(ret)
     return ret
 
-  _pipeReg: (obj)->
-    for [name,inst] in toFlatten(obj)
-      inst.cell=this
-      inst.elName=toSignal([@__pipeName,name].join('.'))
-      if _.get(@__pipe,name)?
-        throw new Error('Local Register name conflicted '+name)
-      regPack=packEl('reg',inst)
-      _.set(@__pipe,name,regPack)
-      @__pipeNewRegs.push(inst.getName())
-    return @__pipe
-
   _localReg: (width=1,name='')=>
     pReg=Reg.create(Number(width))
     pReg.cell=this
@@ -696,29 +672,6 @@ class Module
       @__initialAssignList.push s
     else
       @__regAssignList.push s
-
-  _pipeline: (name_in,opt={},index=0)->
-    if _.isString(name_in)
-      name=name_in
-    else
-      name=name_in.getName()
-    if index==0
-      name+='___'+localCnt
-      localCnt+=1
-      @__pipeName=name
-      @__pipe={}
-      @__pipeRegs.push {name:name,opt:opt,pipe:@__pipe}
-    return {
-      next: (func)=>
-        @__regAssignList=[]
-        @__pipeNewRegs=[]
-        @__pipeAlways(func)
-        return @_pipeline(name,null,index+1)
-      final: (func)=>
-        ret = func(@__pipe)
-        @__pipeName=null
-        ret
-    }
 
   _clean: ->
     keys=Object.keys(@__signature)

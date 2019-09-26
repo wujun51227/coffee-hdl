@@ -166,30 +166,21 @@ module.exports={
 
   $doubleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    pipeline(sigIn,{clock:clock}).next((pipe)=>
-      pipe_reg(d1:reg(width))
-      assign(pipe.d1) = $ sigIn
-    ).next( (pipe)=>
-      pipe_reg(d2:reg(width))
-      assign(pipe.d2) = $ pipe.d1
-    ).final( (pipe)=>
-      $ pipe.d2
-    )
+    d1 = local_reg(width,'sync').clock(clock).noReset()
+    d2 = local_reg(width,'sync').clock(clock).noReset()
+    assign(d1) = $ sigIn
+    assign(d2) = $ d1
+    return $ d2
 
   $tripleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    pipeline(sigIn,{clock:clock}).next((pipe)=>
-      pipe_reg(d1:reg(width))
-      assign(pipe.d1) = $ sigIn
-    ).next( (pipe)=>
-      pipe_reg(d2:reg(width))
-      assign(pipe.d2) = $ pipe.d1
-    ).next( (pipe)=>
-      pipe_reg(d3:reg(width))
-      assign(pipe.d3) = $ pipe.d2
-    ).final( (pipe)=>
-      $ pipe.d3
-    )
+    d1 = local_reg(width,'sync').clock(clock).noReset()
+    d2 = local_reg(width,'sync').clock(clock).noReset()
+    d3 = local_reg(width,'sync').clock(clock).noReset()
+    assign(d1) = $ sigIn
+    assign(d2) = $ d1
+    assign(d3) = $ d2
+    return $ d3
 
   $bundleAssign:(from,to)->
     iterator=new RecursiveIterator(from)
@@ -227,22 +218,17 @@ module.exports={
     $balance(list,width)
 
   $oneHot: (sig)->
-    pipeline(sig).next((pipe)=>
-      pipe_reg(d1:reg(1))
-      assign(pipe.d1) = $ sig
-    ).final( (pipe)=>
-      $ sig & !pipe.d1
-    )
+    d1 = local_reg(1,'latch')
+    assign(d1) = $ sig
+    return $ sig & !d1
 
   $divider: (clk,n)->
     width=Math.ceil(Math.log2(n))
-    pipeline(clk,{clock:clk,defaultReset:true}).next((pipe)=>
-      pipe_reg(cnt:reg(width))
-      assign(pipe.cnt)
-        $if(pipe.cnt=={n-1}) => $ 0
-        $else => $ pipe.cnt+1
-        $endif
-    ).final( (pipe)=>
-      $ pipe.cnt=={n-1}
-    )
+    cnt = local_reg(width,'cnt')
+    assign(cnt)
+      $if(cnt=={n-1}) => $ 0
+      $else => cnt+1
+      $endif
+    return  $ cnt=={n-1}
+
 }

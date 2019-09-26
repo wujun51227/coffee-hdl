@@ -131,10 +131,6 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogDeclare()
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
-  printBuffer.blank('//pipeline declare')
-  for i in inst.__pipeRegs
-    for [name,reg] in toFlatten(i.pipe)
-      printBuffer.add reg.verilogDeclare(true)
   for [name,port] in toFlatten(inst.__ports)
       assignExpr=port.verilogAssign()
       printBuffer.add assignExpr if assignExpr!=''
@@ -193,54 +189,6 @@ code_gen= (inst)=>
     printBuffer.add "always begin"
     printBuffer.add '  '+i
     printBuffer.add "end"
-
-  for i in inst.__pipeAlwaysList when i.list? and i.list.length>0
-    item=_.find(inst.__pipeRegs,(n)=>n.name==i.name)
-    hasReset=false
-    pipeClock=inst.__defaultClock
-    if item.opt.clock?
-      if _.isString(item.opt.clock)
-        pipeClock=item.opt.clock
-      else
-        pipeClock=item.opt.clock.refName()
-
-    if item.opt.reset?
-      if _.isString(item.opt.reset)
-        pipeReset=item.opt.reset
-      else
-        pipeReset=item.opt.reset.refName()
-      printBuffer.add "always @(posedge #{pipeClock} or negedge #{pipeReset}) begin"
-      printBuffer.add "  if(#{pipeReset}==1'b0) begin"
-      for regName in i.regs
-        printBuffer.add "    #{regName}=0;"
-      printBuffer.add "  end"
-      hasReset=true
-    else if item.opt.defaultReset
-      if inst.__defaultReset?
-        printBuffer.add "always @(posedge #{pipeClock} or negedge #{inst.__defaultReset}) begin"
-        printBuffer.add "  if(#{inst.__defaultReset}==1'b0) begin"
-        for regName in i.regs
-          printBuffer.add "    #{regName}=0;"
-        printBuffer.add "  end"
-        hasReset=true
-      else
-        throw new Error('Can not find reset in module')
-        printBuffer.add "always @(posedge #{pipeClock}) begin"
-    else
-      printBuffer.add "always @(posedge #{pipeClock}) begin"
-
-    if hasReset
-      printBuffer.add '  else begin'
-    for assign in i.list
-      if hasReset
-        printBuffer.add '    '+assign
-      else
-        printBuffer.add '  '+assign
-    if hasReset
-      printBuffer.add '  end'
-    printBuffer.add 'end'
-    printBuffer.blank()
-
 
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)

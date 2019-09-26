@@ -393,13 +393,6 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='pipe_reg'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_pipeReg', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='local_reg'
       list =[
         ['@', '@', {}]
@@ -527,13 +520,6 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
-    else if token[0] is 'IDENTIFIER' and token[1]=='pipeline'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_pipeline', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if'
       list =[
         ['@', '@', {}]
