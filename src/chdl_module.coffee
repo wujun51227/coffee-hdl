@@ -209,7 +209,7 @@ class Module
     console.log 'Module',@__instName
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.getName())
-     console.log '  port',s
+      console.log '  port',s
 
   __addWire: (name,width)->
     wire= Wire.create(width)
