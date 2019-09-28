@@ -217,17 +217,36 @@ module.exports={
       list.push({cond:$(i==select),value:array[i]})
     $balance(list,width)
 
-  $oneHot: (sig)->
-    d1 = local_reg(1,'latch')
-    assign(d1) = $ sig
-    return $ sig & !d1
+  $rise: (sig)->
+    d1 = local_reg(1,'r_'+sig.getName())
+    pass_always
+      assign(d1) = $ sig
+    return $ (sig & (!d1))
+
+  $fall: (sig)->
+    d1 = local_reg(1,'f_'+sig.getName())
+    pass_always
+      assign(d1) = $ sig
+    return $ ((!sig) & d1)
 
   $divider: (clk,n)->
     width=Math.ceil(Math.log2(n))
     cnt = local_reg(width,'cnt')
     assign(cnt)
       $if(cnt=={n-1}) => $ 0
-      $else => cnt+1
+      $else => $ cnt+1
+      $endif
+    return  $ cnt=={n-1}
+
+  $count: (n,enable)->
+    width=Math.ceil(Math.log2(n))
+    cnt = local_reg(width,'cnt')
+    assign(cnt)
+      $if(enable)
+        $if(cnt=={n-1}) => $ 0
+        $else => $ cnt+1
+        $endif
+      $else => $ 0
       $endif
     return  $ cnt=={n-1}
 

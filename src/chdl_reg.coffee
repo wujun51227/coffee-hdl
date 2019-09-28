@@ -275,6 +275,9 @@ class Reg extends CircuitEl
     else if @cell.__assignInAlways
       @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
       @cell.__updateWires.push({type:'reg',name:@elName})
+    else if @cell.__assignInSequence
+      @cell.__sequenceAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
+      @cell.__updateWires.push({type:'reg',name:@elName})
     else
       @cell.__wireAssignList.push "assign _#{@refName()} = #{assignFunc()};"
     @cell.__assignWaiting=false
@@ -306,6 +309,14 @@ class Reg extends CircuitEl
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     "#{@refName()}==#{@elName+'__'+name}"
+
+  isNthState: (n)=>
+    item=@states[n]
+    "#{@refName()}==#{@elName+'__'+item.state}"
+
+  isLastState: ()=>
+    item=_.last(@states)
+    "#{@refName()}==#{@elName+'__'+item.state}"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)

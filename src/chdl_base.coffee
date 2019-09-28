@@ -114,6 +114,9 @@ code_gen= (inst)=>
   for [name,wire] in toFlatten(inst.__wires)
     if wire.constructor.name=='Wire'
       printBuffer.add wire.verilogDeclare()
+  for [name,wire] in toFlatten(inst.__local_wires)
+    if wire.constructor.name=='Wire'
+      printBuffer.add wire.verilogDeclare()
   printBuffer.blank('//port wire declare')
   for [name,port] in toFlatten(inst.__ports)
     unless port.isReg
@@ -189,6 +192,49 @@ code_gen= (inst)=>
     printBuffer.add "always begin"
     printBuffer.add '  '+i
     printBuffer.add "end"
+
+  printBuffer.blank('//sequence logic')
+  for seqBlockList in inst.__sequenceAlwaysList
+    for seqBlock in seqBlockList
+      printBuffer.blank("//sequence #{seqBlock.name}")
+      stateReg=seqBlock.stateReg
+      printBuffer.add "always_combo begin"
+      printBuffer.add "  _#{stateReg.getName()}=#{stateReg.getName()}"
+      for i,index in seqBlock.bin
+        if index==0
+          lastState=stateReg.getState('idle')
+          lastBin=null
+        else
+          lastState=stateReg.getState(seqBlock.bin[index-1].id)
+          lastBin=seqBlock.bin[index-1]
+        currentState=stateReg.getState(i.id)
+        if i.type=='next'
+          printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
+          if i.expr==null
+            printBuffer.add "    _#{stateReg.getName()}=#{currentState};"
+          else
+            printBuffer.add "    if(#{i.expr}) begin"
+            printBuffer.add "      _#{stateReg.getName()}=#{currentState};"
+            printBuffer.add "    end"
+          printBuffer.add "  end"
+        else if i.type=='posedge' or i.type=='negedge' or i.type=='wait'
+          printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
+          printBuffer.add "    if(#{i.expr}) begin"
+          printBuffer.add "      _#{stateReg.getName()}=#{currentState};"
+          printBuffer.add "    end"
+          if i.isLast
+            printBuffer.add "    else begin"
+            printBuffer.add "      _#{stateReg.getName()}=#{stateReg.getState('idle')};"
+            printBuffer.add "    end"
+          printBuffer.add "  end"
+      printBuffer.add "end"
+      printBuffer.add "always_combo begin"
+      for i,index in seqBlock.bin when i.list.length>0
+        printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
+        for state in i.list
+          printBuffer.add "    #{state}"
+        printBuffer.add "  end"
+      printBuffer.add "end"
 
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)

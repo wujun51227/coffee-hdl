@@ -12,6 +12,11 @@ uuid  = require 'uuid/v1'
 
 localCnt=0
 
+_id=(name)=>
+  ret="#{name}#{localCnt}"
+  localCnt+=1
+  return ret
+
 class Module
   @create: (args...)-> new this(args...)
 
@@ -136,6 +141,7 @@ class Module
     @__moduleParameter=null
 
     @__alwaysList     =  []
+    @__sequenceAlwaysList     =  []
     @__pureAlwaysList     =  []
     @__regs           =  {}
     @__wires          =  {}
@@ -146,7 +152,7 @@ class Module
     @__ports          =  {}
     @__wireAssignList =  []
     @__initialList=[]
-    @__initialBlock=null
+    @__sequenceBlock=null
     @__cells      =[]
 
     @__bindChannels=[]
@@ -154,14 +160,13 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
-    @__initialAssignList=[]
-    @__seqMap={}
+    @__sequenceAssignList=[]
     @__trigMap={}
     @__assignWidth=null
     @__updateWires=[]
     @__assignWaiting=false
     @__assignInAlways=false
-    @__assignInInitial=false
+    @__assignInSequence=false
     @__parentNode=null
     @__indent=0
     @__postProcess=[]
@@ -401,6 +406,22 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
+  _sequenceAlways: (block)=>
+    @__assignInSeqAlways=true
+    @__regAssignList=[]
+    @__updateWires=[]
+    @__sequenceBlock=[]
+    block()
+    for seqList in @__sequenceBlock
+      for i in seqList.bin
+        if i.type=='delay' or i.type=='trigger' or i.type=='event' or i.type=='repeat'
+          throw new Error("Can not use delay in always sequence")
+    @__sequenceAlwaysList.push(@__sequenceBlock)
+    @__sequenceBlock=null
+    @__assignInSeqAlways=false
+    @__updateWires=[]
+    @__regAssignList=[]
+
   eval: =>
     for evalFunc in @__alwaysList
       evalFunc()
@@ -426,26 +447,47 @@ class Module
     return {
       _if: (cond)=>
         return (block)=>
-          @__regAssignList.push @_getSpace()+"if(#{cond.str}) begin"
-          @__indent+=1
-          block()
-          @__indent-=1
-          @__regAssignList.push @_getSpace()+"end"
+          if @__assignInAlways
+            @__regAssignList.push @_getSpace()+"if(#{cond.str}) begin"
+            @__indent+=1
+            block()
+            @__indent-=1
+            @__regAssignList.push @_getSpace()+"end"
+          else if @__assignInSequence
+            @__sequenceAssignList.push @_getSpace()+"if(#{cond.str}) begin"
+            @__indent+=1
+            block()
+            @__indent-=1
+            @__sequenceAssignList.push @_getSpace()+"end"
           return @_regProcess()
       _elseif: (cond)=>
         return (block)=>
-          @__regAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
+          if @__assignInAlways
+            @__regAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
+            @__indent+=1
+            block()
+            @__indent-=1
+            @__regAssignList.push @_getSpace()+"end"
+          else if @__assignInSequence
+            @__sequenceAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
+            @__indent+=1
+            block()
+            @__indent-=1
+            @__sequenceAssignList.push @_getSpace()+"end"
+          return @_regProcess()
+      _else: (block)=>
+        if @__assignInAlways
+          @__regAssignList.push @_getSpace()+"else begin"
           @__indent+=1
           block()
           @__indent-=1
           @__regAssignList.push @_getSpace()+"end"
-          return @_regProcess()
-      _else: (block)=>
-        @__regAssignList.push @_getSpace()+"else begin"
-        @__indent+=1
-        block()
-        @__indent-=1
-        @__regAssignList.push @_getSpace()+"end"
+        else if @__assignInSequence
+          @__sequenceAssignList.push @_getSpace()+"else begin"
+          @__indent+=1
+          block()
+          @__indent-=1
+          @__sequenceAssignList.push @_getSpace()+"end"
         return @_regProcess()
       _endif: =>
     }
@@ -571,12 +613,12 @@ class Module
 
   __link: (name)-> @__instName=name
 
+
   _localWire: (width=1,name='')->
     pWire=Wire.create(Number(width))
     pWire.cell=this
     pWire.setLocal()
-    pWire.elName=toSignal(['__t'+localCnt,name].join('.'))
-    localCnt+=1
+    pWire.elName=toSignal([_id('__t'),name].join('.'))
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
     return ret
@@ -585,40 +627,62 @@ class Module
     pReg=Reg.create(Number(width))
     pReg.cell=this
     pReg.setLocal()
-    pReg.elName=toSignal(['__r'+localCnt,name].join('.'))
-    localCnt+=1
+    pReg.elName=toSignal([_id('__r'),name].join('.'))
     ret = packEl('reg',pReg)
     @__local_regs.push(ret)
     return ret
 
   initial: (block)->
-    @__initialBlock=[]
+    @__sequenceBlock=[]
     block()
-    @__initialList.push(@__initialBlock)
-    @__initialBlock=null
+    @__initialList.push(@__sequenceBlock)
+    @__sequenceBlock=null
 
   series: (list...)->
-    if _.isArray(@__initialBlock)
-      for i in list
-        if _.isString(i)
-          seq=@__seqMap[i]
-          if seq?
-            @__initialBlock.push(seq)
-          else
-            throw new Error("Can not find sequence name #{i}")
-        else
-          @__initialBlock.push(i)
+    if @__sequenceBlock==null
+      throw new Error("Series should put in initial or sequenceAlways")
+    lastSeq=null
+    for i,index in list
+      seq=i()
+      if index>0
+        if lastSeq?
+          lastCond=_.last(lastSeq.bin)
+          lastCond.expr= seq.stateReg.isNthState(0)
+          lastCond.id= 'idle'
+
+        startCond={
+          type:'wait'
+          id:_id('wait')
+          expr:lastSeq.stateReg.isLastState()
+          list: []
+        }
+        nextSeq={
+          name: seq.name
+          stateReg: seq.stateReg
+          bin: [startCond,seq.bin...]
+        }
+        if index==list.length-1
+          lastBin=_.last(nextSeq.bin)
+          lastBin.id='idle'
+          lastBin.type='next'
+          lastBin.expr=null
+        @__sequenceBlock.pop()
+        @__sequenceBlock.push(nextSeq)
+      lastSeq=seq
 
   _sequence: (name,bin=[])->
+    if @__sequenceBlock==null
+      throw new Error("Sequence only can run in initial or always")
     return {
-      delay: (delay,func)=>
-        @__assignInInitial=true
-        @__initialAssignList=[]
-        func()
-        bin.push({type:'delay',delay:delay,list:@__initialAssignList})
-        @__assignInInitial=false
-        @__initialAssignList=[]
-        return @_sequence(name,bin)
+      delay: (delay) =>
+        return (func)=>
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func()
+          bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__sequenceAssignList})
+          @__assignInSequence=false
+          @__sequenceAssignList=[]
+          return @_sequence(name,bin)
       repeat: (num)=>
         repeatItem=_.last(bin)
         for i in [0...num]
@@ -626,50 +690,91 @@ class Module
         return @_sequence(name,bin)
       event: (trigName)=>
         @__trigMap[trigName]=1
-        bin.push({type:'event',event:trigName,list:[]})
+        bin.push({type:'event',id:_id('event'),event:trigName,list:[]})
         return @_sequence(name,bin)
-      trigger: (signal,func)=>
-        @__assignInInitial=true
-        @__initialAssignList=[]
-        func()
-        bin.push({type:'trigger',signal:signal,list:@__initialAssignList})
-        @__assignInInitial=false
-        @__initialAssignList=[]
-        return @_sequence(name,bin)
-      posedge: (signal,func)=>
-        @__assignInInitial=true
-        @__initialAssignList=[]
-        func()
-        bin.push({type:'posedge',signal:signal,list:@__initialAssignList})
-        @__assignInInitial=false
-        @__initialAssignList=[]
-        return @_sequence(name,bin)
-      negedge: (signal,func)=>
-        @__assignInInitial=true
-        @__initialAssignList=[]
-        func()
-        bin.push({type:'negedge',signal:signal,list:@__initialAssignList})
-        @__assignInInitial=false
-        @__initialAssignList=[]
-        return @_sequence(name,bin)
-      wait: (expr,func)=>
-        @__assignInInitial=true
-        @__initialAssignList=[]
-        func()
-        bin.push({type:'wait',expr:expr,list:@__initialAssignList})
-        @__assignInInitial=false
-        @__initialAssignList=[]
-        return @_sequence(name,bin)
+      trigger: (signal)=>
+        return (func)=>
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func()
+          bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__sequenceAssignList})
+          @__assignInSequence=false
+          @__sequenceAssignList=[]
+          return @_sequence(name,bin)
+      posedge: (signal)=>
+        return (func)=>
+          expr=@_rise(signal)
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func()
+          bin.push({type:'posedge',id:_id('rise'),expr:expr,list:@__sequenceAssignList})
+          @__assignInSequence=false
+          @__sequenceAssignList=[]
+          return @_sequence(name,bin)
+      negedge: (signal)=>
+        return (func)=>
+          expr=@_fall(signal)
+          active=@_localWire(1,'act')
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func(active)
+          bin.push({type:'negedge',id:_id('fall'),expr:expr,list:@__sequenceAssignList,active:active})
+          @__sequenceAssignList=[]
+          @__assignInSequence=false
+          return @_sequence(name,bin)
+      wait: (expr)=>
+        return (func)=>
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func()
+          bin.push({type:'wait',id:_id('wait'),expr:expr,list:@__sequenceAssignList})
+          @__assignInSequence=false
+          @__sequenceAssignList=[]
+          return @_sequence(name,bin)
+      next: (num=null)=>
+        return (func)=>
+          if num==null
+            expr=null
+            enable=null
+          else
+            enable=@_localWire(1,'enable')
+            expr=@_count(num,enable.getName())
+          @__assignInSequence=true
+          @__sequenceAssignList=[]
+          func()
+          bin.push({type:'next',id:_id('next'),expr:expr,enable:enable,list:@__sequenceAssignList})
+          @__assignInSequence=false
+          @__sequenceAssignList=[]
+          return @_sequence(name,bin)
       end: ()=>
-        @__seqMap[name]={name:name,bin:bin}
-        if _.isArray(@__initialBlock)
-          @__initialBlock.push {name:name,bin:bin}
-        return {name:name,bin:bin}
+        stateNum=1
+        for i in bin
+          stateNum+=1
+        bitWidth=Math.floor(Math.log2(stateNum))+1
+        stateReg=@_localReg(bitWidth,name)
+        lastStateReg=@_localReg(bitWidth,name+'_last')
+        stateNameList=['idle']
+        for i in bin
+          stateNameList.push(i.id)
+        stateReg.stateDef(stateNameList)
+        lastStateReg.stateDef(stateNameList)
+        finalJump=_.clone(bin[0])
+        finalJump.list=[]
+        finalJump.isLast=true
+        bin.push(finalJump)
+        saveData={name:name,bin:bin,stateReg:stateReg}
+        if _.isArray(@__sequenceBlock)
+          @__sequenceBlock.push saveData
+        for i in bin when i.type=='next' and i.enable?
+          @_assign(i.enable) => stateReg.isState(i.id)
+        for i,index in bin when i.active?
+          @_assign(i.active) => stateReg.isState(i.id) && lastStateReg.isState(bin[index-1].id)
+        return saveData
     }
 
   verilog: (s)->
-    if @__assignInInitial
-      @__initialAssignList.push s
+    if @__assignInSequence
+      @__sequenceAssignList.push s
     else
       @__regAssignList.push s
 
