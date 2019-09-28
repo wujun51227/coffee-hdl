@@ -1,0 +1,69 @@
+class SequenceInAlways extends Module
+  constructor: ->
+    super()
+    Port(
+      out: input(5)
+      sel: input()
+      sel1: input()
+      out1: input()
+      out2: input()
+      out3: input()
+    )
+
+    Reg(
+      aa: reg()
+    )
+
+  build: ->
+
+    write= =>
+      @_sequence('writeSeq')
+        .posedge(@sel) =>
+          assign(@aa) = $ @out1
+        .next(5) =>
+          assign(@aa) = $ @out1+1
+        .negedge(@sel1) (first)=>
+          $if(first) => assign(@aa) = $ @out2
+          $else => assign(@aa) = $ 100
+          $endif
+        .wait($(@sel==1)) =>
+          assign(@aa) = $ @out2
+        .end()
+
+    read= =>
+      @_sequence('read')
+        .posedge(@sel) =>
+          assign(@aa) = $ @out1
+        .wait($(@sel==1)) =>
+          assign(@aa) = $ @out2
+        .end()
+
+    #write()
+
+    #a=@_sequence('delay')
+    #  .delay(null) =>
+    #    assign(@aa) = $ 1
+    #  .delay(10) =>
+    #    assign(@aa) = $ 1
+    #  .delay(10_) =>
+    #    assign(@aa) = $ 1
+    #  .event('hello') =>
+    #  .end()
+
+    #b=@_sequence('write')
+    #  .posedge(@sel) =>
+    #    assign(@aa) = $ @out1
+    #  .negedge(@sel) =>
+    #    assign(@aa) = $ @out2
+    #  .negedge(@sel) =>
+    #  .wait($(@sel==1) =>
+    #    assign(@aa) = $ @out2
+    #  .end()
+
+    @_sequenceAlways =>
+      write()
+      #@series(write,read,read)
+      #@series('write','read')
+
+module.exports=SequenceInAlways
+
