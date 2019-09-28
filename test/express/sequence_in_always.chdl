@@ -17,21 +17,21 @@ class SequenceInAlways extends Module
   build: ->
 
     write= =>
-      @_sequence('writeSeq')
-        .posedge(@sel) =>
+      $sequence('writeSeq')
+        .posedge(@sel,'wait_aa') =>
           assign(@aa) = $ @out1
-        .next(5) =>
+        .next(5,'count5') =>
           assign(@aa) = $ @out1+1
-        .negedge(@sel1) (first)=>
-          $if(first) => assign(@aa) = $ @out2
+        .negedge(@sel1,'wait_sel1_fall') (transition)=>
+          $if(transition) => assign(@aa) = $ @out2
           $else => assign(@aa) = $ 100
           $endif
-        .wait($(@sel==1)) =>
+        .wait($(@sel==1),'final') =>
           assign(@aa) = $ @out2
         .end()
 
     read= =>
-      @_sequence('read')
+      $sequence('read')
         .posedge(@sel) =>
           assign(@aa) = $ @out1
         .wait($(@sel==1)) =>
@@ -60,8 +60,9 @@ class SequenceInAlways extends Module
     #    assign(@aa) = $ @out2
     #  .end()
 
-    @_sequenceAlways =>
-      write()
+    sequence_always =>
+      sequence_series(write,read,read)
+      #write()
       #@series(write,read,read)
       #@series('write','read')
 

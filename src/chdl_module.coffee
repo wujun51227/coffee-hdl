@@ -407,7 +407,6 @@ class Module
     @__regAssignList=[]
 
   _sequenceAlways: (block)=>
-    @__assignInSeqAlways=true
     @__regAssignList=[]
     @__updateWires=[]
     @__sequenceBlock=[]
@@ -418,7 +417,6 @@ class Module
           throw new Error("Can not use delay in always sequence")
     @__sequenceAlwaysList.push(@__sequenceBlock)
     @__sequenceBlock=null
-    @__assignInSeqAlways=false
     @__updateWires=[]
     @__regAssignList=[]
 
@@ -614,31 +612,31 @@ class Module
   __link: (name)-> @__instName=name
 
 
-  _localWire: (width=1,name='')->
+  _localWire: (width=1,name='t')->
     pWire=Wire.create(Number(width))
     pWire.cell=this
     pWire.setLocal()
-    pWire.elName=toSignal([_id('__t'),name].join('.'))
+    pWire.elName=toSignal(_id('__'+name))
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
     return ret
 
-  _localReg: (width=1,name='')=>
+  _localReg: (width=1,name='r')=>
     pReg=Reg.create(Number(width))
     pReg.cell=this
     pReg.setLocal()
-    pReg.elName=toSignal([_id('__r'),name].join('.'))
+    pReg.elName=toSignal(_id('__'+name))
     ret = packEl('reg',pReg)
     @__local_regs.push(ret)
     return ret
 
-  initial: (block)->
+  _initial: (block)->
     @__sequenceBlock=[]
     block()
     @__initialList.push(@__sequenceBlock)
     @__sequenceBlock=null
 
-  series: (list...)->
+  _series: (list...)->
     if @__sequenceBlock==null
       throw new Error("Series should put in initial or sequenceAlways")
     lastSeq=null
@@ -701,37 +699,40 @@ class Module
           @__assignInSequence=false
           @__sequenceAssignList=[]
           return @_sequence(name,bin)
-      posedge: (signal)=>
+      posedge: (signal,stepName=null)=>
         return (func)=>
           expr=@_rise(signal)
           @__assignInSequence=true
           @__sequenceAssignList=[]
           func()
-          bin.push({type:'posedge',id:_id('rise'),expr:expr,list:@__sequenceAssignList})
+          id = stepName ? _id('rise')
+          bin.push({type:'posedge',id:id,expr:expr,list:@__sequenceAssignList})
           @__assignInSequence=false
           @__sequenceAssignList=[]
           return @_sequence(name,bin)
-      negedge: (signal)=>
+      negedge: (signal,stepName=null)=>
         return (func)=>
           expr=@_fall(signal)
           active=@_localWire(1,'act')
           @__assignInSequence=true
           @__sequenceAssignList=[]
           func(active)
-          bin.push({type:'negedge',id:_id('fall'),expr:expr,list:@__sequenceAssignList,active:active})
+          id = stepName ? _id('fall')
+          bin.push({type:'negedge',id:id,expr:expr,list:@__sequenceAssignList,active:active})
           @__sequenceAssignList=[]
           @__assignInSequence=false
           return @_sequence(name,bin)
-      wait: (expr)=>
+      wait: (expr,stepName=null)=>
         return (func)=>
           @__assignInSequence=true
           @__sequenceAssignList=[]
           func()
-          bin.push({type:'wait',id:_id('wait'),expr:expr,list:@__sequenceAssignList})
+          id = stepName ? _id('wait')
+          bin.push({type:'wait',id:id,expr:expr,list:@__sequenceAssignList})
           @__assignInSequence=false
           @__sequenceAssignList=[]
           return @_sequence(name,bin)
-      next: (num=null)=>
+      next: (num=null,stepName=null)=>
         return (func)=>
           if num==null
             expr=null
@@ -742,7 +743,8 @@ class Module
           @__assignInSequence=true
           @__sequenceAssignList=[]
           func()
-          bin.push({type:'next',id:_id('next'),expr:expr,enable:enable,list:@__sequenceAssignList})
+          id = stepName ? _id('next')
+          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__sequenceAssignList})
           @__assignInSequence=false
           @__sequenceAssignList=[]
           return @_sequence(name,bin)
@@ -763,8 +765,7 @@ class Module
         finalJump.isLast=true
         bin.push(finalJump)
         saveData={name:name,bin:bin,stateReg:stateReg}
-        if _.isArray(@__sequenceBlock)
-          @__sequenceBlock.push saveData
+        @__sequenceBlock.push saveData
         for i in bin when i.type=='next' and i.enable?
           @_assign(i.enable) => stateReg.isState(i.id)
         for i,index in bin when i.active?

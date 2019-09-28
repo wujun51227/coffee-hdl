@@ -498,6 +498,21 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='initial'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_initial', {}]
+      ]
+      patchLength=findAlwaysBlock(tokens,i)
+      tokens.splice i, 1, list...
+      i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='sequence_series'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_series', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Mixin'
       list =[
         ['@', '@', {}]
@@ -520,6 +535,21 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='sequence_always'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_sequenceAlways', {}]
+      ]
+      patchLength=findAlwaysBlock(tokens,i)
+      tokens.splice i, 1, list...
+      i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_sequence', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if'
       list =[
         ['@', '@', {}]
