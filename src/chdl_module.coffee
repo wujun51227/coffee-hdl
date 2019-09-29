@@ -160,13 +160,11 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
-    @__sequenceAssignList=[]
     @__trigMap={}
     @__assignWidth=null
     @__updateWires=[]
     @__assignWaiting=false
-    @__assignInAlways=false
-    @__assignInSequence=false
+    @__assignEnv=null
     @__parentNode=null
     @__indent=0
     @__postProcess=[]
@@ -387,22 +385,22 @@ class Module
       i.channel.bindPort(this,i.portName)
 
   _always: (block)=>
-    @__assignInAlways=true
+    @__assignEnv = 'always'
     @__regAssignList=[]
     @__updateWires=[]
     block()
     @__alwaysList.push([@__regAssignList,@__updateWires])
-    @__assignInAlways=false
+    @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
 
   _passAlways: (block)=>
-    @__assignInAlways=true
+    @__assignEnv = 'always'
     @__regAssignList=[]
     @__updateWires=[]
     block()
     @__alwaysList.push([@__regAssignList,[]])
-    @__assignInAlways=false
+    @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
 
@@ -445,47 +443,26 @@ class Module
     return {
       _if: (cond)=>
         return (block)=>
-          if @__assignInAlways
-            @__regAssignList.push @_getSpace()+"if(#{cond.str}) begin"
-            @__indent+=1
-            block()
-            @__indent-=1
-            @__regAssignList.push @_getSpace()+"end"
-          else if @__assignInSequence
-            @__sequenceAssignList.push @_getSpace()+"if(#{cond.str}) begin"
-            @__indent+=1
-            block()
-            @__indent-=1
-            @__sequenceAssignList.push @_getSpace()+"end"
-          return @_regProcess()
-      _elseif: (cond)=>
-        return (block)=>
-          if @__assignInAlways
-            @__regAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
-            @__indent+=1
-            block()
-            @__indent-=1
-            @__regAssignList.push @_getSpace()+"end"
-          else if @__assignInSequence
-            @__sequenceAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
-            @__indent+=1
-            block()
-            @__indent-=1
-            @__sequenceAssignList.push @_getSpace()+"end"
-          return @_regProcess()
-      _else: (block)=>
-        if @__assignInAlways
-          @__regAssignList.push @_getSpace()+"else begin"
+          @__regAssignList.push @_getSpace()+"if(#{cond.str}) begin"
           @__indent+=1
           block()
           @__indent-=1
           @__regAssignList.push @_getSpace()+"end"
-        else if @__assignInSequence
-          @__sequenceAssignList.push @_getSpace()+"else begin"
+          return @_regProcess()
+      _elseif: (cond)=>
+        return (block)=>
+          @__regAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
           @__indent+=1
           block()
           @__indent-=1
-          @__sequenceAssignList.push @_getSpace()+"end"
+          @__regAssignList.push @_getSpace()+"end"
+          return @_regProcess()
+      _else: (block)=>
+        @__regAssignList.push @_getSpace()+"else begin"
+        @__indent+=1
+        block()
+        @__indent-=1
+        @__regAssignList.push @_getSpace()+"end"
         return @_regProcess()
       _endif: =>
     }
@@ -640,8 +617,7 @@ class Module
     if @__sequenceBlock==null
       throw new Error("Series should put in initial or sequenceAlways")
     lastSeq=null
-    for i,index in list
-      seq=i()
+    for seq,index in list
       if index>0
         if lastSeq?
           lastCond=_.last(lastSeq.bin)
@@ -658,6 +634,7 @@ class Module
           name: seq.name
           stateReg: seq.stateReg
           bin: [startCond,seq.bin...]
+          update: seq.update
         }
         if index==list.length-1
           lastBin=_.last(nextSeq.bin)
@@ -674,12 +651,12 @@ class Module
     return {
       delay: (delay) =>
         return (func)=>
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
+          @__assignEnv='always'
+          @__regAssignList=[]
           func()
-          bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__sequenceAssignList})
-          @__assignInSequence=false
-          @__sequenceAssignList=[]
+          bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__regAssignList})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       repeat: (num)=>
         repeatItem=_.last(bin)
@@ -692,45 +669,47 @@ class Module
         return @_sequence(name,bin)
       trigger: (signal)=>
         return (func)=>
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
+          @__assignEnv='always'
+          @__regAssignList=[]
           func()
-          bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__sequenceAssignList})
-          @__assignInSequence=false
-          @__sequenceAssignList=[]
+          bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       posedge: (signal,stepName=null)=>
         return (func)=>
           expr=@_rise(signal)
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
-          func()
+          active=@_localWire(1,'trans')
+          @__assignEnv='always'
+          @__regAssignList=[]
+          func(active)
           id = stepName ? _id('rise')
-          bin.push({type:'posedge',id:id,expr:expr,list:@__sequenceAssignList})
-          @__assignInSequence=false
-          @__sequenceAssignList=[]
+          bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,signal:signal})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       negedge: (signal,stepName=null)=>
         return (func)=>
           expr=@_fall(signal)
-          active=@_localWire(1,'act')
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
+          active=@_localWire(1,'trans')
+          @__assignEnv='always'
+          @__regAssignList=[]
           func(active)
           id = stepName ? _id('fall')
-          bin.push({type:'negedge',id:id,expr:expr,list:@__sequenceAssignList,active:active})
-          @__sequenceAssignList=[]
-          @__assignInSequence=false
+          bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,signal:signal})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       wait: (expr,stepName=null)=>
         return (func)=>
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
-          func()
+          @__assignEnv='always'
+          @__regAssignList=[]
+          active=@_localWire(1,'trans')
+          func(active)
           id = stepName ? _id('wait')
-          bin.push({type:'wait',id:id,expr:expr,list:@__sequenceAssignList})
-          @__assignInSequence=false
-          @__sequenceAssignList=[]
+          bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       next: (num=null,stepName=null)=>
         return (func)=>
@@ -739,14 +718,15 @@ class Module
             enable=null
           else
             enable=@_localWire(1,'enable')
-            expr=@_count(num,enable.getName())
-          @__assignInSequence=true
-          @__sequenceAssignList=[]
-          func()
+            expr=@_count(num,enable)
+          active=@_localWire(1,'trans')
+          @__assignEnv='always'
+          @__regAssignList=[]
+          func(active)
           id = stepName ? _id('next')
-          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__sequenceAssignList})
-          @__assignInSequence=false
-          @__sequenceAssignList=[]
+          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active})
+          @__assignEnv=null
+          @__regAssignList=[]
           return @_sequence(name,bin)
       end: ()=>
         stateNum=1
@@ -764,20 +744,19 @@ class Module
         finalJump.list=[]
         finalJump.isLast=true
         bin.push(finalJump)
-        saveData={name:name,bin:bin,stateReg:stateReg}
+        saveData={name:name,bin:bin,stateReg:stateReg,update:_.clone(@__updateWires)}
+        @__updateWires=[]
         @__sequenceBlock.push saveData
+        @_assign(lastStateReg) => stateReg.getName()
         for i in bin when i.type=='next' and i.enable?
           @_assign(i.enable) => stateReg.isState(i.id)
-        for i,index in bin when i.active?
+        for i,index in bin when i.active? and index>0
           @_assign(i.active) => stateReg.isState(i.id) && lastStateReg.isState(bin[index-1].id)
         return saveData
     }
 
   verilog: (s)->
-    if @__assignInSequence
-      @__sequenceAssignList.push s
-    else
-      @__regAssignList.push s
+    @__regAssignList.push s
 
   _clean: ->
     keys=Object.keys(@__signature)

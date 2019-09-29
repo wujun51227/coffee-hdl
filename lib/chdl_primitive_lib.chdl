@@ -219,14 +219,12 @@ module.exports={
 
   $rise: (sig)->
     d1 = local_reg(1,'r_'+sig.getName())
-    pass_always
-      assign(d1) = $ sig
+    assign(d1) = $ sig
     return $ (sig & (!d1))
 
   $fall: (sig)->
     d1 = local_reg(1,'f_'+sig.getName())
-    pass_always
-      assign(d1) = $ sig
+    assign(d1) = $ sig
     return $ ((!sig) & d1)
 
   $divider: (clk,n)->

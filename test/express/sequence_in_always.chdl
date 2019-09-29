@@ -12,6 +12,13 @@ class SequenceInAlways extends Module
 
     Reg(
       aa: reg()
+      xx: reg()
+    )
+
+    Wire(
+      bb: wire()
+      addr1: wire()
+      addr2: wire()
     )
 
   build: ->
@@ -28,14 +35,15 @@ class SequenceInAlways extends Module
           $endif
         .wait($(@sel==1),'final') =>
           assign(@aa) = $ @out2
+          assign(@bb) = $ 1
         .end()
 
-    read= =>
+    read= (xx)=>
       $sequence('read')
         .posedge(@sel) =>
-          assign(@aa) = $ @out1
+          assign(xx) = $ @out1
         .wait($(@sel==1)) =>
-          assign(@aa) = $ @out2
+          assign(xx) = $ @out2
         .end()
 
     #write()
@@ -61,7 +69,7 @@ class SequenceInAlways extends Module
     #  .end()
 
     sequence_always =>
-      sequence_series(write,read,read)
+      sequence_series(write(),read(@addr1),read(@addr2))
       #write()
       #@series(write,read,read)
       #@series('write','read')

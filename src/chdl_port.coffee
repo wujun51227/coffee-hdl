@@ -67,7 +67,7 @@ class Port extends Wire
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     ElementSets.clear()
-    if @cell.__assignInAlways
+    if @cell.__assignEnv=='always'
       if @staticAssign
         throw new Error("This wire have been static assigned")
       else if @firstCondAssign and !@isReg

@@ -198,6 +198,7 @@ code_gen= (inst)=>
     for seqBlock in seqBlockList
       printBuffer.blank("//sequence #{seqBlock.name}")
       stateReg=seqBlock.stateReg
+      updateWires=seqBlock.update
       printBuffer.add "always_combo begin"
       printBuffer.add "  _#{stateReg.getName()}=#{stateReg.getName()}"
       for i,index in seqBlock.bin
@@ -229,6 +230,14 @@ code_gen= (inst)=>
           printBuffer.add "  end"
       printBuffer.add "end"
       printBuffer.add "always_combo begin"
+      for i in _.uniqBy(updateWires,(n)=>n.name)
+        if i.type=='reg'
+          printBuffer.add '  _'+i.name+'='+i.name+';'
+        if i.type=='wire'
+          if i.pending==null
+            printBuffer.add '  _'+i.name+'=0;'
+          else
+            printBuffer.add '  _'+i.name+'='+i.pending+';'
       for i,index in seqBlock.bin when i.list.length>0
         printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
         for state in i.list

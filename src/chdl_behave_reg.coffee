@@ -117,9 +117,9 @@ class BehaveReg extends Reg
       delay = "##{@assignDelay}"
     else
       delay = ""
-    if @cell.__assignInSequence
+    if @cell.__assignEnv=='sequence'
       @cell.__sequenceAssignList.push @getSpace()+"#{@refName()} = #{delay} #{assignFunc()};"
-    else if @cell.__assignInAlways
+    else if @cell.__assignEnv=='always'
       @cell.__pureAlwaysList.push @getSpace()+"#{delay} #{@refName()} = #{assignFunc()};"
     else
       @cell.__wireAssignList.push "assign #{@refName()} = #{delay} #{assignFunc()};"
