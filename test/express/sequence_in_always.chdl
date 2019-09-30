@@ -25,21 +25,27 @@ class SequenceInAlways extends Module
 
     write= =>
       $sequence('writeSeq')
+        .idle =>
+          assign(@aa) = $ 890
         .posedge(@sel,'wait_aa') =>
           assign(@aa) = $ @out1
         .next(5,'count5') =>
           assign(@aa) = $ @out1+1
-        .negedge(@sel1,'wait_sel1_fall') (transition)=>
+        .negedge(@sel1,'wait_sel1_fall') (transition,next)=>
           $if(transition) => assign(@aa) = $ @out2
+          $elseif(next) => assign(@aa) = $ @out2-123
           $else => assign(@aa) = $ 100
           $endif
-        .wait($(@sel==1),'final') =>
+        .wait($(@sel==1),'final') (trans,next)=>
           assign(@aa) = $ @out2
-          assign(@bb) = $ 1
+          $if(next)
+            assign(@bb) = $ 1
+          $endif
         .end()
 
     read= (xx)=>
       $sequence('read')
+        .idle =>
         .posedge(@sel) =>
           assign(xx) = $ @out1
         .wait($(@sel==1)) =>
@@ -69,7 +75,8 @@ class SequenceInAlways extends Module
     #  .end()
 
     sequence_always =>
-      sequence_series(write(),read(@addr1),read(@addr2))
+      #write()
+      sequence_series(write(),read(@addr1))
       #write()
       #@series(write,read,read)
       #@series('write','read')

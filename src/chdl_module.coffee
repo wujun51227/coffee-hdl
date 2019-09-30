@@ -616,39 +616,41 @@ class Module
   _series: (list...)->
     if @__sequenceBlock==null
       throw new Error("Series should put in initial or sequenceAlways")
-    lastSeq=null
     for seq,index in list
-      if index>0
-        if lastSeq?
-          lastCond=_.last(lastSeq.bin)
-          lastCond.expr= seq.stateReg.isNthState(0)
-          lastCond.id= 'idle'
+      if index!=list.length-1
+        lastBin=_.last(seq.bin)
+        lastBin.id='idle'
+        lastBin.isLast=false
+        lastBin.expr=list[index+1].stateReg.isState('idle')
+      else
+        lastBin=_.last(seq.bin)
+        lastBin.id='idle'
+        lastBin.type='next'
+        lastBin.expr=null
 
+      if index!=0
         startCond={
           type:'wait'
           id:_id('wait')
-          expr:lastSeq.stateReg.isLastState()
+          expr:list[index-1].stateReg.isLastState()
           list: []
         }
-        nextSeq={
-          name: seq.name
-          stateReg: seq.stateReg
-          bin: [startCond,seq.bin...]
-          update: seq.update
-        }
-        if index==list.length-1
-          lastBin=_.last(nextSeq.bin)
-          lastBin.id='idle'
-          lastBin.type='next'
-          lastBin.expr=null
-        @__sequenceBlock.pop()
-        @__sequenceBlock.push(nextSeq)
-      lastSeq=seq
+        seq.bin=[seq.bin[0],startCond,seq.bin[1...]...]
+
 
   _sequence: (name,bin=[])->
     if @__sequenceBlock==null
       throw new Error("Sequence only can run in initial or always")
     return {
+      idle: (func)=>
+        next=@_localWire(1,'next')
+        @__assignEnv='always'
+        @__regAssignList=[]
+        func(next)
+        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
+        @__assignEnv=null
+        @__regAssignList=[]
+        return @_sequence(name,bin)
       delay: (delay) =>
         return (func)=>
           @__assignEnv='always'
@@ -680,11 +682,12 @@ class Module
         return (func)=>
           expr=@_rise(signal)
           active=@_localWire(1,'trans')
+          next=@_localWire(1,'next')
           @__assignEnv='always'
           @__regAssignList=[]
-          func(active)
+          func(active,next)
           id = stepName ? _id('rise')
-          bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,signal:signal})
+          bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
           @__assignEnv=null
           @__regAssignList=[]
           return @_sequence(name,bin)
@@ -692,11 +695,12 @@ class Module
         return (func)=>
           expr=@_fall(signal)
           active=@_localWire(1,'trans')
+          next=@_localWire(1,'next')
           @__assignEnv='always'
           @__regAssignList=[]
-          func(active)
+          func(active,next)
           id = stepName ? _id('fall')
-          bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,signal:signal})
+          bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
           @__assignEnv=null
           @__regAssignList=[]
           return @_sequence(name,bin)
@@ -705,9 +709,10 @@ class Module
           @__assignEnv='always'
           @__regAssignList=[]
           active=@_localWire(1,'trans')
-          func(active)
+          next=@_localWire(1,'next')
+          func(active,next)
           id = stepName ? _id('wait')
-          bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active})
+          bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next})
           @__assignEnv=null
           @__regAssignList=[]
           return @_sequence(name,bin)
@@ -720,38 +725,52 @@ class Module
             enable=@_localWire(1,'enable')
             expr=@_count(num,enable)
           active=@_localWire(1,'trans')
+          next=@_localWire(1,'next')
           @__assignEnv='always'
           @__regAssignList=[]
-          func(active)
-          id = stepName ? _id('next')
-          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active})
+          func(active,next)
+          id = stepName ? _id('next_cycle')
+          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next})
           @__assignEnv=null
           @__regAssignList=[]
           return @_sequence(name,bin)
       end: ()=>
-        stateNum=1
+        stateNum=0
         for i in bin
           stateNum+=1
         bitWidth=Math.floor(Math.log2(stateNum))+1
         stateReg=@_localReg(bitWidth,name)
+        nextState=@_localWire(bitWidth,name+'_next')
         lastStateReg=@_localReg(bitWidth,name+'_last')
-        stateNameList=['idle']
+        stateNameList=[]
         for i in bin
           stateNameList.push(i.id)
         stateReg.stateDef(stateNameList)
         lastStateReg.stateDef(stateNameList)
-        finalJump=_.clone(bin[0])
+
+        finalJump=_.clone(bin[1])
         finalJump.list=[]
         finalJump.isLast=true
+        finalJump.next=null
         bin.push(finalJump)
-        saveData={name:name,bin:bin,stateReg:stateReg,update:_.clone(@__updateWires)}
+        saveData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
         @__updateWires=[]
         @__sequenceBlock.push saveData
+        @_assign(stateReg) => nextState.getName()
         @_assign(lastStateReg) => stateReg.getName()
         for i in bin when i.type=='next' and i.enable?
           @_assign(i.enable) => stateReg.isState(i.id)
         for i,index in bin when i.active? and index>0
-          @_assign(i.active) => stateReg.isState(i.id) && lastStateReg.isState(bin[index-1].id)
+          @_assign(i.active) => "(#{stateReg.isState(i.id)})&&(#{lastStateReg.isState(bin[index-1].id)})"
+        cache={}
+        for i,index in bin when i.next?
+          expr="(#{stateReg.getState(bin[index+1].id)}==#{nextState.getName()})"
+          if cache[expr]?
+            @_assign(i.next) => cache[expr]
+          else
+            @_assign(i.next) => expr
+            cache[expr]=i.next.getName()
+
         return saveData
     }
 

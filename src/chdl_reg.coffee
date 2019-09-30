@@ -323,6 +323,11 @@ class Reg extends CircuitEl
     item=@states[n]
     "#{@refName()}==#{@elName+'__'+item.state}"
 
+  getNthState: (n)=>
+    throw new Error("index #{n} is not valid") if n>=@states.length or n<0
+    item=@states[n]
+    @elName+'__'+item.state
+
   isLastState: ()=>
     item=_.last(@states)
     "#{@refName()}==#{@elName+'__'+item.state}"

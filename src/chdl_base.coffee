@@ -198,10 +198,12 @@ code_gen= (inst)=>
     for seqBlock in seqBlockList
       printBuffer.blank("//sequence #{seqBlock.name}")
       stateReg=seqBlock.stateReg
+      nextState=seqBlock.nextState
       updateWires=seqBlock.update
       printBuffer.add "always_combo begin"
-      printBuffer.add "  _#{stateReg.getName()}=#{stateReg.getName()}"
+      printBuffer.add "  #{nextState.getName()}=#{stateReg.getName()}"
       for i,index in seqBlock.bin
+        console.log i.isLast,i.type
         if index==0
           lastState=stateReg.getState('idle')
           lastBin=null
@@ -212,20 +214,20 @@ code_gen= (inst)=>
         if i.type=='next'
           printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
           if i.expr==null
-            printBuffer.add "    _#{stateReg.getName()}=#{currentState};"
+            printBuffer.add "    #{nextState.getName()}=#{currentState};"
           else
             printBuffer.add "    if(#{i.expr}) begin"
-            printBuffer.add "      _#{stateReg.getName()}=#{currentState};"
+            printBuffer.add "      #{nextState.getName()}=#{currentState};"
             printBuffer.add "    end"
           printBuffer.add "  end"
         else if i.type=='posedge' or i.type=='negedge' or i.type=='wait'
           printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
           printBuffer.add "    if(#{i.expr}) begin"
-          printBuffer.add "      _#{stateReg.getName()}=#{currentState};"
+          printBuffer.add "      #{nextState.getName()}=#{currentState};"
           printBuffer.add "    end"
           if i.isLast
             printBuffer.add "    else begin"
-            printBuffer.add "      _#{stateReg.getName()}=#{stateReg.getState('idle')};"
+            printBuffer.add "      #{nextState.getName()}=#{stateReg.getState('idle')};"
             printBuffer.add "    end"
           printBuffer.add "  end"
       printBuffer.add "end"
