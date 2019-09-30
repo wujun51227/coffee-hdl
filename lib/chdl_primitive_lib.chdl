@@ -201,7 +201,7 @@ module.exports={
     gray_code=new Array(width-1)
     for i in [0...width-1]
       gray_code[i]=$ w(i+1) ^ w(i)
-    return $ cat(w(width-1),gray_code.reverse()...)
+    return $ cat(w.fromMsb(1),gray_code.reverse()...)
 
   $arrayMuxSet: (array,select,din)->
     len=array.length
@@ -247,5 +247,43 @@ module.exports={
       $else => $ 0
       $endif
     return  $ cnt=={n-1}
+
+  $hold1: (sig,clear)->
+    out = local_wire(1,'hold')
+    latch = local_reg(1,'hold')
+    assign(out) = $ sig | latch
+    always
+      $if(clear)
+        assign(latch) = $ 0
+      $elseif(sig==1)
+        assign(latch) = $ 1
+      $endif
+    return  $ out
+
+  $hold0: (sig,clear)->
+    out = local_wire(1,'hold')
+    latch = local_reg(1,'hold')
+    assign(out) = $ sig & latch
+    always
+      $if(clear)
+        assign(latch) = $ 1
+      $elseif(sig==0)
+        assign(latch) = $ 0
+      $endif
+    return  $ out
+
+  $holdData: (sig,enable)->
+    out = local_wire(sig.getWidth(),'hold')
+    latch = local_reg(sig.getWidth(),'hold')
+    assign(out)
+      $if(enable) => $ sig
+      $else => $ latch
+      $endif
+
+    always
+      $if(enable)
+        assign(latch) = $ sig
+      $endif
+    return  $ out
 
 }
