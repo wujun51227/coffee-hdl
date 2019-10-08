@@ -21,10 +21,12 @@ class Vec extends CircuitEl
     else if _.isFunction(n)
       reg=Reg.create(@width)
       reg.link(@cell, @elName+'['+n().elName+']')
+      reg.setMem()
       return packEl('reg',reg)
     else
       reg=Reg.create(@width)
       reg.link(@cell, @elName+'['+n.elName+']')
+      reg.setMem()
       return packEl('reg',reg)
 
   link: (cell,name)->
