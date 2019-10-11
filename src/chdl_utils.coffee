@@ -295,7 +295,7 @@ getValue=(i)=>
     return i.refName()
   if i.constructor?.name=='Reg'
     return i.refName()
-  if i.constructor?.name=='BehaveReg'
+  if i.constructor?.name=='Vreg'
     return i.refName()
   if _.isFunction(i)
     return i().refName()
@@ -315,8 +315,13 @@ module.exports.cat= (args...)->
 module.exports.expand= (num,sig)->
   return "{#{getValue(num)}{#{getValue(sig)}}}"
 
-module.exports._expr= (s) ->
+module.exports._expr= (s,lineno=null) ->
+  append=''
+  if lineno? and lineno>=0
+    append='/*'+lineno+'*/'
   if s.str?
-    s.str
-  else
+    s.str+append
+  else if _.isArray(s)
     s
+  else
+    s+append

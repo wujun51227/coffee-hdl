@@ -142,7 +142,7 @@ class Module
 
     @__alwaysList     =  []
     @__sequenceAlwaysList     =  []
-    @__pureAlwaysList     =  []
+    @__foreverList     =  []
     @__regs           =  {}
     @__wires          =  {}
     @__local_wires      =  []
@@ -152,6 +152,7 @@ class Module
     @__ports          =  {}
     @__wireAssignList =  []
     @__initialList=[]
+    @__initialMode=false
     @__sequenceBlock=null
     @__cells      =[]
 
@@ -384,27 +385,27 @@ class Module
       #log 'elaboration bind',this.constructor.name,i.portName
       i.channel.bindPort(this,i.portName)
 
-  _always: (block)=>
+  _always: (lineno,block)=>
     @__assignEnv = 'always'
     @__regAssignList=[]
     @__updateWires=[]
     block()
-    @__alwaysList.push([@__regAssignList,@__updateWires])
+    @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
     @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
 
-  _passAlways: (block)=>
+  _passAlways: (lineno,block)=>
     @__assignEnv = 'always'
     @__regAssignList=[]
     @__updateWires=[]
     block()
-    @__alwaysList.push([@__regAssignList,[]])
+    @__alwaysList.push([@__regAssignList,[],lineno])
     @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
 
-  _sequenceAlways: (block)=>
+  _sequenceAlways: (lineno,block)=>
     @__regAssignList=[]
     @__updateWires=[]
     @__sequenceBlock=[]
@@ -413,7 +414,7 @@ class Module
       for i in seqList.bin
         if i.type=='delay' or i.type=='trigger' or i.type=='event' or i.type=='repeat'
           throw new Error("Can not use delay in always sequence")
-    @__sequenceAlwaysList.push(@__sequenceBlock)
+    @__sequenceAlwaysList.push([@__sequenceBlock,lineno])
     @__sequenceBlock=null
     @__updateWires=[]
     @__regAssignList=[]
@@ -440,60 +441,69 @@ class Module
       return ''
 
   _regProcess: ()=>
+    self=this
     return {
-      _if: (cond)=>
+      _if: (cond,lineno)=>
         return (block)=>
-          @__regAssignList.push @_getSpace()+"if(#{cond.str}) begin"
+          @__regAssignList.push ["if","#{cond.str}",lineno]
           @__indent+=1
           block()
           @__indent-=1
-          @__regAssignList.push @_getSpace()+"end"
+          @__regAssignList.push ["end"]
           return @_regProcess()
-      _elseif: (cond)=>
+      _elseif: (cond,lineno=-1)=>
         return (block)=>
-          @__regAssignList.push @_getSpace()+"else if(#{cond.str}) begin"
+          @__regAssignList.push ["elseif","#{cond.str}",lineno]
           @__indent+=1
           block()
           @__indent-=1
-          @__regAssignList.push @_getSpace()+"end"
+          @__regAssignList.push ["end"]
           return @_regProcess()
-      _else: (block)=>
-        @__regAssignList.push @_getSpace()+"else begin"
-        @__indent+=1
-        block()
-        @__indent-=1
-        @__regAssignList.push @_getSpace()+"end"
-        return @_regProcess()
+      _else: (lineno)=>
+        return (block)=>
+          @__regAssignList.push ["else",lineno]
+          @__indent+=1
+          block()
+          @__indent-=1
+          @__regAssignList.push ["end"]
+          return @_regProcess()
       _endif: =>
     }
 
-  _cond: (cond)=>
-    return (block)=> {cond:cond.str,value:block()}
+  _cond: (cond,lineno=-1)=>
+    return (block)=> {cond:cond.str,value:block(),lineno:lineno}
 
-  _wireProcess: (list=[])=>
+  _wireProcess: (list=[],lineno)=>
     return {
-      _if: (cond)=>
+      _if: (cond,lineno)=>
         return (block)=>
-          list.push {cond: cond.str, value: block()}
+          list.push {cond: cond.str, value: block(),lineno:lineno}
           return @_wireProcess(list)
-      _elseif: (cond)=>
+      _elseif: (cond,lineno)=>
         return (block)=>
-          list.push {cond: cond.str, value: block()}
+          list.push {cond: cond.str, value: block(),lineno:lineno}
           return @_wireProcess(list)
-      _else: (block)=>
-        list.push {cond: null, value: block()}
-        return @_wireProcess(list)
-      #_endif: (parallel=false,width=1)=>
+      _else: (lineno)=>
+        return (block)=>
+          list.push {cond: null, value: block(),lineno:lineno}
+          return @_wireProcess(list)
       _endif: ()=>
-        str=''
-        for item,index in list
-          if index==0
-            str="(#{item.cond})?#{item.value}:"
-          else if item.cond?
-            str+="(#{item.cond})?#{item.value}:"
-          else
-            str+="#{item.value}"
-        return str
+        if _.last(list).cond!=null
+          throw new Error("Please set default value for condition assign")
+        return list
+        #str=''
+        #for item,index in list
+        #  if item.lineno>=0
+        #    anno="/*#{item.lineno}*/"
+        #  else
+        #    anno=""
+        #  if index==0
+        #    str="(#{item.cond}#{anno})?#{item.value}:"
+        #  else if item.cond?
+        #    str+="(#{item.cond}#{anno})?#{item.value}:"
+        #  else
+        #    str+="#{item.value}#{anno}"
+        #return str
     }
 
   _reduce: (list,func)=>
@@ -520,11 +530,11 @@ class Module
       out= func(out,i,first,last)
     return out
 
-  _if: (cond)->
+  _if: (cond,lineno=-1)->
     if @__assignWaiting
-      return @_wireProcess()._if(cond)
+      return @_wireProcess()._if(cond,lineno)
     else
-      return @_regProcess()._if(cond)
+      return @_regProcess()._if(cond,lineno)
 
   _pinConnect: ->
     out=[]
@@ -607,10 +617,20 @@ class Module
     @__local_regs.push(ret)
     return ret
 
-  _initial: (block)->
+  _initial: (lineno,block)->
     @__sequenceBlock=[]
+    @__initialMode=true
     block()
     @__initialList.push(@__sequenceBlock)
+    @__initialMode=false
+    @__sequenceBlock=null
+
+  _forever: (lineno,block)->
+    @__sequenceBlock=[]
+    @__initialMode=true
+    block()
+    @__foreverList.push(@__sequenceBlock)
+    @__initialMode=false
     @__sequenceBlock=null
 
   _series: (list...)->
@@ -637,12 +657,20 @@ class Module
         }
         seq.bin=[seq.bin[0],startCond,seq.bin[1...]...]
 
-
-  _sequence: (name,bin=[])->
+  _sequenceDef: (name='sequence')=>
     if @__sequenceBlock==null
       throw new Error("Sequence only can run in initial or always")
-    return {
-      idle: (func)=>
+
+    bin=[]
+    return (func)=>
+      if @__initialMode
+        @__assignEnv='always'
+        @__regAssignList=[]
+        func()
+        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
+        @__assignEnv=null
+        @__regAssignList=[]
+      else
         next=@_localWire(1,'next')
         @__assignEnv='always'
         @__regAssignList=[]
@@ -650,10 +678,31 @@ class Module
         bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
         @__assignEnv=null
         @__regAssignList=[]
-        return @_sequence(name,bin)
+      @_sequence(_id(name+'_'),bin)
+
+  _sequence: (name,bin=[])->
+    env='always'
+    return {
+      #idle: (func)=>
+      #  if @__initialMode
+      #    @__assignEnv=env
+      #    @__regAssignList=[]
+      #    func()
+      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
+      #    @__assignEnv=null
+      #    @__regAssignList=[]
+      #  else
+      #    next=@_localWire(1,'next')
+      #    @__assignEnv=env
+      #    @__regAssignList=[]
+      #    func(next)
+      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
+      #    @__assignEnv=null
+      #    @__regAssignList=[]
+      #  return @_sequence(name,bin)
       delay: (delay) =>
         return (func)=>
-          @__assignEnv='always'
+          @__assignEnv=env
           @__regAssignList=[]
           func()
           bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__regAssignList})
@@ -671,7 +720,7 @@ class Module
         return @_sequence(name,bin)
       trigger: (signal)=>
         return (func)=>
-          @__assignEnv='always'
+          @__assignEnv=env
           @__regAssignList=[]
           func()
           bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
@@ -680,102 +729,138 @@ class Module
           return @_sequence(name,bin)
       posedge: (signal,stepName=null)=>
         return (func)=>
-          expr=@_rise(signal)
-          active=@_localWire(1,'trans')
-          next=@_localWire(1,'next')
-          @__assignEnv='always'
-          @__regAssignList=[]
-          func(active,next)
-          id = stepName ? _id('rise')
-          bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
-          @__assignEnv=null
-          @__regAssignList=[]
+          if @__initialMode
+            @__assignEnv=env
+            @__regAssignList=[]
+            func()
+            id = stepName ? _id('rise')
+            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            @__assignEnv=null
+            @__regAssignList=[]
+          else
+            expr=@_rise(signal)
+            active=@_localWire(1,'trans')
+            next=@_localWire(1,'next')
+            @__assignEnv=env
+            @__regAssignList=[]
+            func(active,next)
+            id = stepName ? _id('rise')
+            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            @__assignEnv=null
+            @__regAssignList=[]
           return @_sequence(name,bin)
       negedge: (signal,stepName=null)=>
         return (func)=>
-          expr=@_fall(signal)
-          active=@_localWire(1,'trans')
-          next=@_localWire(1,'next')
-          @__assignEnv='always'
-          @__regAssignList=[]
-          func(active,next)
-          id = stepName ? _id('fall')
-          bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
-          @__assignEnv=null
-          @__regAssignList=[]
+          if @__initialMode
+            @__assignEnv=env
+            @__regAssignList=[]
+            func()
+            id = stepName ? _id('fall')
+            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            @__assignEnv=null
+            @__regAssignList=[]
+          else
+            expr=@_fall(signal)
+            active=@_localWire(1,'trans')
+            next=@_localWire(1,'next')
+            @__assignEnv=env
+            @__regAssignList=[]
+            func(active,next)
+            id = stepName ? _id('fall')
+            bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            @__assignEnv=null
+            @__regAssignList=[]
           return @_sequence(name,bin)
       wait: (expr,stepName=null)=>
         return (func)=>
-          @__assignEnv='always'
-          @__regAssignList=[]
-          active=@_localWire(1,'trans')
-          next=@_localWire(1,'next')
-          func(active,next)
-          id = stepName ? _id('wait')
-          bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next})
-          @__assignEnv=null
-          @__regAssignList=[]
+          if @__initialMode
+            @__assignEnv=env
+            @__regAssignList=[]
+            func()
+            id = stepName ? _id('wait')
+            bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:null,next:null})
+            @__assignEnv=null
+            @__regAssignList=[]
+          else
+            @__assignEnv=env
+            @__regAssignList=[]
+            active=@_localWire(1,'trans')
+            next=@_localWire(1,'next')
+            func(active,next)
+            id = stepName ? _id('wait')
+            bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next})
+            @__assignEnv=null
+            @__regAssignList=[]
           return @_sequence(name,bin)
-      next: (num=null,stepName=null)=>
+      next: (num=null,signal=null,stepName=null)=>
         return (func)=>
-          if num==null
-            expr=null
-            enable=null
+          if @__initialMode
+            throw new Error("next not supported in initial")
           else
-            enable=@_localWire(1,'enable')
-            expr=@_count(num,enable)
-          active=@_localWire(1,'trans')
-          next=@_localWire(1,'next')
-          @__assignEnv='always'
-          @__regAssignList=[]
-          func(active,next)
-          id = stepName ? _id('next_cycle')
-          bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next})
-          @__assignEnv=null
-          @__regAssignList=[]
-          return @_sequence(name,bin)
+            if num==null
+              expr=null
+              enable=null
+            else
+              enable=@_localWire(1,'enable')
+              expr=@_count(num,enable)
+            active=@_localWire(1,'trans')
+            next=@_localWire(1,'next')
+            @__assignEnv=env
+            @__regAssignList=[]
+            func(active,next)
+            id = stepName ? _id('next_cycle')
+            bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next})
+            @__assignEnv=null
+            @__regAssignList=[]
+            return @_sequence(name,bin)
       end: ()=>
-        stateNum=0
-        for i in bin
-          stateNum+=1
-        bitWidth=Math.floor(Math.log2(stateNum))+1
-        stateReg=@_localReg(bitWidth,name)
-        nextState=@_localWire(bitWidth,name+'_next')
-        lastStateReg=@_localReg(bitWidth,name+'_last')
-        stateNameList=[]
-        for i in bin
-          stateNameList.push(i.id)
-        stateReg.stateDef(stateNameList)
-        lastStateReg.stateDef(stateNameList)
+        if @__initialMode
+          saveData={name:name,bin:bin,stateReg:null,update:@__updateWires,nextState:null}
+          @__sequenceBlock.push saveData
+          @__updateWires=[]
+        else
+          stateNum=0
+          for i in bin
+            stateNum+=1
+          bitWidth=Math.floor(Math.log2(stateNum))+1
+          stateReg=@_localReg(bitWidth,name)
+          nextState=@_localWire(bitWidth,name+'_next')
+          lastStateReg=@_localReg(bitWidth,name+'_last')
+          stateNameList=[]
+          for i in bin
+            stateNameList.push(i.id)
+          stateReg.stateDef(stateNameList)
+          lastStateReg.stateDef(stateNameList)
 
-        finalJump=_.clone(bin[1])
-        finalJump.list=[]
-        finalJump.isLast=true
-        finalJump.next=null
-        bin.push(finalJump)
-        saveData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
-        @__updateWires=[]
-        @__sequenceBlock.push saveData
-        @_assign(stateReg) => nextState.getName()
-        @_assign(lastStateReg) => stateReg.getName()
-        for i in bin when i.type=='next' and i.enable?
-          @_assign(i.enable) => stateReg.isState(i.id)
-        for i,index in bin when i.active? and index>0
-          @_assign(i.active) => "(#{stateReg.isState(i.id)})&&(#{lastStateReg.isState(bin[index-1].id)})"
-        cache={}
-        for i,index in bin when i.next?
-          expr="(#{stateReg.getState(bin[index+1].id)}==#{nextState.getName()})"
-          if cache[expr]?
-            @_assign(i.next) => cache[expr]
-          else
-            @_assign(i.next) => expr
-            cache[expr]=i.next.getName()
+          finalJump=_.clone(bin[1])
+          finalJump.list=[]
+          finalJump.isLast=true
+          finalJump.next=null
+          bin.push(finalJump)
+
+          saveData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
+          @__sequenceBlock.push saveData
+          @__updateWires=[]
+          @_assign(stateReg) => nextState.getName()
+          @_assign(lastStateReg) => stateReg.getName()
+          for i in bin when i.type=='next' and i.enable?
+            @_assign(i.enable) => stateReg.isState(i.id)
+          for i,index in bin when i.active? and index>0
+            @_assign(i.active) => "(#{stateReg.isState(i.id)})&&(#{lastStateReg.isState(bin[index-1].id)})"
+          cache={}
+          for i,index in bin when i.next?
+            expr="(#{stateReg.getState(bin[index+1].id)}==#{nextState.getName()})"
+            if cache[expr]?
+              @_assign(i.next) => cache[expr]
+            else
+              @_assign(i.next) => expr
+              cache[expr]=i.next.getName()
 
         return saveData
     }
 
   verilog: (s)->
-    @__regAssignList.push s
+    @__regAssignList.push ['verilog',s]
 
   _clean: ->
     keys=Object.keys(@__signature)
@@ -792,7 +877,8 @@ class Module
       list.push(cell.__instName)
       @__getPath(cell.__parentNode,list)
 
-  _assign: (signal)=>
+  _assign: (signal,lineno=-1)=>
+    self=this
     if _.isPlainObject(signal) or _.isArray(signal)
       return (block)=>
         if _.isFunction(block)
@@ -804,21 +890,21 @@ class Module
           el=_.get(signal,path)
           if el?
             if _.isFunction(item)
-              el.assign(item)
+              el.assign(item,lineno)
             else
-              el.assign(->item)
+              el.assign((->item),lineno)
     else if _.isFunction(signal)
       return (block)->
         if _.isFunction(block)
-          signal().assign(block)
+          signal().assign(block,lineno)
         else
-          signal().assign(->block)
+          signal().assign((->block),lineno)
     else
       return (block)->
         if _.isFunction(block)
-          signal.assign(block)
+          signal.assign(block,lineno)
         else
-          signal.assign(->block)
+          signal.assign((->block),lineno)
 
   __parameterDeclare: ->
     out=''
@@ -826,5 +912,5 @@ class Module
       for i in @__moduleParameter
         out+="parameter #{i.key} = #{i.value};\n"
     return out
-      
+
 module.exports=Module

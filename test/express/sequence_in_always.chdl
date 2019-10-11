@@ -24,8 +24,7 @@ class SequenceInAlways extends Module
   build: ->
 
     write= =>
-      $sequence('writeSeq')
-        .idle =>
+      $sequence('writeSeq') =>
           assign(@aa) = $ 890
         .posedge(@sel,'wait_aa') =>
           assign(@aa) = $ @out1
@@ -44,8 +43,7 @@ class SequenceInAlways extends Module
         .end()
 
     read= (xx)=>
-      $sequence('read')
-        .idle =>
+      $sequence('read') =>
         .posedge(@sel) =>
           assign(xx) = $ @out1
         .wait($(@sel==1)) =>
@@ -74,12 +72,15 @@ class SequenceInAlways extends Module
     #    assign(@aa) = $ @out2
     #  .end()
 
-    sequence_always =>
+    sequence_always
       #write()
       sequence_series(write(),read(@addr1))
       #write()
       #@series(write,read,read)
       #@series('write','read')
+
+    sequence_always
+      write()
 
 module.exports=SequenceInAlways
 

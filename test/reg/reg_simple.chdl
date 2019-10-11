@@ -42,8 +42,14 @@ class RegSimple extends Module
       assign(@ff5)
         $if(@ff2)
           $ @aa.bb.asreg
+        $elseif(@ff3)
+          $if(@ff4)
+            $ @aa.bb.asreg+1
+          $else
+            $ 32\h123
+          $endif
         $else
-          $ @aa.bb.asreg+1
+          $ 32\h456
         $endif
 
 module.exports=RegSimple

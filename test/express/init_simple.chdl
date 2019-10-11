@@ -4,67 +4,58 @@ class InitSimple extends Module
     Port(
       out: input(5)
       sel: input()
+      sel1: input()
       out1: input()
       out2: input()
       out3: input()
     )
 
     Reg(
-      aa: behave_reg()
+      aa: vreg()
+      cc: vreg()
     )
 
   build: ->
     @aa.delay(10)
 
-    always
-      assign(@aa) = $ !@aa
-
-    write=(addr,data)=>
-      @_sequence('do_write')
-      .posedge(@sel,()=>
-        assign(@aa) = $ @out1
-      )
-      .negedge(@sel,()=>
-        assign(@aa) = $ @out2
-      )
-      .wait($(@sel==1),()=>
-        assign(@aa) = $ @out2
-      ).end()
-
-    a=@_sequence('delay')
-      .delay(null,()=>
-        @verilog("aaaa")
-        assign(@aa) = $ 1
-      )
-      .delay(10,()=>
-        assign(@aa) = $ 1
-      )
-      .delay(10,()=>
-        assign(@aa) = $ 1
-      )
-      .event('hello')
+    forever
+      $sequence() =>
+      .delay(10) =>
+        assign(@cc) = $ !@cc
       .end()
 
-    b=@_sequence('write')
-      .posedge(@sel,()=>
-        assign(@aa) = $ @out1
-      )
-      .negedge(@sel,()=>
-        assign(@aa) = $ @out2
-      )
-      .negedge(@sel,()=>
-      )
-      .repeat(10)
-      .trigger('hello',()=>
-        assign(@aa) = $ @out2
-      )
-      .wait($(@sel==1),()=>
-        assign(@aa) = $ @out2
-      ).end()
+    write=(addr,data)=>
+      $sequence('do_write') =>
+        .posedge(@sel1) =>
+          assign(@aa) = $ @out1
+        .negedge(@sel) =>
+          assign(@aa) = $ @out2
+        .wait($(@sel==1)) =>
+          assign(@aa) = $ @out2
+        .end()
 
+    a= =>
+      $sequence('delay') =>
+        .delay(null) =>
+          @verilog("aaaa")
+          assign(@aa) = $ 1
+        .delay(10) =>
+          assign(@aa) = $ 1
+        .delay(10) =>
+          assign(@aa) = $ 1
+        .event('hello')
+        .end()
 
-    @initial =>
-      @series(a,'write')
-      write()
+    initial
+      $sequence() =>
+        assign(@aa) = $ 100
+      .end()
+
+    initial
+      a()
+      write(0x0,0x4)
+
+      
+
 module.exports=InitSimple
 

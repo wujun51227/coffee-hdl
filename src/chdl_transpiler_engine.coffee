@@ -154,12 +154,15 @@ findAssignBlock= (tokens,callEnd)->
       termEnd=findBreak(tokens,callEnd)
       tokens.splice(termEnd,0,
         ['CALL_END',')',{}]
+        ['CALL_END',')',{}]
       )
       tokens.splice(callEnd+1,1,
         ['CALL_START','(',{}]
         ['=>','=>',{}]
+        ['IDENTIFIER','$',{}]
+        ['CALL_START','(',{}]
       )
-      return 2
+      return 5
   else if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
@@ -173,7 +176,7 @@ findAssignBlock= (tokens,callEnd)->
   else
     return 0
 
-findAlwaysBlock= (tokens,callEnd)->
+findAlwaysBlock= (tokens,callEnd,lineno=-1)->
   if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
@@ -181,11 +184,17 @@ findAlwaysBlock= (tokens,callEnd)->
     )
     tokens.splice(callEnd+1,0,
       ['CALL_START','(',{}]
+      ['NUMBER',"'"+String(lineno)+"'",{}]
+      [',',',',{}]
       ['=>','=>',{}]
     )
-    return 3
+    return 5
   else
-    return 0
+    tokens.splice(callEnd+2,0,
+      ['NUMBER',"'"+String(lineno)+"'",{}]
+      [',',',',{}]
+    )
+    return 2
 
 findCondBlock= (tokens,callEnd)->
   if tokens[callEnd+1][0] is 'CALL_START' and tokens[callEnd+2][0] isnt '=>'
@@ -321,6 +330,10 @@ extractLogic = (tokens)->
   startPos=-1
   endPos=-1
   while token = tokens[i]
+    if chdl_base.getConfig('noLineno')
+      lineno=-1
+    else
+      lineno=token[2].first_line-4
     #console.log '>>>>>',token[0],token[1]
     if token[0] is 'IDENTIFIER' and token[1]=='$'
       list =[['IDENTIFIER', '_expr', {}]]
@@ -330,6 +343,8 @@ extractLogic = (tokens)->
       exprExpand(extractSlice)
       list.push tokens[callStart]
       list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
@@ -339,7 +354,11 @@ extractLogic = (tokens)->
         ['PROPERTY', '_assign', {}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
-      patchLength=findAssignBlock(tokens,callEnd)
+      tokens.splice(callEnd,0,
+        [',',',',{}],
+        ['NUMBER',"'"+String(lineno)+"'",{}]
+      )
+      patchLength=findAssignBlock(tokens,callEnd+2)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='input'
@@ -460,11 +479,11 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='behave_reg'
+    else if token[0] is 'IDENTIFIER' and token[1]=='vreg'
       list =[
         ['IDENTIFIER', 'chdl_base', {}]
         [ '.',     '.',  { } ]
-        ['PROPERTY', 'behave_reg', {}]
+        ['PROPERTY', 'vreg', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -495,7 +514,15 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_always', {}]
       ]
-      patchLength=findAlwaysBlock(tokens,i)
+      patchLength=findAlwaysBlock(tokens,i,lineno)
+      tokens.splice i, 1, list...
+      i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='forever'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_forever', {}]
+      ]
+      patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='initial'
@@ -532,7 +559,7 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_passAlways', {}]
       ]
-      patchLength=findAlwaysBlock(tokens,i)
+      patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='sequence_always'
@@ -540,13 +567,13 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_sequenceAlways', {}]
       ]
-      patchLength=findAlwaysBlock(tokens,i)
+      patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
       list =[
         ['@', '@', {}]
-        ['PROPERTY', '_sequence', {}]
+        ['PROPERTY', '_sequenceDef', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -560,12 +587,17 @@ extractLogic = (tokens)->
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$elseif'
-      list =[ ['.', '.', {}] ,['PROPERTY', '_elseif', {}]]
+      list =[
+        ['.', '.', {}] ,
+        ['PROPERTY', '_elseif', {}]
+      ]
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
         i--
@@ -574,6 +606,8 @@ extractLogic = (tokens)->
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
@@ -582,6 +616,9 @@ extractLogic = (tokens)->
       list =[
         ['.', '.', {}]
         ['PROPERTY', '_else', {}]
+        ['CALL_START', '(', {}]
+        ['NUMBER',"'"+String(lineno)+"'",{}]
+        ['CALL_END',  ')', {} ]
       ]
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
@@ -611,6 +648,8 @@ extractLogic = (tokens)->
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
@@ -720,6 +759,7 @@ buildCode= (fullFileName,text,debug=false,param=null) ->
   chdl_base.toVerilog(new design(param))
 
 buildLib= (fullFileName,text,debug=false,param=null) ->
+  chdl_base.configBase({noLineno:true})
   transToJs(fullFileName,text,debug)
 
 transToJs= (fullFileName,text,debug=false) ->

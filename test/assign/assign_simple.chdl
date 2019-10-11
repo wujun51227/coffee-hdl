@@ -9,10 +9,17 @@ class AssignSimple extends Module
     Port(
       din: input(5)
       dout: output(5)
+      dout1: output(5)
+    )
+
+    Wire(
+      xxx: wire(5)
     )
 
   build: ->
-    assign(@dout) => $ @din + 1
+    assign(@dout) = $ @din + 1
+
+    assign(@dout1) =  @din + @xxx
 
 module.exports=AssignSimple
 

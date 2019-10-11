@@ -3,7 +3,7 @@ Reg = require 'chdl_reg'
 _ = require 'lodash'
 {packEl,toNumber,hex}=require 'chdl_utils'
 
-class BehaveReg extends Reg
+class Vreg extends Reg
   value: 0
   resetValue:0
 
@@ -15,7 +15,7 @@ class BehaveReg extends Reg
     @fieldMap={}
     @assignDelay=null
 
-  @create: (width=1)-> new BehaveReg(width)
+  @create: (width=1)-> new Vreg(width)
 
   init: (v)=>
     @value=v
@@ -56,7 +56,7 @@ class BehaveReg extends Reg
       return null
 
   bit: (n)->
-    reg= new BehaveReg(1)
+    reg= new Vreg(1)
     reg.link(@cell,@elName)
     if n.constructor?.name=='Expr'
       reg.setLsb(n.str)
@@ -69,13 +69,13 @@ class BehaveReg extends Reg
 
   slice: (n,m)->
     if n.constructor?.name=='Expr'
-      reg= new BehaveReg(toNumber(n.str)-toNumber(m.str)+1)
+      reg= new Vreg(toNumber(n.str)-toNumber(m.str)+1)
       reg.link(@cell,@elName)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
       return packEl('reg',reg)
     else
-      reg= new BehaveReg(toNumber(n)-toNumber(m)+1)
+      reg= new Vreg(toNumber(n)-toNumber(m)+1)
       reg.link(@cell,@elName)
       reg.setMsb(n)
       reg.setLsb(m)
@@ -117,12 +117,10 @@ class BehaveReg extends Reg
       delay = "##{@assignDelay}"
     else
       delay = ""
-    if @cell.__assignEnv=='sequence'
-      @cell.__sequenceAssignList.push @getSpace()+"#{@refName()} = #{delay} #{assignFunc()};"
-    else if @cell.__assignEnv=='always'
-      @cell.__pureAlwaysList.push @getSpace()+"#{delay} #{@refName()} = #{assignFunc()};"
+    if @cell.__initialMode
+      @cell.__regAssignList.push ["assign_delay","#{@refName()}",delay, assignFunc(),-1]
     else
-      @cell.__wireAssignList.push "assign #{@refName()} = #{delay} #{assignFunc()};"
+      @cell.__wireAssignList.push ["assign_delay","#{@refName()}",delay, assignFunc(),-1]
     @cell.__assignWaiting=false
 
-module.exports=BehaveReg
+module.exports=Vreg

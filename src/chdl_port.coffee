@@ -63,7 +63,7 @@ class Port extends Wire
     @isReset=true
     return packEl('port',this)
 
-  assign: (assignFunc)=>
+  assign: (assignFunc,lineno)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     ElementSets.clear()
@@ -71,15 +71,12 @@ class Port extends Wire
       if @staticAssign
         throw new Error("This wire have been static assigned")
       else if @firstCondAssign and !@isReg
-        if @width==1
-          @cell.__wireAssignList.push "reg _"+@elName+";"
-        else
-          @cell.__wireAssignList.push "reg ["+(@width-1)+":0] _"+@elName+";"
-        @cell.__wireAssignList.push "assign #{@elName} = _#{@elName};"
+        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
+        @cell.__wireAssignList.push ["assign", "#{@elName}"," _#{@elName}",lineno]
         @firstCondAssign=false
-      @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
+      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),-1]
     else
-      @cell.__wireAssignList.push "assign #{@refName()} = #{assignFunc()};"
+      @cell.__wireAssignList.push ["assign", "#{@refName()}",assignFunc(),lineno]
       @staticAssign=true
     @cell.__assignWaiting=false
     if @isReg

@@ -4,7 +4,7 @@ log    =  require 'fancy-log'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
-BehaveReg     = require('chdl_behave_reg')
+Vreg     = require('chdl_vreg')
 Vec     = require('chdl_vec')
 Wire    = require('chdl_wire')
 Port    = require('chdl_port')
@@ -21,6 +21,7 @@ config={
   autoClock: false
   tree: false
   info: false
+  noLineno: false
 }
 
 getCellList= (inst)->
@@ -69,6 +70,69 @@ get_module_build_name= (inst)->
       v=inst.param[k]
       s+='_'+k+v
   return baseName+s+suffix
+
+rhsExpand=(expandItem)->
+  if _.isString(expandItem) or _.isNumber(expandItem)
+    return expandItem
+  else if _.isArray(expandItem)
+    str=''
+    for item,index in expandItem
+      anno= do->
+        if item.lineno>=0
+          "/*#{item.lineno}*/"
+        else
+          ""
+      v= if _.isArray(item.value) then rhsExpand(item.value) else item.value
+      if index==0
+        str="(#{item.cond}#{anno})?(#{v}):"
+      else if item.cond?
+        str+="(#{item.cond}#{anno})?(#{v}):"
+      else
+        str+="#{v}#{anno}"
+    return str
+
+statementGen=(statement)->
+  if statement[0]=='assign'
+    lhs=statement[1]
+    rhs=statement[2]
+    lineno=statement[3]
+    if lineno? and lineno>=0
+      "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+    else
+      "  #{lhs} = #{rhsExpand(rhs)};"
+  else if statement[0]=='assign_delay'
+    lhs=statement[1]
+    delay=statement[2]
+    rhs=statement[3]
+    lineno=statement[4]
+    if lineno? and lineno>=0
+      "  #{lhs}/*#{lineno}*/ = #{delay} #{rhsExpand(rhs)};"
+    else
+      "  #{lhs} = #{delay} #{rhsExpand(rhs)};"
+  else if statement[0]=='end'
+    "  end"
+  else if statement[0]=='verilog'
+    statement[1]
+  else if statement[0]=='if'
+    cond=statement[1]
+    lineno=statement[2]
+    if lineno? and lineno>=0
+      "  if(#{cond}) begin /*#{lineno}*/"
+    else
+      "  if(#{cond}) begin"
+  else if statement[0]=='elseif'
+    cond=statement[1]
+    lineno=statement[2]
+    if lineno? and lineno>=0
+      "  else if(#{cond}) begin /*#{lineno}*/"
+    else
+      "  else if(#{cond}) begin"
+  else if statement[0]=='else'
+    lineno=statement[1]
+    if lineno? and lineno>=0
+      "  else begin /*#{lineno}*/"
+    else
+      "  else begin"
 
 code_gen= (inst)=>
   buildName = do ->
@@ -138,7 +202,32 @@ code_gen= (inst)=>
       assignExpr=port.verilogAssign()
       printBuffer.add assignExpr if assignExpr!=''
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
-  printBuffer.add i for i in inst.__wireAssignList
+  for statement in inst.__wireAssignList
+    if statement[0]=='reg'
+      width=statement[1]
+      name=statement[2]
+      lineno=statement[3]
+      if lineno? and lineno>=0
+        printBuffer.add "reg #{name}/*#{lineno}*/;"
+      else
+        printBuffer.add "reg #{name};"
+    else if statement[0]=='assign'
+      lhs=statement[1]
+      rhs=statement[2]
+      lineno=statement[3]
+      if lineno? and lineno>=0
+        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+      else
+        printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
+    else if statement[0]=='assign_delay'
+      lhs=statement[1]
+      delay=statement[2]
+      rhs=statement[3]
+      lineno=statement[4]
+      if lineno? and lineno>=0
+        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{delay} #{rhsExpand(rhs)};"
+      else
+        printBuffer.add "assign #{lhs} = #{delay} #{rhsExpand(rhs)};"
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)
@@ -148,7 +237,7 @@ code_gen= (inst)=>
     printBuffer.add "initial begin"
     for seq in seqList
       initSegmentList = seq.bin
-      seqName= seq.name
+      seqName= seq.name ? ''
       printBuffer.add "  $display(\"start sequence #{seqName}\");"
       for initSegment in initSegmentList
         item = initSegment
@@ -156,23 +245,51 @@ code_gen= (inst)=>
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
         if item.type=='posedge'
-          printBuffer.add "  @posedge(#{item.signal.getName()});"
+          printBuffer.add "  @(posedge #{item.signal.getName()});"
         if item.type=='negedge'
-          printBuffer.add "  @negedge(#{item.signal.getName()});"
+          printBuffer.add "  @(negedge #{item.signal.getName()});"
         if item.type=='wait'
           printBuffer.add "  wait(#{item.expr})"
         if item.type=='event'
           printBuffer.add "  -> #{item.event};"
         if item.type=='trigger'
           printBuffer.add "  @(#{item.signal});"
-        for e in item.list
-          printBuffer.add "  #{e}"
+        for statement in item.list
+          printBuffer.add statementGen(statement)
+    printBuffer.add "end"
+    printBuffer.blank()
+
+  printBuffer.blank('//forever statement') if inst.__foreverList.length>0
+  for seqList in inst.__foreverList when seqList.length>0
+    printBuffer.add "always begin"
+    for seq in seqList
+      initSegmentList = seq.bin
+      for initSegment in initSegmentList
+        item = initSegment
+        if item.type=='delay'
+          if _.isNumber(item.delay)
+            printBuffer.add "  ##{item.delay}"
+        if item.type=='posedge'
+          printBuffer.add "  @(posedge #{item.signal.getName()});"
+        if item.type=='negedge'
+          printBuffer.add "  @(negedge #{item.signal.getName()});"
+        if item.type=='wait'
+          printBuffer.add "  wait(#{item.expr})"
+        if item.type=='event'
+          printBuffer.add "  -> #{item.event};"
+        if item.type=='trigger'
+          printBuffer.add "  @(#{item.signal});"
+        for statement in item.list
+          printBuffer.add statementGen(statement)
     printBuffer.add "end"
     printBuffer.blank()
 
   printBuffer.blank('//register update logic') if inst.__alwaysList.length>0
-  for [assignList,updateWires] in inst.__alwaysList when assignList? and assignList.length>0
-    printBuffer.add 'always_comb begin'
+  for [assignList,updateWires,lineno] in inst.__alwaysList when assignList? and assignList.length>0
+    if lineno? and lineno>=0
+      printBuffer.add 'always_comb begin'+"/*#{lineno}*/"
+    else
+      printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
         printBuffer.add '  _'+i.name+'='+i.name+';'
@@ -182,21 +299,15 @@ code_gen= (inst)=>
         else
           printBuffer.add '  _'+i.name+'='+i.pending+';'
     if assignList
-      for assign in assignList
-        printBuffer.add '  '+assign
+      for statement in assignList
+        printBuffer.add statementGen(statement)
     printBuffer.add 'end'
     printBuffer.blank()
 
-  printBuffer.blank('//datapath logic')
-  for i in inst.__pureAlwaysList
-    printBuffer.add "always begin"
-    printBuffer.add '  '+i
-    printBuffer.add "end"
-
   printBuffer.blank('//sequence logic')
-  for seqBlockList in inst.__sequenceAlwaysList
+  for [seqBlockList,lineno] in inst.__sequenceAlwaysList
     for seqBlock in seqBlockList
-      printBuffer.blank("//sequence #{seqBlock.name}")
+      printBuffer.blank("//sequence #{seqBlock.name} #{lineno}")
       stateReg=seqBlock.stateReg
       nextState=seqBlock.nextState
       updateWires=seqBlock.update
@@ -242,8 +353,8 @@ code_gen= (inst)=>
             printBuffer.add '  _'+i.name+'='+i.pending+';'
       for i,index in seqBlock.bin when i.list.length>0
         printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
-        for state in i.list
-          printBuffer.add "    #{state}"
+        for statement in i.list
+          printBuffer.add statementGen(statement)
         printBuffer.add "  end"
       printBuffer.add "end"
 
@@ -317,7 +428,7 @@ probe= (name)-> Wire.bind(name)
 
 reg= (width=1)-> packEl('reg', Reg.create(width))
 
-behave_reg= (width=1)-> packEl('reg', new BehaveReg(width))
+vreg= (width=1)-> packEl('reg', new Vreg(width))
 
 wire= (width=1)->packEl('wire', Wire.create(width))
 
@@ -353,7 +464,7 @@ module.exports.bind        = bind
 #module.exports.probe       = probe
 module.exports.channel     = channel
 module.exports.reg         = reg
-module.exports.behave_reg  = behave_reg
+module.exports.vreg        = vreg
 module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.channel_wire = instEnv.getWire

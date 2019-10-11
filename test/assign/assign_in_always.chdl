@@ -15,11 +15,14 @@ class AssignInAlways extends Module
 
     Reg(
       r1: reg(5).init(0)
+      r2: reg(5).init(0)
     )
 
   build: ->
-    always
+    pass_always
       assign(@r1(3:1)) = $ @din(4:2)+0x100
+
+    assign(@r2(3:1)) = $ @din(4:2)+0x100
 
 module.exports=AssignInAlways
 

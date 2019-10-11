@@ -236,7 +236,7 @@ class Reg extends CircuitEl
       if @clearSignal?
         enableSig=_.get(@cell,@clearSignal)
         if enableSig?
-          console.log enableSig
+          #console.log enableSig
           list.push "  else if(#{enableSig.getName()}==#{@clearValue} )  begin"
           list.push "    "+@elName+" <= #`UDLY "+@resetValue+";"
           list.push "  end"
@@ -273,21 +273,21 @@ class Reg extends CircuitEl
     else
       return ''
 
-  assign: (assignFunc)=>
+  assign: (assignFunc,lineno=-1)=>
     ElementSets.clear()
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     if @isMem
-      @cell.__regAssignList.push @getSpace()+"#{@refName()} = #{assignFunc()};"
+      @cell.__regAssignList.push ['assign',"#{@refName()}",assignFunc(),lineno]
     else if @cell.__assignEnv=='always'
       if @staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
+      @cell.__regAssignList.push ['assign',"_#{@refName()}",assignFunc(),lineno]
       @cell.__updateWires.push({type:'reg',name:@elName,pending:@elName})
     else
       if @staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__wireAssignList.push "assign _#{@refName()} = #{assignFunc()};"
+      @cell.__wireAssignList.push ["assign", "_#{@refName()}", assignFunc(),lineno]
       @staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
@@ -343,18 +343,18 @@ class Reg extends CircuitEl
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
-    @cell.__regAssignList.push @getSpace()+"_#{@refName()}=#{@elName+'__'+name};"
+    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName+'__'+name}",-1]
     @cell.__updateWires.push({type:'reg',name:@elName})
 	
   getState: (name)=> @elName+'__'+name
 
   stateSwitch: (obj)=>
-    @cell.__regAssignList.push "_#{@refName()} = #{@elName};"
+    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName}",-1]
     for src,v of obj
       for dst,condFunc of v
-          @cell.__regAssignList.push "if(#{@refName()}==#{@elName+'__'+src} && #{condFunc()}) begin"
-          @cell.__regAssignList.push "  _#{@refName()} = #{@elName+'__'+dst};"
-          @cell.__regAssignList.push "end"
+          @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
+          @cell.__regAssignList.push ["assign","_#{@refName()}", "#{@elName+'__'+dst}",-1]
+          @cell.__regAssignList.push ["end",-1]
   getWidth: => @width
 
   enable: (s,value=1)=>

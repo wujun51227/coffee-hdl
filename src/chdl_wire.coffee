@@ -160,7 +160,7 @@ class Wire extends CircuitEl
     else
       return ''
 
-  assign: (assignFunc)=>
+  assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     ElementSets.clear()
@@ -168,16 +168,13 @@ class Wire extends CircuitEl
       if @staticAssign
         throw new Error("This wire have been static assigned")
       else if @firstCondAssign
-        if @width==1
-          @cell.__wireAssignList.push "reg _"+@elName+";"
-        else
-          @cell.__wireAssignList.push "reg ["+(@width-1)+":0] _"+@elName+";"
-        @cell.__wireAssignList.push "assign #{@elName} = _#{@elName};"
+        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
+        @cell.__wireAssignList.push ["assign", "#{@elName}","_#{@elName}",lineno]
         @firstCondAssign=false
-      @cell.__regAssignList.push @getSpace()+"_#{@refName()} = #{assignFunc()};"
+      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),lineno]
       @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     else
-      @cell.__wireAssignList.push "assign #{@refName()} = #{assignFunc()};"
+      @cell.__wireAssignList.push ["assign","#{@refName()}",assignFunc(),lineno]
       @staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
@@ -218,7 +215,7 @@ class Wire extends CircuitEl
     "#{@refName()}!=#{@elName+'__'+name}"
 
   setState: (name)=>
-    @cell.__wireAssignList.push @getSpace()+"_#{@refName()}=#{@elName+'__'+name};"
+    @cell.__wireAssignList.push ["assign","_#{@refName()}","#{@elName+'__'+name}",-1]
 
   getState: (name)=> @elName+'__'+name
 
