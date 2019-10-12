@@ -121,6 +121,7 @@ class Module
             createReg.link(this,sigName)
 
   __overrideModuleName: (name)-> @__moduleName=name
+  setUniq: -> @__uniq=true
   getModuleName: -> @__moduleName
   setCombModule: -> @__isCombModule=true
   specifyModuleName: (name)->
@@ -155,6 +156,7 @@ class Module
     @__initialMode=false
     @__sequenceBlock=null
     @__cells      =[]
+    @__uniq       = false
 
     @__bindChannels=[]
     @__defaultClock=null

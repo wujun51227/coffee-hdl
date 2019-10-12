@@ -1,7 +1,7 @@
 #########################################################3
 # Design
 #########################################################3
-{in_port,out_port} = require 'port_def'
+{in_port,out_port} = require './port_def'
 
 class PortComplex extends Module
   constructor: ->

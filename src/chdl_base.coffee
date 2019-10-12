@@ -60,7 +60,7 @@ get_module_build_name= (inst)->
   baseName=inst.constructor.name
   param=inst.param
   suffix=''
-  if getCellList(inst).length>0
+  if getCellList(inst).length>0 or inst.__uniq
     moduleIndex+=1
     suffix='__'+moduleIndex
   s=''
@@ -137,7 +137,11 @@ statementGen=(statement)->
 code_gen= (inst)=>
   buildName = do ->
     if inst.__specify
-      inst.__specifyModuleName
+      if inst.__uniq
+        moduleIndex+=1
+        inst.__specifyModuleName+'__'+moduleIndex
+      else
+        inst.__specifyModuleName
     else
       get_module_build_name(inst)
   inst.__overrideModuleName(buildName)

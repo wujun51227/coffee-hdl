@@ -150,6 +150,16 @@ findAssignBlock= (tokens,callEnd)->
         ['=>','=>',{}]
       )
       return 2
+    else if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1].match(/^\$/)
+      [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
+      tokens.splice(exprCallEnd,0,
+        ['CALL_END',')',{}]
+      )
+      tokens.splice(callEnd+1,1,
+        ['CALL_START','(',{}]
+        ['=>','=>',{}]
+      )
+      return 2
     else
       termEnd=findBreak(tokens,callEnd)
       tokens.splice(termEnd,0,

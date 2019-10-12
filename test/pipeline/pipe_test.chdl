@@ -42,6 +42,7 @@ class PipeTest extends Module
         $if(@in1) => $ ff.d1
         $else => $ 32\h100
         $endif
+      $else => 0
       $endif
     assign(@dout2) = $ (!ff.d1) & ff.d2
 

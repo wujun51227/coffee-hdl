@@ -1,10 +1,5 @@
 #!/usr/bin/env coffee
 
-banner= ->
-    console.log '|          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬'
-    console.log '|          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││'
-    console.log '|          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘'
-
 fs = require 'fs'
 path = require 'path'
 _ = require 'lodash'
@@ -16,6 +11,13 @@ mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
 program = require('commander')
 
+
+banner= (topFile)->
+    console.log '|          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬'
+    console.log '|          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││'
+    console.log '|          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘'
+    log "Top file #{topFile}"
+
 program
   .version('0.0.1')
   .name('chdl_compile.coffee')
@@ -26,6 +28,7 @@ program
   .option('-a, --autoClock')
   .option('-t, --tree')
   .option('-i, --info')
+  .option('--flist <file list name>')
   .option('--debug')
   .parse(process.argv)
 
@@ -57,8 +60,9 @@ processFile= (fileName,outDir) ->
       log.error error
       return
     try
-      buildCode(fileName,text,debug,programParam)
+      buildCode(path.resolve(fileName),text,debug,programParam)
       printBuffer.flush()
+      flist=[]
       for i,index in printBuffer.getBin()
         code= i.list.join("\n")
         do ->
@@ -67,9 +71,13 @@ processFile= (fileName,outDir) ->
               outDir+'/'+i.name
             else
               i.name
+          flist.push(fname+'.sv')
           fs.writeFile fname+'.sv', code, (err) =>
             throw err if err
             log "generate code",fname+".sv"
+
+      if program.flist
+        fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)
@@ -83,7 +91,6 @@ processFile= (fileName,outDir) ->
 
 fileName = program.args[0]
 outDir= program.output ? './'
-log 'Generate code to directory "'+outDir+'"' if outDir?
 if not fs.existsSync(outDir)
   mkdirp.sync(outDir)
 
@@ -94,7 +101,8 @@ unless fileName
   log 'No file specified'
   process.exit()
 
-banner()
+banner(fileName)
+log 'Generate code to directory "'+outDir+'"' if outDir?
 processFile(fileName,outDir.replace(/\/$/,''))
 
 if program.watch
