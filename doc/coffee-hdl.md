@@ -26,7 +26,7 @@ coffee-hdl关注二进制逻辑设计,能表达所有的verilog时序电路和�
 	* 对verilog互动友好,生成代码可读性良好,易于debug
 	* 强调参数化设计,动态生成verilog描述,彻底去除在verilog中使用define条件编译
 	* 仿真器中立,对功能验证提供高层次的支持
-	
+
 coffee-hdl的未来要实现的功能
 	
 	* 使用宿主语言coffeescript仿真
@@ -39,7 +39,7 @@ coffeescript-hdl模块描述文件以.chdl作为文件后缀名,一个模块一�
 模块内容一般是三部分组成
 1. 实例化子模块
 2. 在构造函数内申明port,wire,channel,reg等资源,并且绑定channel到cell的端口
-3. 在build函数内描述模块的数字逻辑,主要是assign,assign_pipe等语句构成
+3. 在build函数内描述模块的数字逻辑,主要是assign等语句构成
 
 示例代码(test/integration/import_simple.chdl),语法细节请参见后面的介绍
 
@@ -74,7 +74,7 @@ class ImportSimple extends Module     #申明当前模块
     )
 
   build: ->                         #模块内部数字逻辑
-    assign(@data_wire) = $ channel_wire('up_signal','din')+1
+    assign(@data_wire) = $ @up_signal.din+1
 
     always
       assign(@data_latch) = $ @data_wire*2
@@ -156,36 +156,37 @@ coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面�
 字符串,对象等数据类型无法在电路描述层面使用,但是可以在宿主程序计算的时候影响电路生成的形式
 
 ## 组合电路表达
-coffee-hdl采用“$”符号作为verilog组合电路表达式的前导符,凡是跟在"$"符号后面
-的表达式都会产生相应的的verilog组合电路表达式,其中有几个限制需要注意
+coffee-hdl采用“$”符号作为verilog组合电路表达式的前导符,如果电路表达式是单行跟在assign() = 后面可以省略$符号，电路表达式会产生相应的的verilog组合电路表达式,其中有几个限制需要注意
+
 * 可以用 @name 的方式直接引用模块内部的wire,reg等资源
 * 需有求值的部分必须放在{}中,比如局部变量,原生数据计算等等
 * 除此以外的符号都按照字面量生成在verilog表达式当中
 * 三目运算符的: 通过$if $else 结构代替
-* 由于{}符号作为求值运算符存在,verilog原生的{}运算符的使用cat()函数代替 
+* 由于{}符号作为求值运算符存在,verilog原生的{}运算符的使用cat()函数代替
+* 位扩展操作{n{net}}使用expand函数代替 
 
 示例代码 (test/express/expr_simple.chdl)
 ```coffeescript
 build: ->
   data=100
-  assign(@out) = $  {data+1} + hex(5,0x1f)
+  assign(@out) = {data+1} + hex(5,0x1f)
 ```
 生成代码
 ```verilog
 assign out = 101+5'h1f;
 ```
 ## assign语句
-coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) = $ expr 或者 assign(signal) 缩进语句块, signal为申明的reg/wire,block为一个函数,函数的返回值必须是$表达式产生的verilog语句
+coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) = expr 或者 assign(signal) 缩进语句块, signal为申明的reg/wire,缩进语句块的返回值必须是$表达式产生的verilog语句
 	
 在coffee-hdl中,可以写出如下代码表达组合电路信号传递
 
 示例代码 (test/control/branch_test.chdl)
 ```coffeescript
 assign(@dout)
-  $if(@sel1)         $ @din+1
-  $elseif(@sel2)     $ @din+2
-  $elseif(@sel3)     $ @din+3
-  $else              $ @din
+  $if(@sel1)    =>     $ @din+1
+  $elseif(@sel2)  =>   $ @din+2
+  $elseif(@sel3)  =>   $ @din+3
+  $else          =>    $ @din
   $endif
 ```
 
@@ -273,15 +274,15 @@ Wire(
 ```coffeescript
 Wire wire_struct: {
   key1: wire(1)
-  package: {
-    key2: wire(16)
+  aaa: {
+    bbb: wire(16)
     }
 }
 ```
 
-map数据结构可以通过@wire_struct.package.key2的方式引用.
+map数据结构可以通过@wire_struct.aaa.bbb的方式引用.
 
-wire类型通过()操作符获取bit或者切片,data(1)取bit1,data(3:0)或者data(0,3)取bit[3:0],对于slice或者bit可以设置字段名(setField)使其语义化,
+wire类型通过()操作符获取bit或者切片,data(1)取bit1,data(2:0)或者data(0,3)取bit[3:0],对于slice或者bit可以设置字段名(setField)使其语义化,
 
 示例代码(test/wire/wire_simple.chdl)
 ```coffeescript
@@ -294,8 +295,8 @@ constructor: ->
     )
     
 build:->
-  assign(@result.field('carry')) = $ 1
-  assign(@result.field('sum')) = $ hex(32,0x12345678)
+  assign(@result.field('carry')) = 1
+  assign(@result.field('sum')) = 32\h12345678
 ```
 生成代码
 ```verilog
@@ -329,7 +330,7 @@ assign(@out) = $ @in.select((i,bit)=> i%2==0)
 ```verilog
 assign dout = {w3[4],w3[2],w3[0]};
 ```
- 
+
 对wire类型的逻辑操作符完全兼容verilog语法
 	
 ## 函数抽象
@@ -341,7 +342,7 @@ coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包�
 add: (v1,v2) -> $ @in3+v1+v2
 mul: (v1,v2) -> $ v1*v2
 build: ->
-  assign(@out) = $ @add(@mul(10\h123,@in1),@in2)
+  assign(@out) = @add(@mul(10\h123,@in1),@in2)
 ```
 
 生成代码
@@ -366,7 +367,7 @@ clock相关示例代码请参见(test/clock/)
 ```coffeescript
 Reg ff_simple: reg(16)
 ```
-    
+
 指定clock,reset信号的寄存器申明如下
 	
 ```coffeescript
@@ -390,7 +391,7 @@ always @(posedge clock or nedgedge rstn) begin
 	end
 end 
 ```
-		
+
 此后所有对ff_full寄存器的赋值都体现在对_ff_full信号赋值的组合逻辑中.
 
 	进一步加强的语义包括如下一些方法：
@@ -415,7 +416,7 @@ end
  ~~write(writeenwire,writedatain) 配合decode写入数据~~
 	
 	加强的语义会产生相应的verilog代码,或者在生成verilog代码的时候作相应的检查
-		
+
 ## 状态机
 针对状态机,reg类型有以下方法来管理状态
 * stateDef(array|map)
@@ -444,7 +445,7 @@ localparam ff1__read = 3;
 	pending: 300
 	})
 ```
-				
+
 生成代码
 ```verilog
 localparam ff2__idle=100;
@@ -464,7 +465,7 @@ localparam ff2__peding=300;
 ```verilog
 ff1==ff1__idle
 ```
-			
+
 * notState(state_name)
 
   判定寄存器值不是某个状态,等价于isState取反
@@ -482,7 +483,7 @@ ff1==ff1__idle
 _ff1 = ff1_write
 ```
 	其中_ff是寄存器d端,ff_write是localparam
-	
+
 * stateSwitch
 
   状态转移逻辑如果足够简单的话可以使用reg内置stateSwitch方法设定
@@ -574,6 +575,7 @@ endmodule
 端口进一步加强的语义包括如下一些方法：
 * fromReg(reg_name:string): 当前output端口为reg_name的q端 (test/reg/reg_simple.chld)
 			
+
 除了标准的input/output以外,还可以用bind(channel_name)的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见下一章.
 	
 ## 通道(channel)
@@ -589,7 +591,7 @@ endmodule
 Probe(
   channel_name: 'cell.channel_name'
 )
-```  
+```
 前一种形式代表从cell pin绑定channel,
 后一种形式代表从子层次模块抽取channel到当前模块
 
@@ -610,48 +612,54 @@ assign(@dout) = $ @cell2_port.din+@cell1_ch.Port.din(3:0)+@cell2_probe.din
 assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
 ```
 
-## 流水线
-为更好的生成流水线类型的verilog代码,模块内嵌了一个pipe模式,如果不使用pipe模式,用户也可以用always手动的生成流水线.
+## 序列
+为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，序列分为可综合序列和行为序列，在initial中出现的是行为序列，操作对象是vreg类型变量，在sequenace_always中出现的是可综合序列，操作对象是reg,port,wire.
 
-示例代码(test/pipeline/pipe_test.chdl)
+可综合序列触发条件和回调函数形式
+
+* posedge(signal name) (trans,next) =>
+* negedge(signal name) (trans,next) =>
+* next(cycle number) (trans,next)=>
+* wait(expression) (trans,next)=>
+* end()
+
+行为序列触发条件和回调函数形式
+
+* posedge(signal name) =>
+* negedge(signal name) =>
+* wait(expression) =>
+* delay(delay time) =>
+* trigger(trigger name) =>
+* event(tringger name)
+* repeat(repeat times)
+* end()
+
+可综合事件对应的回调函数带有两个参数，第一个参数trans是进入状态的的信号,第二个参数next是退出状态时候的信号
+
+示例代码(test/express/sequence_in_always.chdl)
 		
 ```coffeescript
-pipeline('sync')  
-.next((pipe)=>
-	#level 1 pipe logic
-	pipe_reg(d1:reg(32)
-	assign(pipe.d1) = $ @din 
-).next((pipe)=>
-	#level 2 pipe logic
-	pipe_reg(d2:reg(32))
-	assign(pipe.d2) = $ pipe.d1 
-).final((pipe)=>
-	#some combo logic
-	assign(@dout) = $ (!pipe.d1) & pipe.d2
-)
+$sequence('writesSeq') =>
+	assign(@aa) = $ 0  
+.posedge(@sel) =>
+	assign(@aa) = $ 1
+.next(5)=>
+	assign(@aa) = $ 2
+.negedge(@sel) (trans,next)=>
+	$if(trans)
+		assign(@aa) = $ 3
+	$elseif(next)
+		assign(@aa) = $ 4
+	 $else
+	 	assign(@aa) = $ 5
+	 $endif
+.wait($(@aa==1)) =>
+	assign(@aa) = $ 6
+.end()
 ```
+在initial当中的sequence自由组合调用，编译结果是verilog行为语句，目的在于描述testbench行为。
 
-在使用pipe模式的时候,需要指定流水线的名字,此处为'sync', 如果有需要可以在第二个参数设定pipeline相关属性,然后在.next参数中放入每级pipeline需要执行的电路,每级pipeline所需要暂存数据的寄存器通过pipe_reg自动生成,默认情况下pipe_reg生成的寄存器不需要复位,需要复位的话可以通过第二个参数设定.
-
-每一级next语句代表了pipeline的一拍,next参数是一个回调函数,函数的参数(示例中起名叫pipe)是生成的pipeline对象,引用流水线中的寄存器的时候,使用{ pipe.name }符号.当流水线结束的时候,使用.final函数,.final参数中放入的是组合逻辑,对输出信号赋值.通常可以把pipe电路封装成函数,把名字,输入信号,输出信号作为函数参数,可以极大提高代码的的复用.以上示例代码生成的verilog如下
-		
-```verilog
-reg [31:0] sync___d1;
-reg [31:0] sync___d2;
-assign dout = (!sync___d1)&sync___d2;
-always @(clock) begin
-  sync___d1 = din;
-end
-
-always @(clock) begin
-  sync___d2 = sync___d1;
-end
-```	
-当前property_obj支持的属性
-
-* reset: reset_name:string
-* clock: clock_name:string
-* defaultClock: boolean
+在sequence_always当中如果单独使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是直接进入第一个状态，也可以使用sequence_series(seq1,seq2...)形式把多个序列串接在一起，编译器会自动生成序列之间的握手电路，每一个序列最终都必须回到idle状态。
 
 ## 分支
 coffee-hdl 提供了能生成等价if else形式的verilog代码的能力,coffee-hdl的数字逻辑分支形式如下
@@ -702,12 +710,9 @@ always_comb begin
  end
 ```
 ## 便利函数
-@initial(list)
-> 把list里面的字符串放入initial begin end中
-
 @verilog(string)
 > 字符串输出到生成代码,例如
-	 
+
 ```coffeescript
 @verilog('$display("data is %d",ff1);')
 ```
@@ -740,16 +745,14 @@ class HubSimple extends Module
       )
   build: ->
 ```
- 
+
 ## 关键字
 操作符
 
 * assign(signal) = or block
-* assign_pipe(reg_name:string,width:number) = or block
 * always block
-* pipeline(pipe_name,property).next(func)
+* expand(times,signal)
 * cat(signal1,signal2...)
-* op_reduce(list,operator)
 
 类型
 
@@ -782,12 +785,13 @@ class HubSimple extends Module
 * Port()
 * Probe()
 * Wire()
+* Channel()
 * Mem()
 * Reg()
 * Hub()
 * local_wire()
-* pipe_reg()
- 
+* local_reg()
+
 模块自带方法
 
 * @setBlackBox()
@@ -796,7 +800,6 @@ class HubSimple extends Module
 * @moduleParameter(parameter_list)
 * @instParameter(parameter_list)
 * @verilog(verilog_string:string)
-* @initial(list:array)
 
 ## 感谢
-powelljin,lizhousun两位对本项目提的意见以及小白鼠工作
+powelljin,lizhousun,siyu对本项目提的意见以及小白鼠工作
