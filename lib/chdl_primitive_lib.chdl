@@ -217,13 +217,19 @@ module.exports={
       list.push({cond:$(i==select),value:array[i]})
     $balance(list,width)
 
-  $rise: (sig)->
-    d1 = local_reg(1,'r_'+sig.getName())
+  $rise: (sig,clock=null)->
+    if clock?
+      d1 = local_reg(1,'r_'+sig.getName()).clock(clock)
+    else
+      d1 = local_reg(1,'r_'+sig.getName())
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
-  $fall: (sig)->
-    d1 = local_reg(1,'f_'+sig.getName())
+  $fall: (sig,clock=null)->
+    if clock?
+      d1 = local_reg(1,'f_'+sig.getName()).clock(clock)
+    else
+      d1 = local_reg(1,'f_'+sig.getName())
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 
@@ -236,9 +242,12 @@ module.exports={
       $endif
     return  $ cnt=={n-1}
 
-  $count: (n,enable)->
+  $count: (n,enable,clock=null)->
     width=Math.ceil(Math.log2(n))
-    cnt = local_reg(width,'cnt')
+    if clock?
+      cnt = local_reg(width,'cnt').clock(clock)
+    else
+      cnt = local_reg(width,'cnt')
     assign(cnt)
       $if(enable)
         $if(cnt=={n-1}) => $ 0
@@ -248,9 +257,12 @@ module.exports={
       $endif
     return  $ cnt=={n-1}
 
-  $hold1: (sig,clear)->
+  $hold1: (sig,clear,clock=null)->
     out = local_wire(1,'hold')
-    latch = local_reg(1,'hold')
+    if clock?
+      latch = local_reg(1,'hold').clock(clock)
+    else
+      latch = local_reg(1,'hold')
     assign(out) = $ sig | latch
     always
       $if(clear)
@@ -260,9 +272,12 @@ module.exports={
       $endif
     return  $ out
 
-  $hold0: (sig,clear)->
+  $hold0: (sig,clear,clock=null)->
     out = local_wire(1,'hold')
-    latch = local_reg(1,'hold')
+    if clock?
+      latch = local_reg(1,'hold').clock(clock)
+    else
+      latch = local_reg(1,'hold')
     assign(out) = $ sig & latch
     always
       $if(clear)
@@ -272,9 +287,12 @@ module.exports={
       $endif
     return  $ out
 
-  $holdData: (sig,enable)->
+  $holdData: (sig,enable,clock=null)->
     out = local_wire(sig.getWidth(),'hold')
-    latch = local_reg(sig.getWidth(),'hold')
+    if clock?
+      latch = local_reg(sig.getWidth(),'hold').clock(clock)
+    else
+      latch = local_reg(sig.getWidth(),'hold')
     assign(out)
       $if(enable) => $ sig
       $else => $ latch
