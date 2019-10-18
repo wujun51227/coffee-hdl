@@ -155,6 +155,7 @@ class Module
     @__initialList=[]
     @__initialMode=false
     @__sequenceBlock=null
+    @__sequenceClock=null
     @__cells      =[]
     @__uniq       = false
 
@@ -566,10 +567,11 @@ class Module
           else
             thisPin="#{i.channel.getName()}"
           usedPort=usedPorts[toSignal(port.getName())]
-          if usedPort.port.type=='output'
-            assignList.push({from:usedPort.pin,to:thisPin})
-          else if usedPort.port.type=='input'
-            assignList.push({from:thisPin,to:usedPort.pin})
+          if usedPort.pin!=thisPin
+            if usedPort.port.type=='output'
+              assignList.push({from:usedPort.pin,to:thisPin})
+            else if usedPort.port.type=='input'
+              assignList.push({from:thisPin,to:usedPort.pin})
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.getName())
       if port.bindSignal?
@@ -659,7 +661,7 @@ class Module
         }
         seq.bin=[seq.bin[0],startCond,seq.bin[1...]...]
 
-  _sequenceDef: (name='sequence')=>
+  _sequenceDef: (name='sequence',clock=null)=>
     if @__sequenceBlock==null
       throw new Error("Sequence only can run in initial or always")
 
@@ -673,6 +675,7 @@ class Module
         @__assignEnv=null
         @__regAssignList=[]
       else
+        @__sequenceClock=clock
         next=@_localWire(1,'next')
         @__assignEnv='always'
         @__regAssignList=[]
@@ -685,23 +688,6 @@ class Module
   _sequence: (name,bin=[])->
     env='always'
     return {
-      #idle: (func)=>
-      #  if @__initialMode
-      #    @__assignEnv=env
-      #    @__regAssignList=[]
-      #    func()
-      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
-      #    @__assignEnv=null
-      #    @__regAssignList=[]
-      #  else
-      #    next=@_localWire(1,'next')
-      #    @__assignEnv=env
-      #    @__regAssignList=[]
-      #    func(next)
-      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
-      #    @__assignEnv=null
-      #    @__regAssignList=[]
-      #  return @_sequence(name,bin)
       delay: (delay) =>
         return (func)=>
           @__assignEnv=env
@@ -804,7 +790,7 @@ class Module
               enable=null
             else
               enable=@_localWire(1,'enable')
-              expr=@_count(num,enable)
+              expr=@_count(num,enable,@__sequenceClock)
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
             @__assignEnv=env
@@ -825,9 +811,13 @@ class Module
           for i in bin
             stateNum+=1
           bitWidth=Math.floor(Math.log2(stateNum))+1
-          stateReg=@_localReg(bitWidth,name)
+          if @__sequenceClock?
+            stateReg=@_localReg(bitWidth,name).clock(@__sequenceClock)
+            lastStateReg=@_localReg(bitWidth,name+'_last').clock(@__sequenceClock)
+          else
+            stateReg=@_localReg(bitWidth,name)
+            lastStateReg=@_localReg(bitWidth,name+'_last')
           nextState=@_localWire(bitWidth,name+'_next')
-          lastStateReg=@_localReg(bitWidth,name+'_last')
           stateNameList=[]
           for i in bin
             stateNameList.push(i.id)
