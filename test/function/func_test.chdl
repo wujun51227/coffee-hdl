@@ -35,7 +35,7 @@ class FuncTest extends Module
     assign(@w3) = $ cat(list)
 
     always
-      assign(@r1) =>
+      assign(@r1)
         @verilog('$display("data is %d",ff1);')
         $ 100
 

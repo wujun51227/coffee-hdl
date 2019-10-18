@@ -25,15 +25,15 @@ class WireSimple extends Module
     )
 
   build: ->
-    assign(@w1) => $ @din
-    assign(@w2(2:0)) => $ @din(4:2)
+    assign(@w1) = @din
+    assign(@w2(2:0)) = @din(4:2)
     #assign(@w2(2:0)) => $ @din.fromMsb(3)
     #assign(@w2(2:0)) => $ @din.fromLsb(3)
-    assign(@dout(2:0)) => $ @w3.reverse()(4:2)
+    assign(@dout(2:0)) = @w3.reverse()(4:2)
     width=5
-    assign(@dout([width-1]:3)) => $ @w3.select((i)=>i%2==0)
-    assign(@result.field('carry')) => $ 1
-    assign(@result.field('sum')) => $ hex(32,0x12345678)
+    assign(@dout([width-1]:3)) = @w3.select((i)=>i%2==0)
+    assign(@result.field('carry')) = 1
+    assign(@result.field('sum')) = 32\h12345678
 
     always
       $if(@w1>2)
