@@ -119,6 +119,7 @@ class Module
             createReg.config(inst.isRegConfig)
             @__regs[sigName]=createReg
             createReg.link(this,sigName)
+            inst.setShadowReg(createReg)
 
   __overrideModuleName: (name)-> @__moduleName=name
   setUniq: -> @__uniq=true
@@ -207,11 +208,23 @@ class Module
       console.error 'Channel',channelName,'not found'
       console.trace()
 
-  __dumpPorts: ->
-    console.log 'Module',@__instName
-    for [name,port] in toFlatten(@__ports)
-      s=toSignal(port.getName())
-      console.log '  port',s
+  __dumpPort: ->
+    out={}
+    for [name,item] in toFlatten(@__ports)
+      _.set(out,name,{dir:item.getType(),width:item.getWidth()})
+    return out
+
+  __dumpReg: ->
+    out={}
+    for [name,item] in toFlatten(@__regs)
+      _.set(out,name,{width:item.getWidth()})
+    return out
+
+  __dumpWire: ->
+    out={}
+    for [name,item] in toFlatten(@__wires)
+      _.set(out,name,{width:item.getWidth()})
+    return out
 
   __addWire: (name,width)->
     wire= Wire.create(width)

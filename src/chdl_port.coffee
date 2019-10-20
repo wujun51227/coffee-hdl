@@ -37,8 +37,8 @@ class Port extends Wire
   constructor: (type,width)->
     super(width)
     @type=type
-    @reg=null
     @isReg=false
+    @shadowReg=null
     @isRegConfig={}
     @pendingValue=null
     @bindChannel=null
@@ -68,13 +68,16 @@ class Port extends Wire
     @cell.__assignWidth=@width
     ElementSets.clear()
     if @cell.__assignEnv=='always'
-      if @staticAssign
-        throw new Error("This wire have been static assigned")
-      else if @firstCondAssign and !@isReg
-        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
-        @cell.__wireAssignList.push ["assign", "#{@elName}"," _#{@elName}",lineno]
-        @firstCondAssign=false
-      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),-1]
+      if !@isReg
+        if @staticAssign
+          throw new Error("This wire have been static assigned")
+        else if @firstCondAssign
+          @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
+          @cell.__wireAssignList.push ["assign", "#{@elName}"," _#{@elName}",lineno]
+          @firstCondAssign=false
+        @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),-1]
+      else
+        @shadowReg.assign(assignFunc,lineno)
     else
       @cell.__wireAssignList.push ["assign", "#{@refName()}",assignFunc(),lineno]
       @staticAssign=true
@@ -87,13 +90,6 @@ class Port extends Wire
 
   getDepNames: => _.uniq(@depNames)
 
-  fromReg: (name)=>
-    if @type=='output'
-      @reg=toSignal(name)
-    else
-      throw new Error('Only output port can be aliased to a register')
-    return packEl('port',this)
-
   asReg: (config={})=>
     if @type=='output'
       @isReg=true
@@ -104,10 +100,6 @@ class Port extends Wire
 
   portDeclare: ->portDeclare(@type,this)
 
-  verilogAssign: ->
-    if @reg?
-      return "\nassign #{@refName()} = #{@reg};"
-    else
-      return ''
+  setShadowReg: (i)=> @shadowReg = i
 
 module.exports=Port
