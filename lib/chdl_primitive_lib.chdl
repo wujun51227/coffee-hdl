@@ -166,17 +166,26 @@ module.exports={
 
   $doubleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    d1 = local_reg(width,'sync').clock(clock).noReset()
-    d2 = local_reg(width,'sync').clock(clock).noReset()
+    if clock?
+      d1 = local_reg(width,'sync').clock(clock).noReset()
+      d2 = local_reg(width,'sync').clock(clock).noReset()
+    else
+      d1 = local_reg(width,'sync').noReset()
+      d2 = local_reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     return $ d2
 
   $tripleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    d1 = local_reg(width,'sync').clock(clock).noReset()
-    d2 = local_reg(width,'sync').clock(clock).noReset()
-    d3 = local_reg(width,'sync').clock(clock).noReset()
+    if clock?
+      d1 = local_reg(width,'sync').clock(clock).noReset()
+      d2 = local_reg(width,'sync').clock(clock).noReset()
+      d3 = local_reg(width,'sync').clock(clock).noReset()
+    else
+      d1 = local_reg(width,'sync').noReset()
+      d2 = local_reg(width,'sync').noReset()
+      d3 = local_reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     assign(d3) = $ d2
@@ -219,17 +228,17 @@ module.exports={
 
   $rise: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'r_'+sig.getName()).clock(clock)
+      d1 = local_reg(1,'r_').clock(clock)
     else
-      d1 = local_reg(1,'r_'+sig.getName())
+      d1 = local_reg(1,'r_')
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
   $fall: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'f_'+sig.getName()).clock(clock)
+      d1 = local_reg(1,'f_').clock(clock)
     else
-      d1 = local_reg(1,'f_'+sig.getName())
+      d1 = local_reg(1,'f_')
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 

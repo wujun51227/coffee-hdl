@@ -73,7 +73,7 @@ class UseLib extends Module
     $bundleUniOp('~',@g,@d)
     $bundleReduceOp('+',@d,[@g,@h])
 
-    assign(@dout) = $oneHot($doubleSync(@syncin))
+    assign(@dout) = $rise($doubleSync(@syncin))
 
     assign(@dout) = $divider(@clk1,4)
 
