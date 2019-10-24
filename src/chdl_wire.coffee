@@ -106,7 +106,7 @@ class Wire extends CircuitEl
 
   bit: (n)->
     wire= Wire.create(1)
-    wire.link(@cell,@elName)
+    wire.link(@cell,@hier)
     if n.constructor.name=='Expr'
       wire.setLsb(n.str)
       wire.setMsb(n.str)
@@ -131,13 +131,13 @@ class Wire extends CircuitEl
   slice: (n,m)->
     if n.constructor.name=='Expr'
       wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
-      wire.link(@cell,@elName)
+      wire.link(@cell,@hier)
       wire.setLsb(m.str)
       wire.setMsb(n.str)
       return packEl('wire',wire)
     else
       wire= Wire.create(toNumber(n)-toNumber(m)+1)
-      wire.link(@cell,@elName)
+      wire.link(@cell,@hier)
       wire.setLsb(m)
       wire.setMsb(n)
       return packEl('wire',wire)
