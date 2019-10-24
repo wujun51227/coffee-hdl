@@ -13,8 +13,6 @@ class CircuitEl
 
   getName: -> @elName
 
-  dName: -> '_'+@elName
-
   getPath: ->
     list=[@elName]
     cell=@cell

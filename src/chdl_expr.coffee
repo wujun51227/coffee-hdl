@@ -21,7 +21,7 @@ class Expr
     else if s==null
       @str+=''
     else if s.__type? and s.__type=='reg'
-      n=s().hier
+      n=s().refName()
       ElementSets.add(n)
       @str+= n
     else if s.__type? and s.__type=='wire'
@@ -33,7 +33,7 @@ class Expr
       ElementSets.add(n)
       @str+= n
     else if s instanceof Reg
-      n=s().hier
+      n=s().refName()
       ElementSets.add(n)
       @str+= n
     else if s instanceof Wire

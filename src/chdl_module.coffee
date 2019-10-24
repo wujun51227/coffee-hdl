@@ -69,7 +69,7 @@ class Module
       else
         this[k]=v
         for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+          inst.link(this,toHier(k,name))
 
   _mem: (obj) ->
     for k,v of obj
@@ -109,7 +109,8 @@ class Module
         this[k]=v
         for [name,inst] in toFlatten(v)
           sigName=toSignal(k+'.'+name)
-          inst.link(this,sigName)
+          hierName=toHier(k,name)
+          inst.link(this,hierName)
           if inst.isClock
             @__setDefaultClock(sigName)
           if inst.isReset

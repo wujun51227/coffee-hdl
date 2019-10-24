@@ -98,6 +98,10 @@ statementGen=(statement)->
     lineno=statement[3]
     if lhs.constructor?.name is 'Reg'
       lhs=lhs.dName()
+    if lhs.constructor?.name is 'Wire'
+      lhs=lhs.refName()
+    if lhs.constructor?.name is 'Port'
+      lhs=lhs.refName()
     if lineno? and lineno>=0
       "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
     else
@@ -220,6 +224,10 @@ code_gen= (inst)=>
       lineno=statement[3]
       if lhs.constructor?.name is 'Reg'
         lhs=lhs.dName()
+      else if lhs.constructor?.name is 'Wire'
+        lhs=lhs.refName()
+      else if lhs.constructor?.name is 'Port'
+        lhs=lhs.refName()
       if lineno? and lineno>=0
         printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
       else
@@ -297,12 +305,12 @@ code_gen= (inst)=>
       printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
-        printBuffer.add '  '+i.inst.dName()+'='+i.inst.getName()+';'
+        printBuffer.add '  '+i.inst.dName()+'='+i.inst.refName()+';'
       if i.type=='wire'
         if i.pending==null
-          printBuffer.add '  '+i.name+'=0;'
+          printBuffer.add '  '+i.inst.refName()+'=0;'
         else
-          printBuffer.add '  '+i.name+'='+i.pending+';'
+          printBuffer.add '  '+i.inst.refName()+'='+i.pending+';'
     if assignList
       for statement in assignList
         printBuffer.add statementGen(statement)

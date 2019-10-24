@@ -186,6 +186,8 @@ class Reg extends CircuitEl
     else
       @elName
 
+  dName: -> '_'+@refName()
+
   get: -> @value
 
   set: (v)-> @value=v
