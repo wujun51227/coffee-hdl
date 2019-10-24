@@ -221,9 +221,6 @@ class Wire extends CircuitEl
   notState: (name)=>
     _expr "#{@elName}!=#{@elName+'__'+name}"
 
-  setState: (name)=>
-    @cell.__wireAssignList.push ["assign",this,"#{@elName+'__'+name}",-1]
-
   getState: (name)=> @elName+'__'+name
 
   reverse: ()=>
