@@ -9,7 +9,7 @@ class RegSimple extends Module
     Port(
       hclk: input().asClock()
       rstn: input().asReset()
-      dout: output(5).fromReg('ff1')
+      dout: output(5)
       din: input(9)
       clear: input()
       aa:
@@ -28,6 +28,7 @@ class RegSimple extends Module
 
 
   build: ->
+    assign(@dout) = @ff1
     assign(@ff6) = $ @ff5.fromMsb(8)
 
     always

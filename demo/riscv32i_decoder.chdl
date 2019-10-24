@@ -20,9 +20,9 @@ class riscv32i_decoder extends Module
         rs2Index: output(5)
       
       alu:
-        op: output(opWidth).fromReg('opLatch')
-        pc: output(32).fromReg('pcLatch')
-        instr: output(32).fromReg('instrLatch')
+        op: output(opWidth)
+        pc: output(32)
+        instr: output(32)
     )
 
     Reg(
@@ -48,6 +48,9 @@ class riscv32i_decoder extends Module
   sliceInstr: (lsb,width)-> $ (@instrLatch>>lsb) & @mask(width)
 
   build: ->
+    assign(@alu.op) = @opLatch
+    assign(@alu.pc) = @pcLatch
+    assign(@alu.instr) = @instrLatch
     for name in Object.keys(@slice)
       property =instTable.fieldProperty[name]
       assign(@slice[name]) = $ @sliceInstr(property.lsb,property.width)
