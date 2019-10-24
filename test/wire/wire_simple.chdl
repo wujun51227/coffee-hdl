@@ -40,7 +40,6 @@ class WireSimple extends Module
         assign(@w4) = $ @w1 + 1
       $else
         assign(@w4) = $ @w1 - 1
-        assign(@w2) = $ @w3 + 1
 
 module.exports=WireSimple
 

@@ -23,8 +23,6 @@ class Wire extends CircuitEl
     @pendingValue=null
     @lsb= -1
     @msb= -1
-    @staticAssign=false
-    @firstCondAssign=true
     @states=[]
     @bindChannel=null
     @fieldMap={}
@@ -32,6 +30,10 @@ class Wire extends CircuitEl
     @local=false
     @clockName=null
     @resetName=null
+    @share={
+      staticWire:true
+      staticAssign:false
+    }
 
   attach:(clock,reset)=>
     if _.isString(clock)
@@ -165,17 +167,16 @@ class Wire extends CircuitEl
     @cell.__assignWidth=@width
     ElementSets.clear()
     if @cell.__assignEnv=='always'
-      if @staticAssign
+      @share.staticWire=false
+      if @share.staticAssign
         throw new Error("This wire have been static assigned")
-      else if @firstCondAssign
-        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
-        @cell.__wireAssignList.push ["assign", "#{@elName}","_#{@elName}",lineno]
-        @firstCondAssign=false
-      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),lineno]
+      @cell.__regAssignList.push ["assign","#{@refName()}",assignFunc(),lineno]
       @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     else
+      if @share.staticWire==false or @share.staticAssign
+        throw new Error("This wire have been assigned again")
       @cell.__wireAssignList.push ["assign","#{@refName()}",assignFunc(),lineno]
-      @staticAssign=true
+      @share.staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
 
@@ -189,9 +190,15 @@ class Wire extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
     if @width==1
-      list.push "wire "+@elName+";"
+      if @share.staticWire
+        list.push "wire "+@elName+";"
+      else
+        list.push "reg "+@elName+";"
     else if @width>1
-      list.push "wire ["+(@width-1)+":0] "+@elName+";"
+      if @share.staticWire
+        list.push "wire ["+(@width-1)+":0] "+@elName+";"
+      else
+        list.push "reg ["+(@width-1)+":0] "+@elName+";"
     return list.join("\n")
 
   setWidth:(w)-> @width=w

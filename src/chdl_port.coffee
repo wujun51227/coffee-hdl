@@ -69,23 +69,19 @@ class Port extends Wire
     ElementSets.clear()
     if @cell.__assignEnv=='always'
       if !@isReg
-        if @staticAssign
+        @share.staticWire=false
+        if @share.staticAssign
           throw new Error("This wire have been static assigned")
-        else if @firstCondAssign
-          @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
-          @cell.__wireAssignList.push ["assign", "#{@elName}"," _#{@elName}",lineno]
-          @firstCondAssign=false
-        @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),-1]
+        @cell.__regAssignList.push ["assign","#{@refName()}",assignFunc(),-1]
+        @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
       else
         @shadowReg.assign(assignFunc,lineno)
     else
+      if @share.staticWire==false or @share.staticAssign
+        throw new Error("This wire have been assigned again")
       @cell.__wireAssignList.push ["assign", "#{@refName()}",assignFunc(),lineno]
-      @staticAssign=true
+      @share.staticAssign=true
     @cell.__assignWaiting=false
-    if @isReg
-      @cell.__updateWires.push({type:'wire',name:@elName,pending:@elName})
-    else
-      @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
     @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)

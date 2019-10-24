@@ -202,9 +202,6 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogDeclare()
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
-  for [name,port] in toFlatten(inst.__ports)
-      assignExpr=port.verilogAssign()
-      printBuffer.add assignExpr if assignExpr!=''
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   for statement in inst.__wireAssignList
     if statement[0]=='reg'
@@ -299,9 +296,9 @@ code_gen= (inst)=>
         printBuffer.add '  _'+i.name+'='+i.name+';'
       if i.type=='wire'
         if i.pending==null
-          printBuffer.add '  _'+i.name+'=0;'
+          printBuffer.add '  '+i.name+'=0;'
         else
-          printBuffer.add '  _'+i.name+'='+i.pending+';'
+          printBuffer.add '  '+i.name+'='+i.pending+';'
     if assignList
       for statement in assignList
         printBuffer.add statementGen(statement)

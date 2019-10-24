@@ -26,7 +26,9 @@ class Reg extends CircuitEl
     @needInitial=false
     @depNames=[]
     @local=false
-    @staticAssign=false
+    @share={
+      staticAssign:false
+    }
 
   setLocal: =>
     @local=true
@@ -197,13 +199,13 @@ class Reg extends CircuitEl
         list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
     if @width==1
       list.push "reg "+@elName+";"
-      if @staticAssign
+      if @share.staticAssign
         list.push "wire _"+@elName+";"
       else
         list.push "reg _"+@elName+";"
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
-      if @staticAssign
+      if @share.staticAssign
         list.push "wire ["+(@width-1)+":0] _"+@elName+";"
       else
         list.push "reg ["+(@width-1)+":0] _"+@elName+";"
@@ -280,15 +282,15 @@ class Reg extends CircuitEl
     if @isMem
       @cell.__regAssignList.push ['assign',"#{@refName()}",assignFunc(),lineno]
     else if @cell.__assignEnv=='always'
-      if @staticAssign
+      if @share.staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ['assign',"_#{@refName()}",assignFunc(),lineno]
       @cell.__updateWires.push({type:'reg',name:@elName,pending:@elName})
     else
-      if @staticAssign
+      if @share.staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__wireAssignList.push ["assign", "_#{@refName()}", assignFunc(),lineno]
-      @staticAssign=true
+      @share.staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
 
