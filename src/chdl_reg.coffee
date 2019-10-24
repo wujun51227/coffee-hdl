@@ -16,7 +16,6 @@ class Reg extends CircuitEl
     @states=[]
     @lsb= -1
     @msb= -1
-    @isMem=false
     @assertHigh=false
     @enableSignal=null
     @enableValue=null
@@ -33,8 +32,6 @@ class Reg extends CircuitEl
   setLocal: =>
     @local=true
     return packEl('reg',this)
-
-  setMem: -> @isMem=true
 
   init: (v,initial=false)=>
     @value=v
@@ -141,12 +138,10 @@ class Reg extends CircuitEl
     if n.constructor?.name=='Expr'
       reg.setLsb(n.str)
       reg.setMsb(n.str)
-      reg.isMem=@isMem
       return packEl('reg',reg)
     else
       reg.setLsb(n)
       reg.setMsb(n)
-      reg.isMem=@isMem
       return packEl('reg',reg)
 
   fromMsb: (n)=>
@@ -167,14 +162,12 @@ class Reg extends CircuitEl
       reg.link(@cell,@hier)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
-      reg.isMem=@isMem
       return packEl('reg',reg)
     else
       reg= Reg.create(toNumber(n)-toNumber(m)+1)
       reg.link(@cell,@hier)
       reg.setMsb(n)
       reg.setLsb(m)
-      reg.isMem=@isMem
       return packEl('reg',reg)
 
   refName: ->
@@ -281,9 +274,7 @@ class Reg extends CircuitEl
     ElementSets.clear()
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    if @isMem
-      @cell.__regAssignList.push ['assign',"#{@refName()}",assignFunc(),lineno]
-    else if @cell.__assignEnv=='always'
+    if @cell.__assignEnv=='always'
       if @share.staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]

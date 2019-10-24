@@ -107,7 +107,7 @@ statementGen=(statement)->
     else
       "  #{lhs} = #{rhsExpand(rhs)};"
   else if statement[0]=='assign_delay'
-    lhs=statement[1]
+    lhs=statement[1].refName()
     delay=statement[2]
     rhs=statement[3]
     lineno=statement[4]
@@ -233,7 +233,7 @@ code_gen= (inst)=>
       else
         printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
     else if statement[0]=='assign_delay'
-      lhs=statement[1]
+      lhs=statement[1].refName()
       delay=statement[2]
       rhs=statement[3]
       lineno=statement[4]

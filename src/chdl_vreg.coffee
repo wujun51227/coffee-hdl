@@ -118,9 +118,9 @@ class Vreg extends Reg
     else
       delay = ""
     if @cell.__initialMode
-      @cell.__regAssignList.push ["assign_delay","#{@refName()}",delay, assignFunc(),-1]
+      @cell.__regAssignList.push ["assign_delay",this,delay, assignFunc(),-1]
     else
-      @cell.__wireAssignList.push ["assign_delay","#{@refName()}",delay, assignFunc(),-1]
+      @cell.__wireAssignList.push ["assign_delay",this,delay, assignFunc(),-1]
     @cell.__assignWaiting=false
 
 module.exports=Vreg

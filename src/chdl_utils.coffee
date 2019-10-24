@@ -98,38 +98,6 @@ toFlatten = (data,root='') ->
 
 module.exports.toFlatten = toFlatten
 
-#cloneIO= (io,out)->
-#  if io.constructor?.name=='Port'
-#    return Channel.create()
-#  else if _.isPlainObject(io)
-#    for k,v of io
-#      if _.isPlainObject(v)
-#        bin={}
-#        out[k]=bin
-#        cloneIO(v,bin)
-#      else if _.isArray(v)
-#        bin=[]
-#        out[k]=bin
-#        cloneIO(v,bin)
-#      else
-#        out[k]=Channel.create()
-#  else if _.isArray(io)
-#    for v in io
-#      if _.isPlainObject(v)
-#        bin={}
-#        out.push bin
-#        cloneIO(v,bin)
-#      else if _.isArray(v)
-#        bin=[]
-#        out.push bin
-#        cloneIO(v,bin)
-#      else
-#        out.push Channel.create()
-#  #console.log '>>>>>',out
-#  return out
-
-#exports.cloneIO=cloneIO
-
 module.exports.portDeclare= (type,inst)->
   if type=='input'
     if inst.width==1

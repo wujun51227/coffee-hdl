@@ -22,6 +22,9 @@ class BranchTest extends Module
         w4: wire(32)
         w5: wire(32)
         w6: wire(32)
+        w7: wire(32)
+        w8: wire(32)
+        w9: wire(32)
       syncIn: wire()
       syncOut: wire()
     )
@@ -53,7 +56,7 @@ class BranchTest extends Module
         $cond(@in1(2)) => $ @w2.w5
       ]
 
-    assign(@w2.w5)
+    assign(@w2.w7)
       $balance [
         $cond(@in1(1)) => $ @w2.w4
         $cond(@in1(2)) => $ @w2.w5
@@ -68,9 +71,9 @@ class BranchTest extends Module
         $ @w2.w3(6:4)
       )
 
-    assign(@w2.w6) = $ expand(@w2.w5.getWidth(), @w2.w3(9:7))
+    assign(@w2.w8) = $ expand(@w2.w5.getWidth(), @w2.w3(9:7))
 
-    assign(@w2.w6) = $ expand(5, @w2.w3(9:7))
+    assign(@w2.w9) = $ expand(5, @w2.w3(9:7))
 
     always
       $if(@in1==hex(5,1))
