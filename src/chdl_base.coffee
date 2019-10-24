@@ -96,6 +96,8 @@ statementGen=(statement)->
     lhs=statement[1]
     rhs=statement[2]
     lineno=statement[3]
+    if lhs.constructor?.name is 'Reg'
+      lhs=lhs.dName()
     if lineno? and lineno>=0
       "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
     else
@@ -117,16 +119,16 @@ statementGen=(statement)->
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  if(#{cond}) begin /*#{lineno}*/"
+      "  if(#{toSignal cond}) begin /*#{lineno}*/"
     else
-      "  if(#{cond}) begin"
+      "  if(#{toSignal cond}) begin"
   else if statement[0]=='elseif'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  else if(#{cond}) begin /*#{lineno}*/"
+      "  else if(#{toSignal cond}) begin /*#{lineno}*/"
     else
-      "  else if(#{cond}) begin"
+      "  else if(#{toSignal cond}) begin"
   else if statement[0]=='else'
     lineno=statement[1]
     if lineno? and lineno>=0
@@ -293,7 +295,7 @@ code_gen= (inst)=>
       printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
-        printBuffer.add '  _'+i.name+'='+i.name+';'
+        printBuffer.add '  '+i.inst.dName()+'='+i.inst.getName()+';'
       if i.type=='wire'
         if i.pending==null
           printBuffer.add '  '+i.name+'=0;'

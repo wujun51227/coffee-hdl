@@ -1,7 +1,7 @@
 CircuitEl = require 'chdl_el'
 ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
-{packEl,toNumber,hex}=require 'chdl_utils'
+{_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
   value: 0
@@ -198,17 +198,17 @@ class Reg extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
     if @width==1
-      list.push "reg "+@elName+";"
+      list.push "reg "+@getName()+";"
       if @share.staticAssign
-        list.push "wire _"+@elName+";"
+        list.push "wire "+@dName()+";"
       else
-        list.push "reg _"+@elName+";"
+        list.push "reg "+@dName()+";"
     else if @width>1
-      list.push "reg ["+(@width-1)+":0] "+@elName+";"
+      list.push "reg ["+(@width-1)+":0] "+@getName()+";"
       if @share.staticAssign
-        list.push "wire ["+(@width-1)+":0] _"+@elName+";"
+        list.push "wire ["+(@width-1)+":0] "+@dName()+";"
       else
-        list.push "reg ["+(@width-1)+":0] _"+@elName+";"
+        list.push "reg ["+(@width-1)+":0] "+@dName()+";"
 
     if @needInitial
       list.push "initial begin"
@@ -258,7 +258,7 @@ class Reg extends CircuitEl
       if @enableSignal?
         enableSig=_.get(@cell,@enableSignal)
         if enableSig?
-          list.push "  if(#{enableSig.elName}==#{@enableValue} )  begin"
+          list.push "  if(#{enableSig.getName()}==#{@enableValue} )  begin"
           list.push "    "+@elName+" <= #`UDLY _"+@elName+";"
           list.push "  end"
         else
@@ -284,12 +284,12 @@ class Reg extends CircuitEl
     else if @cell.__assignEnv=='always'
       if @share.staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__regAssignList.push ['assign',"_#{@refName()}",assignFunc(),lineno]
-      @cell.__updateWires.push({type:'reg',name:@elName,pending:@elName})
+      @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]
+      @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
     else
       if @share.staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__wireAssignList.push ["assign", "_#{@refName()}", assignFunc(),lineno]
+      @cell.__wireAssignList.push ["assign", this, assignFunc(),lineno]
       @share.staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
@@ -315,47 +315,47 @@ class Reg extends CircuitEl
 
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "_#{@refName()}==#{@elName+'__'+name}"
+    _expr "_#{@refName()}==#{@elName+'__'+name}"
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "#{@refName()}==#{@elName+'__'+name}"
+    _expr "#{@refName()}==#{@elName+'__'+name}"
 
   isNthState: (n)=>
     item=@states[n]
-    "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "#{@refName()}==#{@elName+'__'+item.state}"
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
     item=@states[n]
-    @elName+'__'+item.state
+    _expr @elName+'__'+item.state
 
   isLastState: ()=>
     item=_.last(@states)
-    "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "#{@refName()}==#{@elName+'__'+item.state}"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
-    "((#{@refName()}==#{@elName+'__'+prevState}) && (_#{@refName()}==#{@elName+'__'+nextState}))"
+    _expr "((#{@refName()}==#{@elName+'__'+prevState}) && (_#{@refName()}==#{@elName+'__'+nextState}))"
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "#{@refName()}!=#{@elName+'__'+name}"
+    _expr "#{@refName()}!=#{@elName+'__'+name}"
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
-    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName+'__'+name}",-1]
-    @cell.__updateWires.push({type:'reg',name:@elName})
+    @cell.__regAssignList.push ['assign',this,"#{@elName+'__'+name}",-1]
+    @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
 	
-  getState: (name)=> @elName+'__'+name
+  getState: (name)=> _expr @elName+'__'+name
 
   stateSwitch: (obj)=>
-    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName}",-1]
+    @cell.__regAssignList.push ['assign',this,"#{@elName}",-1]
     for src,v of obj
       for dst,condFunc of v
           @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
-          @cell.__regAssignList.push ["assign","_#{@refName()}", "#{@elName+'__'+dst}",-1]
+          @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
           @cell.__regAssignList.push ["end",-1]
   getWidth: => @width
 

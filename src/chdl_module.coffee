@@ -5,7 +5,7 @@ Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
 ElementSets = require 'chdl_el_sets'
 {table} = require 'table'
-{packEl,toSignal,toFlatten}=require('chdl_utils')
+{packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
@@ -59,7 +59,7 @@ class Module
       else
         this[k]=v
         for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+          inst.link(this,toHier(k,name))
 
   _wire: (obj) ->
     for k,v of obj

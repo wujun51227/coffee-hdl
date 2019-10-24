@@ -1,14 +1,19 @@
+{toSignal} = require('chdl_utils')
 class CircuitEl
 
   constructor: ->
     @cell=null
     @elName=''
+    @hier=''
 
   link: (cell,name)->
     @cell=cell
-    @elName=name  # this name is flatten name
+    @elName=toSignal(name)  # this name is flatten name
+    @hier=name
 
   getName: -> @elName
+
+  dName: -> '_'+@elName
 
   getPath: ->
     list=[@elName]

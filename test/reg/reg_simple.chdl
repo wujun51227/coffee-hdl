@@ -39,7 +39,7 @@ class RegSimple extends Module
     pass_always
       assign(@ff5) = $ @aa.bb.asreg
 
-    always
+    pass_always
       assign(@ff5)
         $if(@ff2)
           $ @aa.bb.asreg

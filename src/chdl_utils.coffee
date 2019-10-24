@@ -9,6 +9,17 @@ toSignal= (i)->
 
 module.exports.toSignal=toSignal
 
+toHier= (a,b)->
+  if a? and b? and a.trim()!='' and b.trim()!=''
+    return a+'.'+b
+  if a? and a.trim()!=''
+    return a
+  if b? and b.trim()!=''
+    return b
+  return ''
+
+module.exports.toHier=toHier
+
 toNumber=(s)->
   if isNaN(s)==false
     return Number(s)
@@ -320,8 +331,8 @@ module.exports._expr= (s,lineno=null) ->
   if lineno? and lineno>=0
     append='/*'+lineno+'*/'
   if s.str?
-    s.str+append
+    toSignal(s.str+append)
   else if _.isArray(s)
     s
   else
-    s+append
+    toSignal(s+append)
