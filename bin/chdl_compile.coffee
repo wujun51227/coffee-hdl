@@ -29,6 +29,7 @@ program
   .option('-t, --tree')
   .option('-i, --info')
   .option('--flist <file list name>')
+  .option('--nolineno')
   .option('--debug')
   .parse(process.argv)
 
@@ -38,6 +39,7 @@ cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
   info: program.info ? false
+  noLineno: program.nolineno ? false
 }
 
 configBase(cfg)
