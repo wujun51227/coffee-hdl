@@ -1,7 +1,7 @@
 CircuitEl=require 'chdl_el'
 ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{packEl,toNumber,cat}=require 'chdl_utils'
 
 class Wire extends CircuitEl
   width: 0
@@ -227,23 +227,21 @@ class Wire extends CircuitEl
   getState: (name)=> @elName+'__'+name
 
   reverse: ()=>
-    wire= Wire.create(@width)
+    tempWire=@cell._localWire(@width,'reverse')
     list=[]
     for i in [0...@width]
       list.push @bit(i)
-    name='{'+_.map(list,(i)=>i.refName()).join(',')+'}'
-    wire.link(@cell,name)
-    return packEl('wire',wire)
+    tempWire.assign((=> cat(list)))
+    return tempWire
 
   select: (cb)=>
-    wire= Wire.create(@width)
     list=[]
     for i in [0...@width]
       index = @width-1-i
       if cb(index)
         list.push @bit(index)
-    name='{'+_.map(list,(i)=>i.refName()).join(',')+'}'
-    wire.link(@cell,name)
-    return packEl('wire',wire)
+    tempWire=@cell._localWire(list.length,'select')
+    tempWire.assign((=> cat(list)))
+    return tempWire
 
 module.exports=Wire
