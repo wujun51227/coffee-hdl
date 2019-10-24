@@ -30,9 +30,11 @@ class Wire extends CircuitEl
     @local=false
     @clockName=null
     @resetName=null
+    @staticWire=true
+    @staticAssign=false
     @share={
-      staticWire:true
-      staticAssign:false
+      assignList:[]
+      alwaysList:null
     }
 
   attach:(clock,reset)=>
@@ -110,10 +112,12 @@ class Wire extends CircuitEl
     if n.constructor.name=='Expr'
       wire.setLsb(n.str)
       wire.setMsb(n.str)
+      wire.share=@share
       return packEl('wire',wire)
     else
       wire.setLsb(n)
       wire.setMsb(n)
+      wire.share=@share
       return packEl('wire',wire)
 
   fromMsb: (n)=>
@@ -134,12 +138,14 @@ class Wire extends CircuitEl
       wire.link(@cell,@hier)
       wire.setLsb(m.str)
       wire.setMsb(n.str)
+      wire.share=@share
       return packEl('wire',wire)
     else
       wire= Wire.create(toNumber(n)-toNumber(m)+1)
       wire.link(@cell,@hier)
       wire.setLsb(m)
       wire.setMsb(n)
+      wire.share=@share
       return packEl('wire',wire)
 
   refName: =>
@@ -167,16 +173,18 @@ class Wire extends CircuitEl
     @cell.__assignWidth=@width
     ElementSets.clear()
     if @cell.__assignEnv=='always'
-      @share.staticWire=false
-      if @share.staticAssign
+      @staticWire=false
+      if @staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
       @cell.__updateWires.push({type:'wire',name:@hier,pending:@pendingValue,inst:this})
     else
-      if @share.staticWire==false or @share.staticAssign
+      if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again")
-      @cell.__wireAssignList.push ["assign",this,assignFunc(),lineno]
-      @share.staticAssign=true
+      assignItem=["assign",this,assignFunc(),lineno]
+      @cell.__wireAssignList.push assignItem
+      @share.assignList.push [@lsb,@msb,assignItem[2]]
+      @staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
 
@@ -190,12 +198,12 @@ class Wire extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
     if @width==1
-      if @share.staticWire
+      if @staticWire
         list.push "wire "+@elName+";"
       else
         list.push "reg "+@elName+";"
     else if @width>1
-      if @share.staticWire
+      if @staticWire
         list.push "wire ["+(@width-1)+":0] "+@elName+";"
       else
         list.push "reg ["+(@width-1)+":0] "+@elName+";"
@@ -240,5 +248,47 @@ class Wire extends CircuitEl
     tempWire=@cell._localWire(list.length,'select')
     tempWire.assign((=> cat(list)))
     return tempWire
+
+  rhsTraceExpand:(slice,expandItem,bin=[])=>
+    if _.isString(expandItem) or _.isNumber(expandItem)
+      bin.push {type:'transfer',slice:slice,e:expandItem}
+    else if _.isArray(expandItem)
+      for item,index in expandItem
+        v= if _.isArray(item.value) then rhsTraceExpand(slice,item.value,bin) else [{type:'transfer',slice:slice,e:item.value}]
+        if item.cond?
+          bin.push {type:'cond',e:item.cond,action:_.cloneDeep(v)}
+        else
+          bin.push {type:'cond',e:null,     action:_.cloneDeep(v)}
+    return bin
+
+  simList: =>
+    if @share.alwaysList?
+      list=[]
+      transfer=null
+      for i in @share.alwaysList
+        if i[0]=='if'
+          list.push({type:'cond',e:i[1],action:null})
+          transfer=_.last(list)
+        else if i[0]=='assign'
+          if i[1].hier==@hier
+            if transfer?
+              transfer.action=@rhsTraceExpand({lsb:i[1].lsb,msb:i[1].msb},i[2])
+            else
+              list.push(@rhsTraceExpand({lsb:i[1].lsb,msb:i[1].msb},i[2])...)
+        else if i[0]=='elseif'
+          list.push({type:'cond',e:i[1],action:null})
+          transfer=_.last(list)
+        else if i[0]=='else'
+          list.push({type:'cond',e:i[1],action:null})
+          transfer=_.last(list)
+        else if i[0]=='end'
+          transfer=null
+      return list
+    else
+      list=[]
+      for i in @share.assignList
+        list.push(@rhsTraceExpand({lsb:i[0],msb:i[1]},i[2])...)
+      return list
+
 
 module.exports=Wire

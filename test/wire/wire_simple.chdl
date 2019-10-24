@@ -27,6 +27,7 @@ class WireSimple extends Module
   build: ->
     assign(@w1) = @din
     assign(@w2(2:0)) = @din(4:2)
+    assign(@w2(3)) = 1
     #assign(@w2(2:0)) => $ @din.fromMsb(3)
     #assign(@w2(2:0)) => $ @din.fromLsb(3)
     assign(@dout(2:0)) = @w3.reverse()(4:2)

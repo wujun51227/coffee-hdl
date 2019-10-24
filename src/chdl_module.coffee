@@ -218,13 +218,13 @@ class Module
   __dumpReg: ->
     out={}
     for [name,item] in toFlatten(@__regs)
-      _.set(out,name,{width:item.getWidth()})
+      _.set(out,name,{width:item.getWidth(),clock:item.getClock(),reset:item.getReset(),simList:item.simList()})
     return out
 
   __dumpWire: ->
     out={}
     for [name,item] in toFlatten(@__wires)
-      _.set(out,name,{width:item.getWidth()})
+      _.set(out,name,{width:item.getWidth(),simList:item.simList()})
     return out
 
   __addWire: (name,width)->
@@ -408,6 +408,8 @@ class Module
     @__updateWires=[]
     block()
     @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
+    for i in @__updateWires
+      i.inst.share.alwaysList=@__regAssignList
     @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]

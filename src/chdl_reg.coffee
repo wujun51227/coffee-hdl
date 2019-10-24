@@ -24,8 +24,10 @@ class Reg extends CircuitEl
     @needInitial=false
     @depNames=[]
     @local=false
+    @staticAssign=false
     @share={
-      staticAssign:false
+      assignList:[]
+      alwaysList:null
     }
 
   setLocal: =>
@@ -136,6 +138,7 @@ class Reg extends CircuitEl
     if n.constructor?.name=='Expr'
       reg.setLsb(n.str)
       reg.setMsb(n.str)
+      reg.share=@share
       return packEl('reg',reg)
     else
       reg.setLsb(n)
@@ -160,12 +163,14 @@ class Reg extends CircuitEl
       reg.link(@cell,@hier)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
+      reg.share=@share
       return packEl('reg',reg)
     else
       reg= Reg.create(toNumber(n)-toNumber(m)+1)
       reg.link(@cell,@hier)
       reg.setMsb(n)
       reg.setLsb(m)
+      reg.share=@share
       return packEl('reg',reg)
 
   refName: ->
@@ -188,13 +193,13 @@ class Reg extends CircuitEl
         list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
     if @width==1
       list.push "reg "+@getName()+";"
-      if @share.staticAssign
+      if @staticAssign
         list.push "wire "+@dName()+";"
       else
         list.push "reg "+@dName()+";"
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@getName()+";"
-      if @share.staticAssign
+      if @staticAssign
         list.push "wire ["+(@width-1)+":0] "+@dName()+";"
       else
         list.push "reg ["+(@width-1)+":0] "+@dName()+";"
@@ -269,15 +274,17 @@ class Reg extends CircuitEl
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     if @cell.__assignEnv=='always'
-      if @share.staticAssign
+      if @staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]
       @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
     else
-      if @share.staticAssign
+      if @staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__wireAssignList.push ["assign", this, assignFunc(),lineno]
-      @share.staticAssign=true
+      assignItem=["assign",this,assignFunc(),lineno]
+      @cell.__wireAssignList.push assignItem
+      @share.assignList.push [@lsb,@msb,assignItem[2]]
+      @staticAssign=true
     @cell.__assignWaiting=false
     @depNames.push(ElementSets.get()...)
 
@@ -355,5 +362,51 @@ class Reg extends CircuitEl
     @clearSignal=s
     @clearValue=value
     return packEl('reg',this)
+
+  rhsTraceExpand:(slice,expandItem,bin=[])=>
+    if _.isString(expandItem) or _.isNumber(expandItem)
+      bin.push {type:'transfer',slice:slice,e:expandItem}
+    else if _.isArray(expandItem)
+      for item,index in expandItem
+        v= if _.isArray(item.value) then rhsTraceExpand(slice,item.value,bin) else [{type:'transfer',slice:slice,e:item.value}]
+        if item.cond?
+          bin.push {type:'cond',e:item.cond,action:_.cloneDeep(v)}
+        else
+          bin.push {type:'cond',e:null,     action:_.cloneDeep(v)}
+    return bin
+
+  simList: ->
+      list=[]
+      if @resetMode?
+        action={type:'transfer',e:@resetValue}
+        if @assertHigh
+          list.push {type:'cond',e:"#{@getReset()}==1",action:action}
+        else
+          list.push {type:'cond',e:"#{@getReset()}==0",action:action}
+
+      if @clearSignal?
+        action={type:'transfer',e:@resetValue}
+        list.push {type:"cond",e:"#{@clearSignal}==#{@clearValue}",action:action}
+
+      if @enableSignal?
+        action={type:'update'}
+        list.push {type:'cond',e:"#{@enableSignal}==#{@enableValue}",action:action}
+      else
+        action={type:'update'}
+        if list.length>0
+          list.push {type:'cond',e:null,action:action}
+        else
+          list.push {type:'update'}
+
+      out={
+        trig: list
+      }
+
+      list=[]
+      for i in @share.assignList
+        list.push(@rhsTraceExpand({lsb:i[0],msb:i[1]},i[2])...)
+
+      out.assign=list
+      return out
 
 module.exports=Reg

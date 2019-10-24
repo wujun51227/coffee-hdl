@@ -165,6 +165,13 @@ code_gen= (inst)=>
 
   instEnv.register(inst)
   inst.build()
+  simPackage={
+    name: buildName
+    #port: inst.__dumpPort()
+    reg: inst.__dumpReg()
+    wire: inst.__dumpWire()
+  }
+  console.log JSON.stringify(simPackage,null,' ')
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
   printBuffer.add '`define UDLY 1'
