@@ -137,7 +137,7 @@ class Reg extends CircuitEl
 
   bit: (n)->
     reg= Reg.create(1)
-    reg.link(@cell,@elName)
+    reg.link(@cell,@hier)
     if n.constructor?.name=='Expr'
       reg.setLsb(n.str)
       reg.setMsb(n.str)
@@ -164,14 +164,14 @@ class Reg extends CircuitEl
   slice: (n,m)->
     if n.constructor?.name=='Expr'
       reg= Reg.create(toNumber(n.str)-toNumber(m.str)+1)
-      reg.link(@cell,@elName)
+      reg.link(@cell,@hier)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
       reg.isMem=@isMem
       return packEl('reg',reg)
     else
       reg= Reg.create(toNumber(n)-toNumber(m)+1)
-      reg.link(@cell,@elName)
+      reg.link(@cell,@hier)
       reg.setMsb(n)
       reg.setLsb(m)
       reg.isMem=@isMem
@@ -315,15 +315,15 @@ class Reg extends CircuitEl
 
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "_#{@refName()}==#{@elName+'__'+name}"
+    _expr "#{@dName()}==#{@elName+'__'+name}"
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@refName()}==#{@elName+'__'+name}"
+    _expr "#{@elName}==#{@elName+'__'+name}"
 
   isNthState: (n)=>
     item=@states[n]
-    _expr "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "#{@elName()}==#{@elName+'__'+item.state}"
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
@@ -332,16 +332,16 @@ class Reg extends CircuitEl
 
   isLastState: ()=>
     item=_.last(@states)
-    _expr "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "#{@elName}==#{@elName+'__'+item.state}"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
-    _expr "((#{@refName()}==#{@elName+'__'+prevState}) && (_#{@refName()}==#{@elName+'__'+nextState}))"
+    _expr "((#{@elName}==#{@elName+'__'+prevState}) && (#{@dName}==#{@elName+'__'+nextState}))"
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@refName()}!=#{@elName+'__'+name}"
+    _expr "#{@elName}!=#{@elName+'__'+name}"
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
@@ -354,7 +354,7 @@ class Reg extends CircuitEl
     @cell.__regAssignList.push ['assign',this,"#{@elName}",-1]
     for src,v of obj
       for dst,condFunc of v
-          @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
+          @cell.__regAssignList.push ["if","#{@elName}==#{@elName+'__'+src} && #{condFunc()}",-1]
           @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
           @cell.__regAssignList.push ["end",-1]
   getWidth: => @width

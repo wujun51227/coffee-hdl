@@ -218,6 +218,8 @@ code_gen= (inst)=>
       lhs=statement[1]
       rhs=statement[2]
       lineno=statement[3]
+      if lhs.constructor?.name is 'Reg'
+        lhs=lhs.dName()
       if lineno? and lineno>=0
         printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
       else
