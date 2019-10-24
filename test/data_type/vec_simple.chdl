@@ -9,17 +9,15 @@ class VecSimple extends Module
     )
 
     Mem(
-      mem: vec(16,1024)
+      aa:
+        mem: vec(16,1024)
     )
 
   build: ->
     always =>
       $if(@enable) =>
-        #assign(@mem.index(10)) => $ @in1
-        #assign(@mem.index(12)(3:2)) => $ @in1
-        #assign(@out1) => $ @mem.index(100)+ @mem.index(11)(15:0)
-        @mem.set(@addr, $ @in1)
-        assign(@out1) => $ @mem.get(100)+ @mem.get(@in1)
+        @aa.mem.set(@addr, $ @in1)
+        assign(@out1) => $ @aa.mem.get(100)+ @aa.mem.get(@in1)
       $endif
 
 module.exports=VecSimple

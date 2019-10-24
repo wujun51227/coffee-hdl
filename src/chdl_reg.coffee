@@ -4,7 +4,6 @@ _ = require 'lodash'
 {_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
-  value: 0
   resetMode: 'async' #async or sync
   resetValue: 0
 
@@ -34,7 +33,6 @@ class Reg extends CircuitEl
     return packEl('reg',this)
 
   init: (v,initial=false)=>
-    @value=v
     @resetValue=v
     @needInitial=initial
     return packEl('reg',this)
@@ -180,10 +178,6 @@ class Reg extends CircuitEl
       @elName
 
   dName: -> '_'+@refName()
-
-  get: -> @value
-
-  set: (v)-> @value=v
 
   @create: (width=1)-> new Reg(width)
 

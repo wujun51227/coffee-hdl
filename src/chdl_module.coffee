@@ -79,7 +79,7 @@ class Module
       else
         this[k]=v
         for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+          inst.link(this,toHier(k,name))
 
   _channel: (obj) ->
     for k,v of obj
@@ -88,7 +88,7 @@ class Module
         throw new Error('Channel name conflicted '+k)
       else
         for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+          inst.link(this,toHier(k,name))
         this[k]=v
 
   _probe: (obj) ->
