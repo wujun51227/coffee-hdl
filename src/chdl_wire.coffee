@@ -168,6 +168,10 @@ class Wire extends CircuitEl
     else
       return ''
 
+  drive: (list...)=>
+    for i in list
+      i.assign(=>_expr(@refName()))
+
   assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width

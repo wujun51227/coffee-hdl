@@ -277,6 +277,10 @@ class Reg extends CircuitEl
     else
       return ''
 
+  drive: (list...)=>
+    for i in list
+      i.assign(=>_expr(@refName()))
+
   assign: (assignFunc,lineno=-1)=>
     ElementSets.clear()
     @cell.__assignWaiting=true
