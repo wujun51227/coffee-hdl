@@ -16,6 +16,7 @@ class Reg extends CircuitEl
     @lsb= -1
     @msb= -1
     @assertHigh=false
+    @negClock=false
     @enableSignal=null
     @enableValue=null
     @clearSignal=null
@@ -46,6 +47,10 @@ class Reg extends CircuitEl
       @bindClockName=clock.getName()
     return packEl('reg',this)
 
+  negedge: =>
+    @negClock=true
+    return packEl('reg',this)
+
   syncReset: (reset)=>
     @resetMode='sync'
     if _.isString(reset)
@@ -74,6 +79,8 @@ class Reg extends CircuitEl
       @bindClockName= data.clockName
     if data.resetValue?
       @resetValue= data.resetValue
+    if data.negedge?
+      @negClock=data.negedge
 
   noReset: =>
     @resetMode=null
@@ -214,13 +221,14 @@ class Reg extends CircuitEl
 
   verilogUpdate: ->
     list=[]
+    activeEdge= if @negClock then 'negedge' else 'posedge'
     if @resetMode=='async'
       if @assertHigh
-        list.push "always @(posedge "+@getClock()+" or posedge "+@getReset()+") begin"
+        list.push "always @(#{activeEdge} "+@getClock()+" or posedge "+@getReset()+") begin"
       else
-        list.push "always @(posedge "+@getClock()+" or negedge "+@getReset()+") begin"
+        list.push "always @(#{activeEdge} "+@getClock()+" or negedge "+@getReset()+") begin"
     else
-      list.push "always @(posedge "+@getClock()+") begin"
+      list.push "always @(#{activeEdge} "+@getClock()+") begin"
     if @getReset()?
       if @assertHigh
         list.push "  if("+@getReset()+") begin"

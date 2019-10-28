@@ -24,6 +24,7 @@ class RegSimple extends Module
       ff4: reg(8).clock('hclk').syncReset('rstn').highReset()
       ff5: reg(9)
       ff6: reg(9)
+      ff7: reg(9).clock('hclk').negedge()
     )
 
 
