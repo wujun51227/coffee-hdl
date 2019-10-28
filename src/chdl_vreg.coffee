@@ -13,7 +13,6 @@ class Vreg extends Reg
     @lsb= -1
     @msb= -1
     @fieldMap={}
-    @assignDelay=null
 
   @create: (width=1)-> new Vreg(width)
 
@@ -107,20 +106,13 @@ class Vreg extends Reg
 
   verilogUpdate: ->
 
-  delay: (v=0)=>
-    @assignDelay = v
-
   assign: (assignFunc)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    if @assignDelay!=null
-      delay = "##{@assignDelay}"
-    else
-      delay = ""
     if @cell.__initialMode
-      @cell.__regAssignList.push ["assign_delay",this,delay, assignFunc(),-1]
+      @cell.__regAssignList.push ["assign_vreg",this,assignFunc(),-1]
     else
-      @cell.__wireAssignList.push ["assign_delay",this,delay, assignFunc(),-1]
+      @cell.__wireAssignList.push ["assign_vreg",this, assignFunc(),-1]
     @cell.__assignWaiting=false
 
 module.exports=Vreg

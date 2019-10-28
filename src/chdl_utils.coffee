@@ -304,3 +304,80 @@ module.exports._expr= (s,lineno=null) ->
     s
   else
     toSignal(s+append)
+
+rhsTraceExpand= (target,slice,expandItem,bin=[])=>
+  if _.isString(expandItem) or _.isNumber(expandItem)
+    bin.push {type:'transfer',target:target,slice:slice,e:expandItem}
+  else if _.isArray(expandItem)
+    for item,index in expandItem
+      nextBin=[]
+      if item.cond?
+        bin.push {type:'cond',e:item.cond,action:nextBin}
+      else
+        bin.push {type:'cond',e:null,     action:nextBin}
+        bin.push {type:'condend'}
+      if _.isArray(item.value)
+        rhsTraceExpand(target,slice,item.value,nextBin)
+      else
+        nextBin.push {type:'transfer',slice:slice,e:item.value}
+  return bin
+
+ifToCond=(block,index,bin) =>
+  while index<block.length
+    i=block[index]
+    if i[0]=='if'
+      nextBin=[]
+      bin.push({type:'cond',e:i[1],action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='assign_vreg'
+      el=i[1]
+      bin.push rhsTraceExpand(el.hier,{lsb:el.lsb,msb:el.msb},i[2])...
+    else if i[0]=='elseif'
+      nextBin=[]
+      bin.push({type:'cond',e:i[1],action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='else'
+      nextBin=[]
+      bin.push({type:'cond',e:null,action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='end'
+      break
+    else if i[0]=='endif'
+      bin.push({type:'condend'})
+    index+=1
+  return index
+
+module.exports.rhsTraceExpand= rhsTraceExpand
+
+module.exports.toEventList=(initSegmentList,list=[])=>
+  for initSegment in initSegmentList
+    item = initSegment
+    if item.type=='delay'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'delay',e:item.delay,block:block}
+    else if item.type=='posedge'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'posedge',e:item.signal.hier,block:block}
+    else if item.type=='negedge'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'negedge',e:item.signal.hier,block:block}
+    else if item.type=='wait'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'wait',e:item.expr,block:block}
+    else if item.type=='event'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'event',e:item.event,block:block}
+    else if item.type=='trigger'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'trigger',e:item.signal,block:block}
+    else if item.type=='idle'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'init',e:item.signal,block:block}
+
