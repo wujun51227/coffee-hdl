@@ -11,6 +11,9 @@ class CircuitEl
     @elName=toSignal(name)  # this name is flatten name
     @hier=name
 
+  toString: ->
+    @hier+'(...)'
+
   getName: -> @elName
 
   getPath: ->
