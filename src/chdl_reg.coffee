@@ -188,7 +188,7 @@ class Reg extends CircuitEl
         else
           @hier+".slice("+@msb+","+@lsb+")"
       else
-        @hier
+        @hier+'.getQ()'
     else
       if @lsb>=0
         if @width==1

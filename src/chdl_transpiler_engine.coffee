@@ -46,11 +46,16 @@ findCallSlice=(tokens,index)->
 
 findBreak=(tokens,index)->
   i=index
+  cnt=0
   while token = tokens[i]
     if token[0]=='TERMINATOR'
       return i
+    else if token[0]=='INDENT'
+      cnt+=1
     else if token[0]=='OUTDENT'
-      return i+1
+      cnt-=1
+      if cnt==-1
+        return i
     i+=1
   return -1
 

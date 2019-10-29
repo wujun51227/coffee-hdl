@@ -10,6 +10,7 @@ class AssignSimple extends Module
       din: input(5)
       dout: output(5)
       dout1: output(5)
+      dout2: output(5)
     )
 
     Wire(
@@ -17,7 +18,9 @@ class AssignSimple extends Module
     )
 
   build: ->
-    assign(@dout) = $ @din + 1
+    assign(@dout) =  @din + 1
+
+    assign(@dout2) = @xxx.select((i)=>i%2==0)
 
     assign(@dout1) =  @din + @xxx
 

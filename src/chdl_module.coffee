@@ -635,6 +635,7 @@ class Module
     pWire.cell=this
     pWire.setLocal()
     pWire.elName=toSignal(_id('__'+name))
+    pWire.hier=pWire.elName
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
     return ret
@@ -644,6 +645,7 @@ class Module
     pReg.cell=this
     pReg.setLocal()
     pReg.elName=toSignal(_id('__'+name))
+    pReg.hier=pReg.elName
     ret = packEl('reg',pReg)
     @__local_regs.push(ret)
     return ret
