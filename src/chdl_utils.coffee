@@ -310,9 +310,8 @@ module.exports._expr= (s,lineno=null) ->
       append='/*'+lineno+'*/'
     if s.str?
       toSignal(s.str+append)
-    #else if _.isArray(s)
-    #  console.log '>>>>>>>>>>>>>>>>>>'
-    #  s
+    else if _.isArray(s)
+      s
     else
       toSignal(s+append)
 
