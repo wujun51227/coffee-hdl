@@ -180,6 +180,10 @@ class Module
     @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
+    @__sim=false
+
+  __setSim: ->
+    @__sim=true
 
   __setParentNode: (node)->
     @__parentNode=node

@@ -1,6 +1,10 @@
 #{Channel}=require('./chdl_channel')
 _ =require 'lodash'
 
+simMode=false
+
+module.exports.setSim= -> simMode=true
+
 toSignal= (i)->
   a=i.replace(/^\$\./,'')
   b=a.replace(/\.$/,'')
@@ -295,15 +299,21 @@ module.exports.expand= (num,sig)->
   return "{#{getValue(num)}{#{getValue(sig)}}}"
 
 module.exports._expr= (s,lineno=null) ->
-  append=''
-  if lineno? and lineno>=0
-    append='/*'+lineno+'*/'
-  if s.str?
-    toSignal(s.str+append)
-  else if _.isArray(s)
-    s
+  if simMode
+    if s.str?
+      s.str
+    else
+      s
   else
-    toSignal(s+append)
+    append=''
+    if lineno? and lineno>=0
+      append='/*'+lineno+'*/'
+    if s.str?
+      toSignal(s.str+append)
+    else if _.isArray(s)
+      s
+    else
+      toSignal(s+append)
 
 rhsTraceExpand= (target,slice,expandItem,bin=[])=>
   if _.isString(expandItem) or _.isNumber(expandItem)

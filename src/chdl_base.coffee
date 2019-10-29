@@ -11,7 +11,7 @@ Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 {stringifyTree} = require "stringify-tree"
-{packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
+{setSim,packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -22,6 +22,7 @@ config={
   tree: false
   info: false
   noLineno: false
+  sim: false
 }
 
 getCellList= (inst)->
@@ -139,6 +140,46 @@ statementGen=(statement)->
       "  else begin /*#{lineno}*/"
     else
       "  else begin"
+  else
+    ''
+
+sim_gen= (inst)=>
+  buildName = do ->
+    if inst.__specify
+      if inst.__uniq
+        moduleIndex+=1
+        inst.__specifyModuleName+'__'+moduleIndex
+      else
+        inst.__specifyModuleName
+    else
+      get_module_build_name(inst)
+  inst.__overrideModuleName(buildName)
+  log 'Build cell',inst.__getPath(),'(',buildName,')'
+  if moduleCache[buildName]?
+    return
+  else if inst.isBlackBox()
+    log 'Warning:',inst.__getPath(),'is blackbox'
+    return
+  else
+    moduleCache[buildName]=true
+
+  for i in getCellList(inst)
+    sim_gen(i.inst)
+
+  instEnv.register(inst)
+  inst.__setSim()
+  inst.build()
+  simPackage={
+    name    : buildName
+    port    : inst.__dumpPort()
+    reg     : inst.__dumpReg()
+    wire    : inst.__dumpWire()
+    var     : inst.__dumpVar()
+    event   : inst.__dumpEvent()
+    cell    : inst.__dumpCell()
+    channel : inst.__dumpChannel()
+  }
+  console.log JSON.stringify(simPackage,null,'  ')
 
 code_gen= (inst)=>
   buildName = do ->
@@ -165,13 +206,6 @@ code_gen= (inst)=>
 
   instEnv.register(inst)
   inst.build()
-  simPackage={
-    name: buildName
-    #port: inst.__dumpPort()
-    reg: inst.__dumpReg()
-    wire: inst.__dumpWire()
-  }
-  console.log JSON.stringify(simPackage,null,' ')
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
   printBuffer.add '`define UDLY 1'
@@ -434,7 +468,11 @@ toVerilog=(inst)->
       inst.__setDefaultReset('_resetn')
       inst.__addPort('_resetn','input',1)
   cell_build(inst)
-  code_gen(inst)
+  if config.sim
+    setSim()
+    sim_gen(inst)
+  else
+    code_gen(inst)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   inst._clean()

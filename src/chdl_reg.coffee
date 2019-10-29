@@ -181,15 +181,28 @@ class Reg extends CircuitEl
       return packEl('reg',reg)
 
   refName: ->
-    if @lsb>=0
-      if @width==1
-        @elName+"["+@lsb+"]"
+    if @cell.__sim
+      if @lsb>=0
+        if @width==1
+          @hier+".bit("+@lsb+")"
+        else
+          @hier+".slice("+@msb+","+@lsb+")"
       else
-        @elName+"["+@msb+":"+@lsb+"]"
+        @hier
     else
-      @elName
+      if @lsb>=0
+        if @width==1
+          @elName+"["+@lsb+"]"
+        else
+          @elName+"["+@msb+":"+@lsb+"]"
+      else
+        @elName
 
-  dName: -> '_'+@refName()
+  dName: ->
+    if @cell.__sim
+      @hier+'.getD()'
+    else
+      '_'+@refName()
 
   @create: (width=1)-> new Reg(width)
 
