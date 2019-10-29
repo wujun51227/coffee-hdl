@@ -1,7 +1,7 @@
 CircuitEl=require 'chdl_el'
 ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
-{_expr,packEl,toNumber,cat}=require 'chdl_utils'
+{rhsTraceExpand,_expr,packEl,toNumber,cat}=require 'chdl_utils'
 
 class Wire extends CircuitEl
   width: 0
@@ -149,13 +149,22 @@ class Wire extends CircuitEl
       return packEl('wire',wire)
 
   refName: =>
-    if @lsb>=0
-      if @width==1
-        @elName+"["+@lsb+"]"
+    if @cell.__sim
+      if @lsb>=0
+        if @width==1
+          @hier+".bit("+@lsb+")"
+        else
+          @hier+".slice("+@msb+","+@lsb+")"
       else
-        @elName+"["+@msb+":"+@lsb+"]"
+        @hier
     else
-      @elName
+      if @lsb>=0
+        if @width==1
+          @elName+"["+@lsb+"]"
+        else
+          @elName+"["+@msb+":"+@lsb+"]"
+      else
+        @elName
 
   get: -> @value
 
@@ -228,10 +237,10 @@ class Wire extends CircuitEl
       throw new Error('Set sateMap error')
 
   isState: (name)=>
-    _expr "#{@elName}==#{@elName+'__'+name}"
+    _expr "#{@refName()}==#{@elName+'__'+name}"
 
   notState: (name)=>
-    _expr "#{@elName}!=#{@elName+'__'+name}"
+    _expr "#{@refName()}!=#{@elName+'__'+name}"
 
   getState: (name)=> @elName+'__'+name
 
@@ -253,18 +262,6 @@ class Wire extends CircuitEl
     tempWire.assign((=> cat(list)))
     return tempWire
 
-  rhsTraceExpand:(slice,expandItem,bin=[])=>
-    if _.isString(expandItem) or _.isNumber(expandItem)
-      bin.push {type:'transfer',slice:slice,e:expandItem}
-    else if _.isArray(expandItem)
-      for item,index in expandItem
-        v= if _.isArray(item.value) then rhsTraceExpand(slice,item.value,bin) else [{type:'transfer',slice:slice,e:item.value}]
-        if item.cond?
-          bin.push {type:'cond',e:item.cond,action:_.cloneDeep(v)}
-        else
-          bin.push {type:'cond',e:null,     action:_.cloneDeep(v)}
-    return bin
-
   simList: =>
     if @share.alwaysList?
       list=[]
@@ -276,22 +273,23 @@ class Wire extends CircuitEl
         else if i[0]=='assign'
           if i[1].hier==@hier
             if transfer?
-              transfer.action=@rhsTraceExpand({lsb:i[1].lsb,msb:i[1].msb},i[2])
+              transfer.action=rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])
             else
-              list.push(@rhsTraceExpand({lsb:i[1].lsb,msb:i[1].msb},i[2])...)
+              list.push(rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])...)
         else if i[0]=='elseif'
           list.push({type:'cond',e:i[1],action:null})
           transfer=_.last(list)
         else if i[0]=='else'
-          list.push({type:'cond',e:i[1],action:null})
+          list.push({type:'cond',e:null,action:null})
           transfer=_.last(list)
         else if i[0]=='end'
+          list.push({type:'end'})
           transfer=null
       return list
     else
       list=[]
       for i in @share.assignList
-        list.push(@rhsTraceExpand({lsb:i[0],msb:i[1]},i[2])...)
+        list.push(rhsTraceExpand(@hier,{lsb:i[0],msb:i[1]},i[2])...)
       return list
 
 

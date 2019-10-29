@@ -42,5 +42,7 @@ class WireSimple extends Module
       $else
         assign(@w4) = $ @w1 - 1
 
+    @w1(1).drive(@sel1,@sel2,@sel3)
+
 module.exports=WireSimple
 

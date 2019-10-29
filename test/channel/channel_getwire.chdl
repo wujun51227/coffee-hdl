@@ -45,6 +45,7 @@ class ChannelGetWire extends Module
       cell2_port: bind('u0_cell2.ch1')
       cell1_port: bind('cell1_ch')
       dout: output(16)
+      dout1: output(16)
     )
 
     Probe(
@@ -63,7 +64,7 @@ class ChannelGetWire extends Module
 
   build: ->
     assign(@dout) => $ @cell2_port.din+channel_wire('cell1_select')&&channel_wire('cell1_ch','din')(3:0)+@cell2_probe.din
-    assign(@dout) => $ @cell2_port.din+@cell1_select.Port&&@cell1_ch.Port.din(3:0)+@cell2_probe.din
+    assign(@dout1) => $ @cell2_port.din+@cell1_select.Port&&@cell1_ch.Port.din(3:0)+@cell2_probe.din
 
 module.exports=ChannelGetWire
 

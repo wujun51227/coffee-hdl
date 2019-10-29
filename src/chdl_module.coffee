@@ -5,7 +5,7 @@ Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
 ElementSets = require 'chdl_el_sets'
 {table} = require 'table'
-{packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
+{toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
@@ -222,7 +222,15 @@ class Module
   __dumpReg: ->
     out={}
     for [name,item] in toFlatten(@__regs)
-      _.set(out,name,{width:item.getWidth(),clock:item.getClock(),reset:item.getReset(),simList:item.simList()})
+      if item.constructor.name=='Reg'
+        _.set(out,name,{width:item.getWidth(),property:item.simProperty(),simList:item.simList()})
+    return out
+
+  __dumpVar: ->
+    out={}
+    for [name,item] in toFlatten(@__regs)
+      if item.constructor.name=='Vreg'
+        _.set(out,name,{width:item.getWidth()})
     return out
 
   __dumpWire: ->
@@ -491,6 +499,7 @@ class Module
           @__regAssignList.push ["end"]
           return @_regProcess()
       _endif: =>
+          @__regAssignList.push ["endif"]
     }
 
   _cond: (cond,lineno=-1)=>
@@ -610,13 +619,11 @@ class Module
           #console.log name,sig
           net=Wire.create(sig.getWidth())
           if name
-            wireName=channel.getName()+'__'+name
-            net.link(channel.cell,toSignal(wireName))
+            net.link(channel.cell,toHier(channel.hier,name))
             netEl=packEl('wire',net)
             _.set(channel.Port,name,netEl)
           else
-            wireName=channel.getName()
-            net.link(channel.cell,toSignal(wireName))
+            net.link(channel.cell,channel.hier)
             netEl=packEl('wire',net)
             channel.Port=netEl
 
@@ -924,5 +931,46 @@ class Module
       for i in @__moduleParameter
         out+="parameter #{i.key} = #{i.value};\n"
     return out
+
+  __dumpEvent: =>
+    out=[]
+    for seqBlock in @__initialList when seqBlock.length>0
+      seq={type:'initial',list:[]}
+      out.push seq
+      for item in seqBlock
+        toEventList(item.bin,seq.list)
+    for seqBlock in @__foreverList when seqBlock.length>0
+      seq={type:'forever',list:[]}
+      out.push seq
+      for item in seqBlock
+        toEventList(item.bin,seq.list)
+    return out
+
+  __dumpCell: =>
+    p = Object.getPrototypeOf(this)
+    cellList=({inst:k,module:v.getModuleName()} for k,v of p when typeof(v)=='object' and v instanceof Module)
+    for i in @__cells
+      cellList.push({inst:i.name,module:i.inst.getModuleName()}) unless _.find(cellList,(n)-> n.inst.__id==i.inst.__id)
+    for cellInfo in cellList
+      cellInst=@__getCell(cellInfo.inst)
+      connList=[]
+      for i in cellInst.__bindChannels
+        connList.push {port:i.portName,channel:i.channel.hier}
+      cellInfo.conn=connList
+    return cellList
+
+  __dumpChannel: =>
+    out={}
+    for [name,channel] in toFlatten(@__channels)
+      for [path,port] in toFlatten(channel.Port)
+        hier=do ->
+          if path!=''
+            channel.hier+'.Port.'+path
+          else
+            channel.hier+'.Port'
+        _.set(out,hier,{width:port.getWidth(),simList:port.simList()})
+
+    return out
+    
 
 module.exports=Module

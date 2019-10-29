@@ -1,0 +1,80 @@
+class count extends Module
+  constructor: ->
+    super()
+    Port(
+      enable: input()
+      dout: output(32)
+    )
+
+    Reg(
+      cnt: reg(32)
+    )
+
+  build: ->
+    assign(@dout) = @cnt
+
+    assign(@cnt)
+      $if(@enable)
+        $if(@cnt<100)
+          $ @cnt+1
+        $else
+          $ 0
+        $endif
+      $else
+        $ @cnt
+      $endif
+
+class bench_top extends Module
+  u0_count: new count()
+
+  constructor: ->
+    super()
+    @setCombModule()
+    Port(
+    )
+
+    Reg(
+      rstn: vreg()
+      clk: vreg()
+      en: vreg()
+    )
+
+    Channel(
+      en_channel: channel()
+    )
+
+    @u0_count.bind(
+      enable: @en_channel
+    )
+
+    @__setDefaultClock('clk')
+    @__setDefaultReset('rstn')
+
+  build: ->
+    assign(@en_channel.Port) = @en
+
+    forever
+      $sequence() =>
+      .delay(10) =>
+        assign(@clk) = $ !@clk
+      .end()
+
+    s1= =>
+      $sequence('delay') =>
+          assign(@rstn) =>  1
+        .delay(10) =>
+          assign(@rstn) =>  0
+        .delay(10) =>
+          assign(@rstn) =>  1
+        .delay(10) =>
+          assign(@en) => 1
+        .delay(1000) =>
+          assign(@en) => 0
+        .delay(100) =>
+        .end()
+
+    initial
+      s1()
+
+module.exports=bench_top
+

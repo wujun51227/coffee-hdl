@@ -107,15 +107,14 @@ statementGen=(statement)->
       "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
     else
       "  #{lhs} = #{rhsExpand(rhs)};"
-  else if statement[0]=='assign_delay'
+  else if statement[0]=='assign_vreg'
     lhs=statement[1].refName()
-    delay=statement[2]
-    rhs=statement[3]
-    lineno=statement[4]
+    rhs=statement[2]
+    lineno=statement[3]
     if lineno? and lineno>=0
-      "  #{lhs}/*#{lineno}*/ = #{delay} #{rhsExpand(rhs)};"
+      "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
     else
-      "  #{lhs} = #{delay} #{rhsExpand(rhs)};"
+      "  #{lhs} = #{rhsExpand(rhs)};"
   else if statement[0]=='end'
     "  end"
   else if statement[0]=='verilog'
@@ -273,15 +272,14 @@ code_gen= (inst)=>
         printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
       else
         printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
-    else if statement[0]=='assign_delay'
+    else if statement[0]=='assign_vreg'
       lhs=statement[1].refName()
-      delay=statement[2]
-      rhs=statement[3]
-      lineno=statement[4]
+      rhs=statement[2]
+      lineno=statement[3]
       if lineno? and lineno>=0
-        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{delay} #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
       else
-        printBuffer.add "assign #{lhs} = #{delay} #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)

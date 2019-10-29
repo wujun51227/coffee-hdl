@@ -1,7 +1,7 @@
 CircuitEl = require 'chdl_el'
 ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
-{_expr,packEl,toNumber,hex}=require 'chdl_utils'
+{rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
   resetMode: 'async' #async or sync
@@ -338,11 +338,11 @@ class Reg extends CircuitEl
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@elName}==#{@elName+'__'+name}"
+    _expr "#{@refName()}==#{@elName+'__'+name}"
 
   isNthState: (n)=>
     item=@states[n]
-    _expr "#{@elName()}==#{@elName+'__'+item.state}"
+    _expr "#{@refName()}==#{@elName+'__'+item.state}"
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
@@ -351,16 +351,16 @@ class Reg extends CircuitEl
 
   isLastState: ()=>
     item=_.last(@states)
-    _expr "#{@elName}==#{@elName+'__'+item.state}"
+    _expr "#{@refName()}==#{@elName+'__'+item.state}"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
-    _expr "((#{@elName}==#{@elName+'__'+prevState}) && (#{@dName}==#{@elName+'__'+nextState}))"
+    _expr "((#{@refName()}==#{@elName+'__'+prevState}) && (#{@dName()}==#{@elName+'__'+nextState}))"
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@elName}!=#{@elName+'__'+name}"
+    _expr "#{@refName()}!=#{@elName+'__'+name}"
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
@@ -370,10 +370,10 @@ class Reg extends CircuitEl
   getState: (name)=> _expr @elName+'__'+name
 
   stateSwitch: (obj)=>
-    @cell.__regAssignList.push ['assign',this,"#{@elName}",-1]
+    @cell.__regAssignList.push ['assign',this,"#{@refName()}",-1]
     for src,v of obj
       for dst,condFunc of v
-          @cell.__regAssignList.push ["if","#{@elName}==#{@elName+'__'+src} && #{condFunc()}",-1]
+          @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
           @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
           @cell.__regAssignList.push ["end",-1]
   getWidth: => @width
@@ -388,20 +388,17 @@ class Reg extends CircuitEl
     @clearValue=value
     return packEl('reg',this)
 
-  rhsTraceExpand:(slice,expandItem,bin=[])=>
-    if _.isString(expandItem) or _.isNumber(expandItem)
-      bin.push {type:'transfer',slice:slice,e:expandItem}
-    else if _.isArray(expandItem)
-      for item,index in expandItem
-        v= if _.isArray(item.value) then rhsTraceExpand(slice,item.value,bin) else [{type:'transfer',slice:slice,e:item.value}]
-        if item.cond?
-          bin.push {type:'cond',e:item.cond,action:_.cloneDeep(v)}
-        else
-          bin.push {type:'cond',e:null,     action:_.cloneDeep(v)}
-    return bin
+  simProperty: ->
+    {
+      clock: @getClock()
+      clockEdge: (if @negClock then 'negedge' else 'posedge')
+      reset: @getReset()
+      resetAssert: @assertHigh
+    }
 
   simList: ->
       list=[]
+      out={}
       if @resetMode?
         action={type:'transfer',e:@resetValue}
         if @assertHigh
@@ -420,16 +417,36 @@ class Reg extends CircuitEl
         action={type:'update'}
         if list.length>0
           list.push {type:'cond',e:null,action:action}
+          list.push {type:'condend'}
         else
           list.push {type:'update'}
 
-      out={
-        trig: list
-      }
+      out.trig=list
 
       list=[]
       for i in @share.assignList
-        list.push(@rhsTraceExpand({lsb:i[0],msb:i[1]},i[2])...)
+        list.push(rhsTraceExpand(@hier,{lsb:i[0],msb:i[1]},i[2])...)
+      if @share.alwaysList?
+        transfer=null
+        for i in @share.alwaysList
+          if i[0]=='if'
+            list.push({type:'cond',e:i[1],action:null})
+            transfer=_.last(list)
+          else if i[0]=='assign'
+            if i[1].hier==@hier
+              if transfer?
+                transfer.action=rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])
+              else
+                list.push(rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])...)
+          else if i[0]=='elseif'
+            list.push({type:'cond',e:i[1],action:null})
+            transfer=_.last(list)
+          else if i[0]=='else'
+            list.push({type:'cond',e:null,action:null})
+            transfer=_.last(list)
+          else if i[0]=='end'
+            list.push({type:'end'})
+            transfer=null
 
       out.assign=list
       return out

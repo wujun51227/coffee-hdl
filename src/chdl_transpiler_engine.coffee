@@ -571,6 +571,9 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_passAlways', {}]
       ]
+      console.log '=========================================='
+      console.log 'pass_always not supported anymore'
+      console.log '=========================================='
       patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
