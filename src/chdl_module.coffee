@@ -565,8 +565,11 @@ class Module
   _if: (cond,lineno=-1)->
     if @__assignWaiting
       return @_wireProcess()._if(cond,lineno)
-    else
+    else if @__assignEnv=='always'
       return @_regProcess()._if(cond,lineno)
+    else
+      return @_wireProcess()._if(cond,lineno)
+    #return @_regProcess()._if(cond,lineno)
 
   _pinConnect: ->
     out=[]

@@ -69,7 +69,5 @@ class FuncTest extends Module
         $endif
     )
 
-    console.log @w3.getDepNames()
-
 module.exports=FuncTest
 
