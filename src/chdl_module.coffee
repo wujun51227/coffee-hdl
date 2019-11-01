@@ -426,6 +426,19 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
+  _always_if: (cond,lineno)=>
+    return (block)=>
+      @__assignEnv = 'always'
+      @__regAssignList=[]
+      @__updateWires=[]
+      @_regProcess()._if(cond,lineno)(block)._endif()
+      @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
+      for i in @__updateWires
+        i.inst.share.alwaysList=@__regAssignList
+      @__assignEnv = null
+      @__updateWires=[]
+      @__regAssignList=[]
+
   _passAlways: (lineno,block)=>
     @__assignEnv = 'always'
     @__regAssignList=[]

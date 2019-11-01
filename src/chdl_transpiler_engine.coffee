@@ -534,6 +534,22 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='always_if'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_always_if', {}]
+      ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      extractSlice=tokens.slice(callStart+1,callEnd)
+      tokenExpand(extractSlice,true)
+      list.push tokens[callStart]
+      list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push tokens[callEnd]
+      patchLength=findCondBlock(tokens,callEnd)
+      tokens.splice i, callEnd-i+1, list...
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='forever'
       list =[
         ['@', '@', {}]
