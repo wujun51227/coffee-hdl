@@ -193,7 +193,7 @@ class Wire extends CircuitEl
       @cell.__updateWires.push({type:'wire',name:@hier,pending:@pendingValue,inst:this})
     else
       if @staticWire==false or @staticAssign
-        throw new Error("This wire have been assigned again")
+        throw new Error("This wire have been assigned again #{@elName}")
       assignItem=["assign",this,assignFunc(),lineno]
       @cell.__wireAssignList.push assignItem
       @share.assignList.push [@lsb,@msb,assignItem[2]]

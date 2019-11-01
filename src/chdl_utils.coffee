@@ -149,7 +149,7 @@ printBuffer= do ->
   return {
     reset: -> list=[]
     clearBin: -> bin.length=0
-    add: (s)-> list.push s
+    add: (s)-> list.push s if s?
     get: -> list
     blank: (s='')-> list.push s
     setName: (s)->

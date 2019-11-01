@@ -334,15 +334,15 @@ class Reg extends CircuitEl
 
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@dName()}==#{@elName+'__'+name}"
+    _expr "(#{@dName()}==#{@elName+'__'+name})"
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@refName()}==#{@elName+'__'+name}"
+    _expr "(#{@refName()}==#{@elName+'__'+name})"
 
   isNthState: (n)=>
     item=@states[n]
-    _expr "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
@@ -351,7 +351,7 @@ class Reg extends CircuitEl
 
   isLastState: ()=>
     item=_.last(@states)
-    _expr "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
@@ -360,7 +360,7 @@ class Reg extends CircuitEl
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "#{@refName()}!=#{@elName+'__'+name}"
+    _expr "(#{@refName()}!=#{@elName+'__'+name})"
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)

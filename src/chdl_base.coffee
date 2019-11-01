@@ -140,7 +140,7 @@ statementGen=(statement)->
     else
       "  else begin"
   else
-    ''
+    null
 
 sim_gen= (inst)=>
   buildName = do ->

@@ -8,6 +8,17 @@ module.exports={
   createChannelArray: (number)->
     return (channel() for i in [0...number])
 
+  numWidth: (number)->
+    Math.floor(Math.log2(number))+1
+
+  $sigMux:(select,sig1,sig2)->
+    selSig=local_wire(sig1.getWidth(),'sel')
+    assign(selSig)
+      $if(select) => $ sig1
+      $else => $ sig2
+      $endif
+    return $ selSig
+    
   $channelMux:(select,outChannel,inChannelList...)->
     for dst in outChannel.wireList()
       list=[]
@@ -228,17 +239,17 @@ module.exports={
 
   $rise: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'r_').clock(clock)
+      d1 = local_reg(1,'r_').clock(clock).noReset()
     else
-      d1 = local_reg(1,'r_')
+      d1 = local_reg(1,'r_').noReset()
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
   $fall: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'f_').clock(clock)
+      d1 = local_reg(1,'f_').clock(clock).noReset()
     else
-      d1 = local_reg(1,'f_')
+      d1 = local_reg(1,'f_').noReset()
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 
@@ -251,10 +262,10 @@ module.exports={
       $endif
     return  $ cnt=={n-1}
 
-  $count: (n,enable,clock=null)->
+  $count: (n,enable,clock=null,reset=null)->
     width=Math.ceil(Math.log2(n))
     if clock?
-      cnt = local_reg(width,'cnt').clock(clock)
+      cnt = local_reg(width,'cnt').clock(clock).reset(reset)
     else
       cnt = local_reg(width,'cnt')
     assign(cnt)
@@ -266,10 +277,10 @@ module.exports={
       $endif
     return  $ cnt=={n-1}
 
-  $hold1: (sig,clear,clock=null)->
+  $hold1: (sig,clear,clock=null,reset=null)->
     out = local_wire(1,'hold')
     if clock?
-      latch = local_reg(1,'hold').clock(clock)
+      latch = local_reg(1,'hold').clock(clock).reset(reset)
     else
       latch = local_reg(1,'hold')
     assign(out) = $ sig | latch
@@ -281,10 +292,10 @@ module.exports={
       $endif
     return  $ out
 
-  $hold0: (sig,clear,clock=null)->
+  $hold0: (sig,clear,clock=null,reset=null)->
     out = local_wire(1,'hold')
     if clock?
-      latch = local_reg(1,'hold').clock(clock)
+      latch = local_reg(1,'hold').clock(clock).reset(reset)
     else
       latch = local_reg(1,'hold')
     assign(out) = $ sig & latch
@@ -296,10 +307,10 @@ module.exports={
       $endif
     return  $ out
 
-  $holdData: (sig,enable,clock=null)->
+  $holdData: (sig,enable,clock=null,reset=null)->
     out = local_wire(sig.getWidth(),'hold')
     if clock?
-      latch = local_reg(sig.getWidth(),'hold').clock(clock)
+      latch = local_reg(sig.getWidth(),'hold').clock(clock).reset(reset)
     else
       latch = local_reg(sig.getWidth(),'hold')
     assign(out)

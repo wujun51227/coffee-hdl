@@ -23,13 +23,14 @@ module.exports={
     dout = $ rd_data
 
     next_level= local_wire(addrWidth+1,'next_level')
-    pass_always
+
+    assign(next_level)
       $if(pop==0&&push==1)
-        assign(next_level) = $ level+1
+        $ level+1
       $elseif(pop==1&&push==0)
-        assign(next_level) = $ level-1
+        $ level-1
       $else
-        assign(next_level) = $ level
+        $ level
       $endif
 
     always
@@ -201,5 +202,36 @@ module.exports={
       empty: $ empty
       full: $ full
     }
+
+  $fixArbiter: (list,defaultIndex=0)->
+    condList=[]
+    #ret = local_wire(getWidth(list.length))
+    for i,index in list
+      condList.push({cond:i,value:index})
+    $order(condList,defaultIndex)
+
+  $roundArbiter: (list,defaultIndex=0,clock=null,reset=null)->
+    width = Math.floor(Math.log2(list.length))+1
+    if clock?
+      roundReg = local_reg(width,'round').clock(clock).reset(reset)
+    else
+      roundReg = local_reg(width,'round')
+    assign(roundReg)
+      $if(roundReg==list.length-1) => $ 0
+      $else => $ roundReg+1
+      $endif
+    indexArray=(local_wire(width,'index') for i in [0...list.length])
+    assign(indexArray[0]) = roundReg
+    for i,index in indexArray when index>0
+      assign(indexArray[index])
+        $if((roundReg+index)>=list.length)
+          $ roundReg+index-list.length
+        $else
+          $ roundReg+index
+        $endif
+    condList=[]
+    for i,index in list
+      condList.push({cond:i,value:indexArray[index]})
+    $order(condList,defaultIndex)
 
 }
