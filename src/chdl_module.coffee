@@ -490,10 +490,10 @@ class Module
       if index==0
         ret=@_regProcess()._if(item.cond,item.lineno)(item.value)
       else
-        if item.cond?
+        if item.cond? and item.cond.str!='null'
           ret=ret._elseif(item.cond,item.lineno)(item.value)
         else
-          ret=ret._else(item.ineno)(item.value)
+          ret=ret._else(item.lineno)(item.value)
     ret._endif()
 
   _regProcess: ()=>
