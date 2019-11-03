@@ -613,6 +613,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='$if_blocks'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_if_blocks', {}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if'
       list =[
         ['@', '@', {}]

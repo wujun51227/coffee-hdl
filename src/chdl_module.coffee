@@ -484,6 +484,18 @@ class Module
     else
       return ''
 
+  _if_blocks: (list)=>
+    ret=null
+    for item,index in list
+      if index==0
+        ret=@_regProcess()._if(item.cond,item.lineno)(item.value)
+      else
+        if item.cond?
+          ret=ret._elseif(item.cond,item.lineno)(item.value)
+        else
+          ret=ret._else(item.ineno)(item.value)
+    ret._endif()
+
   _regProcess: ()=>
     self=this
     return {
