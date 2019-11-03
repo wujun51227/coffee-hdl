@@ -347,9 +347,9 @@ code_gen= (inst)=>
         printBuffer.add '  '+i.inst.dName()+'='+i.inst.refName()+';'
       if i.type=='wire'
         if i.pending==null
-          printBuffer.add '  '+i.inst.refName()+'=0;'
+          printBuffer.add '  '+i.inst.getName()+'=0;'
         else
-          printBuffer.add '  '+i.inst.refName()+'='+i.pending+';'
+          printBuffer.add '  '+i.inst.getName()+'='+i.pending+';'
     if assignList
       for statement in assignList
         printBuffer.add statementGen(statement)

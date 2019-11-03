@@ -516,7 +516,7 @@ class Module
     }
 
   _cond: (cond,lineno=-1)=>
-    return (block)=> {cond:cond.str,value:block(),lineno:lineno}
+    return (block)=> {cond:cond,value:block,lineno:lineno}
 
   _wireProcess: (list=[],lineno)=>
     return {

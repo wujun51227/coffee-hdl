@@ -116,7 +116,7 @@ module.exports={
   $order: (list,defaultValue=0)->
     plist=[]
     for {cond,value} in list
-      plist.push [cond,value]
+      plist.push [cond,value()]
     plist.push(defaultValue)
     return $reduceRight(plist,(sum,item,first,last)=>
       if first
@@ -170,9 +170,9 @@ module.exports={
     width=width ? @__assignWidth
     return $reduce(list,(sum,item,first,last)=>
       if(first)
-        $ (expand(width,item.cond)&(item.value))
+        $ (expand(width,item.cond)&(item.value()))
       else
-        $ sum|(expand(width,item.cond)&(item.value))
+        $ sum|(expand(width,item.cond)&(item.value()))
         )
 
   $doubleSync: (sigIn,clock=null)->
