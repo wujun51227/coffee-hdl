@@ -4,21 +4,23 @@ class ExprSimple extends Module
     Port(
       out: input(5)
       sel: input()
-      out1: input()
-      out2: input()
-      out3: input()
+      out1: output()
+      out2: output()
+      out3: output()
+      out4: output()
     )
 
   build: ->
     data=100
-    aaa = $opPrefix('^',@sel)
+    aaa = @opPrefix(Op.or,@sel)
     assign(@out)
       $if(@sel) => $ {data+1}
       $else => hex(5,0x1f)
       $endif
-    assign(@out1) = $ {$opPrefix('^',@sel)} + 1
+    assign(@out1) = $ {@opPrefix(Op.or,@sel)} + 1
     assign(@out2) = $ aaa + 1
-    assign(@out3) = $opPrefix('^',@sel)
+    assign(@out3) = @opPrefix(Op.or,@sel)
+    assign(@out4) = @opJoin(Op.plus,[@out1,@out2,@out3])
 
     console.log @out1.getDepNames()
 

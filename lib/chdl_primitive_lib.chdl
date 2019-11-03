@@ -1,4 +1,5 @@
 RecursiveIterator = require 'recursive-iterator'
+{Op}= require 'chdl_base'
 _ = require 'lodash'
 
 module.exports={
@@ -27,7 +28,7 @@ module.exports={
         eq=$ (select==index)
         list.push($ expand(width,eq) & src.getWire(dst.path))
       if dst.dir=='input'
-        assign(dst.net) = $opJoin('|',list)
+        assign(dst.net) = @opJoin('|',list)
       else if dst.dir=='output'
         for src,index in inChannelList
           assign(src.getWire(dst.path)) = $ dst.net
@@ -129,40 +130,40 @@ module.exports={
         $endif
     )
 
-  $opJoin: (op,list)->
+  opJoin: (op,list)->
     return $reduce(list,(sum,item,first,last)=>
       if first
         $ item
       else
-        if op=='+'
+        if op==Op.plus
           $ sum + item
-        else if op=='-'
+        else if op==Op.minus
           $ sum - item
-        else if op=='*'
+        else if op==Op.multiple
           $ sum * item
-        else if op=='^'
+        else if op==Op.xor
           $ sum ^ item
-        else if op=='&&'
+        else if op==Op.logicAnd
           $ sum && item
-        else if op=='||'
+        else if op==Op.logicOr
           $ sum || item
-        else if op=='&'
+        else if op==Op.and
           $ sum & item
-        else if op=='|'
+        else if op==Op.or
           $ sum | item
     )
 
-  $opPrefix: (op,sig)->
-    if op=='-'
-      $  {op}(sig)
-    else if op=='^'
-      $  {op}(sig)
-    else if op=='&'
-      $  {op}(sig)
-    else if op=='|'
-      $  {op}(sig)
-    else if op=='~'
-      $  {op}(sig)
+  opPrefix: (op,sig)->
+    if op==Op.neg
+      $  {'-'}(sig)
+    else if op==Op.xor
+      $  {'^'}(sig)
+    else if op==Op.and
+      $  {'&'}(sig)
+    else if op==Op.or
+      $  {'|'}(sig)
+    else if op==Op.inv
+      $  {'~'}(sig)
     else
       throw new Error("Unknow op #{op}")
 

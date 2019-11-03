@@ -808,7 +808,7 @@ buildLib= (fullFileName,text,debug=false,param=null) ->
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head +="{_expr,printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
-  head += "{channel_wire,channel_exist,infer,cell}= require 'chdl_base'\n"
+  head += "{infer,cell,Op}= require 'chdl_base'\n"
   head += "{importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text

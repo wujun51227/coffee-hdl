@@ -25,6 +25,7 @@ class BranchTest extends Module
         w7: wire(32)
         w8: wire(32)
         w9: wire(32)
+        w10: wire(32)
       syncIn: wire()
       syncOut: wire()
     )
@@ -75,6 +76,12 @@ class BranchTest extends Module
     assign(@w2.w8) = $ expand(@w2.w5.getWidth(), @w2.w3(9:7))
 
     assign(@w2.w9) = $ expand(5, @w2.w3(9:7))
+
+    always
+      $if_blocks([
+        $cond(@in1(1)) => assign(@w2.w3(9:7)) = 100
+        $cond(@in1(2)) => assign(@w2.w3(3:1)) = 200
+      ])
 
     always
       $if(@in1==hex(5,1))

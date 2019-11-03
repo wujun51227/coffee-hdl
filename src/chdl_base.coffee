@@ -532,3 +532,16 @@ module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   =(path)->
   moduleCache={}
   moduleIndex=0
+module.exports.Op       = {
+  xor        : 'xor'
+  or         : 'or'
+  and        : 'and'
+  inv        : 'inv'
+  logicInv   : 'logicInv'
+  logicOr    : 'logicOr'
+  logicAnd   : 'logicAnd'
+  plus       : 'plus'
+  minus      : 'minus'
+  multiple   : 'multiple'
+  neg        : 'neg'
+}
