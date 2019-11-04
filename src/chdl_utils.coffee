@@ -298,6 +298,13 @@ module.exports.cat= (args...)->
 module.exports.expand= (num,sig)->
   return "{#{getValue(num)}{#{getValue(sig)}}}"
 
+module.exports.all1     = (sig)-> return  "(&#{getValue(sig)})"
+module.exports.all0     = (sig)-> return "!(|#{getValue(sig)})"
+module.exports.has1     = (sig)-> return  "(|#{getValue(sig)})"
+module.exports.has0     = (sig)-> return "!(&#{getValue(sig)})"
+module.exports.hasOdd1  = (sig)-> return  "(^#{getValue(sig)})"
+module.exports.hasEven1 = (sig)-> return "!(^#{getValue(sig)})"
+
 module.exports._expr= (s,lineno=null) ->
   if simMode
     if s.str?

@@ -12,15 +12,15 @@ class ExprSimple extends Module
 
   build: ->
     data=100
-    aaa = @opPrefix(Op.or,@sel)
+    aaa = has1(@sel)
     assign(@out)
       $if(@sel) => $ {data+1}
       $else => hex(5,0x1f)
       $endif
-    assign(@out1) = $ {@opPrefix(Op.or,@sel)} + 1
+    assign(@out1) = $ has1(@sel) + 1
     assign(@out2) = $ aaa + 1
-    assign(@out3) = @opPrefix(Op.or,@sel)
-    assign(@out4) = @opJoin(Op.plus,[@out1,@out2,@out3])
+    assign(@out3) = $ has1(@sel)
+    assign(@out4) = $join([@out1,@out2,@out3],(sum,i)=>$(sum+i))
 
     console.log @out1.getDepNames()
 

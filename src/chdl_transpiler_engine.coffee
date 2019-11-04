@@ -113,22 +113,6 @@ findPropertyBound=(tokens,index)->
   else
     return [start,i-1]
 
-findPipeRegSlice=(tokens,index)->
-  i=index
-  cnt=0
-  start=-1
-  while token = tokens[i]
-    if token[0]=='{' and tokens[i-1]?[0]=='{'
-      if start==-1
-        start=i
-      cnt++
-    else if token[0]=='}' and tokens[i+1]?[0]=='}'
-      cnt--
-      if cnt==0
-        return [start,i]
-    i++
-  return [start,-1]
-
 findIndentSlice=(tokens,index)->
   i=index
   cnt=0
@@ -807,8 +791,8 @@ buildLib= (fullFileName,text,debug=false,param=null) ->
 
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
-  head +="{_expr,printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'\n"
-  head += "{infer,cell,Op}= require 'chdl_base'\n"
+  head +="{_expr,printBuffer,cat,hex,dec,oct,bin,__v,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_utils'\n"
+  head += "{infer,cell}= require 'chdl_base'\n"
   head += "{importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text
