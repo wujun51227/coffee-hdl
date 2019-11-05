@@ -205,6 +205,7 @@ module.exports.packEl = (type,bin)->
       return bin.slice(msb+lsb-1,msb)
   ret.__type=type
   ret.getName= -> bin.getName()
+  ret.sign= -> bin.sign()
   for i in Object.keys(bin) when typeof bin[i] == 'function'
     ret[i]=bin[i]
   return ret

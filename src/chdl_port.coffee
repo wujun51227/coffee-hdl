@@ -1,5 +1,4 @@
 Wire=require 'chdl_wire'
-ElementSets = require 'chdl_el_sets'
 {toSignal,portDeclare,packEl}=require 'chdl_utils'
 _ = require 'lodash'
 
@@ -66,7 +65,6 @@ class Port extends Wire
   assign: (assignFunc,lineno)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    ElementSets.clear()
     if @cell.__assignEnv=='always'
       if !@isReg
         @staticWire=false
@@ -84,7 +82,6 @@ class Port extends Wire
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
 

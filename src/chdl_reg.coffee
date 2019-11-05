@@ -1,5 +1,4 @@
 CircuitEl = require 'chdl_el'
-ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
 {rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
@@ -295,7 +294,6 @@ class Reg extends CircuitEl
       i.assign(=>_expr(@refName()))
 
   assign: (assignFunc,lineno=-1)=>
-    ElementSets.clear()
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     if @cell.__assignEnv=='always'
@@ -311,7 +309,6 @@ class Reg extends CircuitEl
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
 

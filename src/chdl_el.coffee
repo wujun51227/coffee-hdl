@@ -16,6 +16,12 @@ class CircuitEl
 
   getName: -> @elName
 
+  sign: ->
+    if @cell.__sim
+      "signed(#{@hier})"
+    else
+      "$signed(#{@hier})"
+
   getPath: ->
     list=[@elName]
     cell=@cell

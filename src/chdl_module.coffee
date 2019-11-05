@@ -3,7 +3,6 @@ Expr    = require 'chdl_expr'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
-ElementSets = require 'chdl_el_sets'
 {table} = require 'table'
 {toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'

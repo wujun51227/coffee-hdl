@@ -1,5 +1,4 @@
 CircuitEl=require 'chdl_el'
-ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
 {rhsTraceExpand,_expr,packEl,toNumber,cat}=require 'chdl_utils'
 
@@ -184,7 +183,6 @@ class Wire extends CircuitEl
   assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    ElementSets.clear()
     if @cell.__assignEnv=='always'
       @staticWire=false
       if @staticAssign
@@ -199,7 +197,6 @@ class Wire extends CircuitEl
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
 
