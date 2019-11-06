@@ -630,10 +630,11 @@ class Module
               assignList.push({from:thisPin,to:usedPort.pin})
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.getName())
-      if port.bindSignal?
-        out.push "  .#{s}( #{port.bindSignal} )"
-      else if not hitPorts[s]?
-        out.push "  .#{s}( )"
+      if not usedPorts[s]?
+        if port.bindSignal?
+          out.push "  .#{s}( #{port.bindSignal} )"
+        else if not hitPorts[s]?
+          out.push "  .#{s}( )"
 
     return [out,assignList]
 
