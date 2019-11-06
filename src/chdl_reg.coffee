@@ -149,6 +149,7 @@ class Reg extends CircuitEl
     else
       reg.setLsb(n)
       reg.setMsb(n)
+      reg.share=@share
       return packEl('reg',reg)
 
   fromMsb: (n)=>

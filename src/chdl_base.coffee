@@ -344,7 +344,7 @@ code_gen= (inst)=>
       printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
-        printBuffer.add '  '+i.inst.dName()+'='+i.inst.refName()+';'
+        printBuffer.add '  _'+i.inst.getName()+'='+i.inst.getName()+';'
       if i.type=='wire'
         if i.pending==null
           printBuffer.add '  '+i.inst.getName()+'=0;'
