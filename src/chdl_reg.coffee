@@ -368,11 +368,25 @@ class Reg extends CircuitEl
 
   stateSwitch: (obj)=>
     @cell.__regAssignList.push ['assign',this,"#{@refName()}",-1]
-    for src,v of obj
-      for dst,condFunc of v
-          @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
+    for src,list of obj
+      @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src}",-1]
+      for item,index in list
+        dst = item.value()
+        if index==0
+          @cell.__regAssignList.push ["if","#{item.cond.str}",-1]
           @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
           @cell.__regAssignList.push ["end",-1]
+        else
+          if item.cond? and item.cond.str!='null'
+            @cell.__regAssignList.push ["elseif","#{item.cond.str}",-1]
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["end",-1]
+          else
+            @cell.__regAssignList.push ["else","#{item.cond.str}",-1]
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["end",-1]
+      @cell.__regAssignList.push ["end",-1]
+
   getWidth: => @width
 
   enable: (s,value=1)=>

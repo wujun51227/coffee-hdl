@@ -33,16 +33,19 @@ class RegState extends Module
         $if(@writeEnable)
           @ff1.setState('write')
         $endif
+      $endif
 
     always =>
       @ff1.stateSwitch(
-        'write':
-          'pending': => $ @stall==1
-          'idle': => $ @quit==1
-        'pending':
-          'read': => $ @readEnable==1
-          'idle': => $ @quit==1
-          )
+        'write': [
+          $cond(@stall==1) => 'pending'
+          $cond(@stall==1) => 'idle'
+        ]
+        'pending': [
+          $cond(@readEnable==1) => 'read'
+          $cond(null) => 'idle'
+          ]
+      )
 
 
 module.exports=RegState

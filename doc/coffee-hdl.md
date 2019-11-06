@@ -492,28 +492,35 @@ _ff1 = ff1_write
 ```coffeescript
 always
   @ff1.stateSwitch(
-    write:
-      pending: => $ @stall==1
-      idle: => $ @quit==1
-    pending:
-      read: => $ @readEnable==1
-      idle: => $ @quit==1
-      )
+    'write': [
+      $cond(@stall==1) => 'pending'
+      $cond(@stall==1) => 'idle'
+    ]
+    'pending': [
+      $cond(@readEnable==1) => 'read'
+      $cond(null) => 'idle'
+      ]
+  )
 ```
 生成代码
 ```verilog
 always_comb begin
-  if(ff1==ff1__write && stall==1'b1) begin
-    _ff1 = ff1__pending;
+  _ff1 = ff1;
+  if(ff1==ff1__write) begin
+    if(stall==1) begin
+      _ff1 = ff1__pending;
+    end
+    else if(stall==1) begin
+      _ff1 = ff1__idle;
+    end
   end
-  if(ff1==ff1__write && quit==1'b1) begin
-    _ff1 = ff1__idle;
-  end
-  if(ff1==ff1__pending && readEnable==1'b1) begin
-    _ff1 = ff1__read;
-  end
-  if(ff1==ff1__pending && quit==1'b1) begin
-    _ff1 = ff1__idle;
+  if(ff1==ff1__pending) begin
+    if(readEnable==1) begin
+      _ff1 = ff1__read;
+    end
+    else begin
+      _ff1 = ff1__idle;
+    end
   end
 end
 ```
