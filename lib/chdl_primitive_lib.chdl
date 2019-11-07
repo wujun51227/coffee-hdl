@@ -1,6 +1,6 @@
 RecursiveIterator = require 'recursive-iterator'
-{Op}= require 'chdl_base'
 _ = require 'lodash'
+{toFlatten} = require('chdl_utils')
 
 module.exports={
   createSigArray: (type,number,width=1)->
@@ -47,6 +47,21 @@ module.exports={
           _.set(out,state.path,input(width))
       item = iterator.next()
     return out
+
+  $portHub:(list...)->
+    clone_list=list[...]
+    i=0
+    while i<clone_list.length
+      dst=clone_list.shift()
+      for [name,port] in toFlatten(dst)
+        el=_.get(dst,name)
+        if port.getType()=='input'
+          for n in clone_list
+            find=_.get(n,name)
+            if find? and find.getType()=='output'
+              assign(find) = el
+      clone_list.push(dst)
+      i+=1
 
   bundleClone:(i)->
     iterator=new RecursiveIterator(i)
