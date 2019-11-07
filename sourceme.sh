@@ -6,9 +6,9 @@ then
   abspath=$(cd $dirpath && echo $PWD/${BASH_SOURCE##*/})
   export CHDL_ROOT=`dirname $abspath`
   if [[ -z "${NODE_PATH}" ]]; then
-    export NODE_PATH=$CHDL_ROOT/src:$CHDL_ROOT/lib
+    export NODE_PATH=$CHDL_ROOT/src:$CHDL_ROOT/lib:$CHDL_ROOT/node_modules
   else
-    export NODE_PATH=$CHDL_ROOT/src:$CHDL_ROOT/lib:$NODE_PATH
+    export NODE_PATH=$CHDL_ROOT/src:$CHDL_ROOT/lib:$CHDL_ROOT/node_modules:$NODE_PATH
   fi
   export PATH=$CHDL_ROOT/bin:$CHDL_ROOT/node_modules/.bin:$PATH
 
