@@ -206,7 +206,7 @@ module.exports={
     len=array.length
     list=[]
     for i in [0...len]
-      list.push({cond:$(i==select),value:array[i]})
+      list.push($cond(i==select) =>array[i])
     $balance(list,width)
 
   $rise: (sig,clock=null)->

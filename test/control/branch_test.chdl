@@ -77,11 +77,15 @@ class BranchTest extends Module
 
     assign(@w2.w9) = $ expand(5, @w2.w3(9:7))
 
+    list=[]
+    for i in [0..1]
+      do(i)=>
+        list.push(
+          $lazy_cond(@in1(i)) => assign(@w2.w3(9:7)) = i
+        )
+
     always
-      $if_blocks([
-        $cond(@in1(1)) => assign(@w2.w3(9:7)) = 100
-        $cond(@in1(2)) => assign(@w2.w3(3:1)) = 200
-      ])
+      $if_blocks(list)
 
     always
       $if(@in1==hex(5,1))

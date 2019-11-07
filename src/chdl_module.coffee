@@ -527,6 +527,11 @@ class Module
     }
 
   _cond: (cond,lineno=-1)=>
+    return (block)=>
+      value=block()
+      {cond:cond,value:(=>value),lineno:lineno}
+
+  _lazy_cond: (cond,lineno=-1)=>
     return (block)=> {cond:cond,value:block,lineno:lineno}
 
   _wireProcess: (list=[],lineno)=>

@@ -677,6 +677,21 @@ extractLogic = (tokens)->
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='$lazy_cond'
+      list =[
+        ['@', '@', {}]
+        ['PROPERTY', '_lazy_cond', {}]
+      ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      extractSlice=tokens.slice(callStart+1,callEnd)
+      tokenExpand(extractSlice,true)
+      list.push tokens[callStart]
+      list.push extractSlice...
+      list.push [',',',',{}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push tokens[callEnd]
+      tokens.splice i, callEnd-i+1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1].match(/^\$/)
       m=token[1].match(/^\$(.*)/)
       list =[

@@ -207,7 +207,7 @@ module.exports={
     condList=[]
     #ret = local_wire(getWidth(list.length))
     for i,index in list
-      condList.push({cond:i,value:index})
+      condList.push($cond(i) =>index)
     $order(condList,defaultIndex)
 
   $roundArbiter: (list,defaultIndex=0,clock=null,reset=null)->
@@ -231,7 +231,7 @@ module.exports={
         $endif
     condList=[]
     for i,index in list
-      condList.push({cond:i,value:indexArray[index]})
+      condList.push($cond(i) =>indexArray[index])
     $order(condList,defaultIndex)
 
 }
