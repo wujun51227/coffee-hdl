@@ -153,10 +153,10 @@ module.exports={
       $endif
 
     rd_addr = local_wire(addrWidth,'rd_addr')
-    assign(rd_addr) = $ cat($opPrefix('^',r.code.fromMsb(2)) , r.code.fromLsb(addrWidth-1))
+    assign(rd_addr) = $ cat(hasOdd1(r.code.fromMsb(2)) , r.code.fromLsb(addrWidth-1))
 
     wr_addr = local_wire(addrWidth,'wr_addr')
-    assign(wr_addr) = $ cat( $opPrefix('^',w.code.fromMsb(2)) , w.code.fromLsb(addrWidth-1))
+    assign(wr_addr) = $ cat(hasOdd1(w.code.fromMsb(2)) , w.code.fromLsb(addrWidth-1))
 
     always
       $if(cat(pop,read)==2\b01)
@@ -176,7 +176,8 @@ module.exports={
     assign(w.code) = $ succeeding_code_wr
 
     full = local_reg(1,'full').clock(clkw).asyncReset(rstw)
-    assign(full) = $ succeeding_code_wr == cat($opPrefix('~',w.rd_s1.fromMsb(2)) ,w.rd_s1.fromLsb(addrWidth-1))
+    inv_w = $ ~w.rd_s1.fromMsb(2)
+    assign(full) = $ succeeding_code_wr == cat(inv_w ,w.rd_s1.fromLsb(addrWidth-1))
 
     assign(next_rd) = $grayNextCode(r.code)
     assign(next_wr) = $grayNextCode(w.code)
@@ -210,15 +211,19 @@ module.exports={
       condList.push($cond(i) =>index)
     $order(condList,defaultIndex)
 
-  $roundArbiter: (list,defaultIndex=0,clock=null,reset=null)->
+  $roundArbiter: (list,enable,defaultIndex=0,clock=null,reset=null)->
     width = Math.floor(Math.log2(list.length))+1
     if clock?
       roundReg = local_reg(width,'round').clock(clock).reset(reset)
     else
       roundReg = local_reg(width,'round')
     assign(roundReg)
-      $if(roundReg==list.length-1) => $ 0
-      $else => $ roundReg+1
+      $if(enable)
+        $if(roundReg==list.length-1) => $ 0
+        $else => $ roundReg+1
+        $endif
+      $else
+        $ roundReg
       $endif
     indexArray=(local_wire(width,'index') for i in [0...list.length])
     assign(indexArray[0]) = roundReg

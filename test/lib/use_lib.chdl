@@ -50,6 +50,8 @@ class UseLib extends Module
       h: @bundleClone(template)
       syncin: wire(1)
       dout: wire(1)
+      dout1: wire(1)
+      dout2: wire(1)
     )
 
     Channel(
@@ -70,12 +72,14 @@ class UseLib extends Module
 
   build: ->
     $channelMux(@select,@x[0],@x[1],@x[2])
-    $bundleUniOp('~',@g,@d)
-    $bundleReduceOp('+',@d,[@g,@h])
+    $bundleMap(@g,@d,all1)
+    $bundleJoin(@d,[@g,@h],(a,b)=>$ a+b)
 
     assign(@dout) = $rise($doubleSync(@syncin))
 
-    assign(@dout) = $divider(@clk1,4)
+    assign(@dout1) = $divider(@clk1,4)
+
+    assign(@dout2) = $arrayDecode(@w,@select,10)
 
 
 module.exports=UseLib

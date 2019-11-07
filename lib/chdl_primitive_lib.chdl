@@ -69,7 +69,7 @@ module.exports={
       item = iterator.next()
     return out
 
-  $bundleUniOp:(op,o,i)->
+  $bundleMap:(o,i,func)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -77,18 +77,10 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='wire' or state.node.__type=='reg' or state.node.__type=='port'
           inWire=_.get(i,state.path)
-          assign(state.node)
-            if op=='&'
-              $ {op} (inWire)
-            else if op=='|'
-              $ {op} (inWire)
-            else if op=='~'
-              $ {op} (inWire)
-            else if op=='^'
-              $ {op} (inWire)
+          assign(state.node) => func(inWire)
       item = iterator.next()
 
-  $bundleReduceOp:(op,o,list)->
+  $bundleJoin:(o,list,func)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -103,14 +95,7 @@ module.exports={
               if first
                 $ item
               else
-                if op=='+'
-                  $ sum + item
-                else if op=='-'
-                  $ sum - item
-                else if op=='*'
-                  $ sum * item
-                else if op=='^'
-                  $ sum ^ item
+                func(sum,item)
             )
       item = iterator.next()
 

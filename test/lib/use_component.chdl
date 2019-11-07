@@ -36,7 +36,8 @@ class UseComponent extends Module
     assign({empty:@empty,full:@full}) = $asyncFifo(8,@din,@push,@pop)
 
     assign(@arb) = $fixArbiter([@full,@clk1,@clk2])
-    assign(@arb1) = $roundArbiter([@full,@clk1,@clk2])
+    list=[@full,@clk1,@clk2]
+    assign(@arb1) = $roundArbiter(list,$join(list,(a,b)=>$ a|b))
 
 
 
