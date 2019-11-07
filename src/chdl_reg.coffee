@@ -1,4 +1,5 @@
 CircuitEl = require 'chdl_el'
+Wire = require 'chdl_wire'
 _ = require 'lodash'
 {rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
@@ -203,6 +204,16 @@ class Reg extends CircuitEl
       @hier+'.getD()'
     else
       '_'+@refName()
+
+  getD: =>
+    if @cell.__sim
+      @hier+'.getD()'
+    else
+      wire= Wire.create(@width)
+      wire.link(@cell,'_'+@hier)
+      wire.setLsb(@lsb)
+      wire.setMsb(@msb)
+      return packEl('wire',wire)
 
   @create: (width=1)-> new Reg(width)
 
