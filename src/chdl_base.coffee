@@ -65,11 +65,11 @@ get_module_build_name= (inst)->
     moduleIndex+=1
     suffix='__'+moduleIndex
   s=''
-  if inst.param?
-    keys=Object.keys(inst.param).sort()
-    for k in keys
-      v=inst.param[k]
-      s+='_'+k+v
+  #if inst.param?
+  #  keys=Object.keys(inst.param).sort()
+  #  for k in keys
+  #    v=inst.param[k]
+  #    s+='_'+k+v
   return baseName+s+suffix
 
 rhsExpand=(expandItem)->

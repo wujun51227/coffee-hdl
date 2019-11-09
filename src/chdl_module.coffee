@@ -41,6 +41,7 @@ class Module
   _cellmap: (v) ->
     for name,inst of v
       @__cells.push({name:name,inst:inst})
+      @[name]=inst
 
   __getCell: (name)=>
     p=Object.getPrototypeOf(this)

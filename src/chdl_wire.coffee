@@ -186,7 +186,7 @@ class Wire extends CircuitEl
     if @cell.__assignEnv=='always'
       @staticWire=false
       if @staticAssign
-        throw new Error("This wire have been static assigned")
+        throw new Error("This wire have been static assigned #{@elName}")
       @cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
       @cell.__updateWires.push({type:'wire',name:@hier,pending:@pendingValue,inst:this})
     else
