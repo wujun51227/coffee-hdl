@@ -11,7 +11,7 @@ Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 {stringifyTree} = require "stringify-tree"
-{setSim,packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
+{getValue,setSim,packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -344,12 +344,9 @@ code_gen= (inst)=>
       printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
-        printBuffer.add '  _'+i.inst.getName()+'='+i.inst.getName()+';'
+        printBuffer.add '  _'+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
       if i.type=='wire'
-        if i.pending==null
-          printBuffer.add '  '+i.inst.getName()+'=0;'
-        else
-          printBuffer.add '  '+i.inst.getName()+'='+i.pending+';'
+        printBuffer.add '  '+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
     if assignList
       for statement in assignList
         printBuffer.add statementGen(statement)
@@ -397,12 +394,9 @@ code_gen= (inst)=>
       printBuffer.add "always_combo begin"
       for i in _.uniqBy(updateWires,(n)=>n.name)
         if i.type=='reg'
-          printBuffer.add '  _'+i.name+'='+i.name+';'
+          printBuffer.add '  _'+i.name+'='+getValue(i.inst.getPending())+';'
         if i.type=='wire'
-          if i.pending==null
-            printBuffer.add '  _'+i.name+'=0;'
-          else
-            printBuffer.add '  _'+i.name+'='+i.pending+';'
+          printBuffer.add '  _'+i.name+'='+getValue(i.inst.getPending())+';'
       for i,index in seqBlock.bin when i.list.length>0
         printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
         for statement in i.list

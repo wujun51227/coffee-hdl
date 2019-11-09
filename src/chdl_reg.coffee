@@ -29,6 +29,7 @@ class Reg extends CircuitEl
     @share={
       assignList:[]
       alwaysList:null
+      pendingValue:null
     }
 
   setLocal: =>
@@ -81,6 +82,10 @@ class Reg extends CircuitEl
       @resetValue= data.resetValue
     if data.negedge?
       @negClock=data.negedge
+
+  pending: (v)=> @share.pendingValue=v
+
+  getPending: => @share.pendingValue ? @getName()
 
   noReset: =>
     @resetMode=null

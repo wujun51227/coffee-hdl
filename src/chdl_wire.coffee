@@ -19,7 +19,6 @@ class Wire extends CircuitEl
     super()
     @width=width
     @value=0
-    @pendingValue=null
     @lsb= -1
     @msb= -1
     @states=[]
@@ -34,6 +33,7 @@ class Wire extends CircuitEl
     @share={
       assignList:[]
       alwaysList:null
+      pendingValue:null
     }
 
   attach:(clock,reset)=>
@@ -69,9 +69,9 @@ class Wire extends CircuitEl
     @value=v
     return this
 
-  defaultValue: (v)=>
-    @pendingValue=v
-    return packEl('wire',this)
+  pending: (v)=> @share.pendingValue=v
+
+  getPending: => @share.pendingValue ? 0
 
   setField: (name,msb=0,lsb=null)=>
     if _.isString(name)
@@ -188,7 +188,7 @@ class Wire extends CircuitEl
       if @staticAssign
         throw new Error("This wire have been static assigned #{@elName}")
       @cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
-      @cell.__updateWires.push({type:'wire',name:@hier,pending:@pendingValue,inst:this})
+      @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
     else
       if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again #{@elName}")

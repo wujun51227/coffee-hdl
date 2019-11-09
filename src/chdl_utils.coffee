@@ -285,6 +285,8 @@ getValue=(i)=>
     return i().refName()
   throw new Error('arg type error'+i)
 
+module.exports.getValue=getValue
+
 module.exports.cat= (args...)->
   if args.length==1 and _.isPlainObject(args[0])
     list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>getValue(i[1])).reverse()

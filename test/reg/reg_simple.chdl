@@ -25,6 +25,7 @@ class RegSimple extends Module
       ff5: reg(9)
       ff6: reg(9)
       ff7: reg(9).clock('hclk').negedge()
+      ff8: reg(9)
     )
 
 
@@ -33,9 +34,11 @@ class RegSimple extends Module
     assign(@ff6) = $ @ff5.fromMsb(8)
 
     always
+      @aa.bb.asreg.pending(@dout)
       $if(@ff1)
         assign(@aa.bb.asreg(0)) = 1
         assign(@aa.bb.asreg(8:1)) = 100
+        assign(@ff8) = 200
       $endif
 
     assign(@ff4) = $ @aa.bb.asreg

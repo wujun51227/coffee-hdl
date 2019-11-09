@@ -40,7 +40,6 @@ class Port extends Wire
     @isReg=false
     @shadowReg=null
     @isRegConfig={}
-    @pendingValue=null
     @bindChannel=null
     @bindSignal=null
     @depNames=[]
@@ -55,6 +54,18 @@ class Port extends Wire
     else
       return ''
 
+  pending: (v)=>
+    if @isReg
+      @shadowReg.pending(v)
+    else
+      @share.pendingValue=v
+
+  getPending: =>
+    if @isReg
+      @shadowReg.getPending()
+    else
+      @share.pendingValue ? 0
+
   asClock: =>
     @isClock=true
     return packEl('port',this)
@@ -65,18 +76,7 @@ class Port extends Wire
 
   bit: (n)->
     if @isReg
-      reg= Reg.create(1)
-      reg.link(@cell,@hier)
-      if n.constructor?.name=='Expr'
-        reg.setLsb(n.str)
-        reg.setMsb(n.str)
-        reg.share=@share
-        return packEl('reg',reg)
-      else
-        reg.setLsb(n)
-        reg.setMsb(n)
-        reg.share=@share
-        return packEl('reg',reg)
+      @shadowReg.bit(n)
     else
       wire= Wire.create(1)
       wire.link(@cell,@hier)
@@ -93,20 +93,7 @@ class Port extends Wire
 
   slice: (n,m)->
     if @isReg
-      if n.constructor?.name=='Expr'
-        reg= Reg.create(toNumber(n.str)-toNumber(m.str)+1)
-        reg.link(@cell,@hier)
-        reg.setMsb(n.str)
-        reg.setLsb(m.str)
-        reg.share=@share
-        return packEl('reg',reg)
-      else
-        reg= Reg.create(toNumber(n)-toNumber(m)+1)
-        reg.link(@cell,@hier)
-        reg.setMsb(n)
-        reg.setLsb(m)
-        reg.share=@share
-        return packEl('reg',reg)
+      @shadowReg.slice(n,m)
     else
       if n.constructor.name=='Expr'
         wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
@@ -132,7 +119,7 @@ class Port extends Wire
         if @staticAssign
           throw new Error("This wire have been static assigned")
         @cell.__regAssignList.push ["assign",this,assignFunc(),-1]
-        @cell.__updateWires.push({type:'wire',name:@hier,pending:@pendingValue,inst:this})
+        @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
       else
         @shadowReg.assign(assignFunc,lineno)
     else

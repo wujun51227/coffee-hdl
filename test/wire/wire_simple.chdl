@@ -14,7 +14,8 @@ class WireSimple extends Module
       w1: wire(5)
       w2: wire(5)
       w3: wire(5)
-      w4: wire(5).defaultValue(12)
+      w4: wire(5)
+      w5: wire(5)
       sel1: wire()
       sel2: wire()
       sel3: wire()
@@ -37,10 +38,17 @@ class WireSimple extends Module
     assign(@result.field('sum')) = 32\h12345678
 
     always
+      @w4.pending(100)
       $if(@w1>2)
         assign(@w4) = $ @w1 + 1
       $else
         assign(@w4) = $ @w1 - 1
+      $endif
+
+    always
+      $if(@w1>2)
+        assign(@w5) = 200
+      $endif
 
     @w1(1).drive(@sel1,@sel2,@sel3)
 
