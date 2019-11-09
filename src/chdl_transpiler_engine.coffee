@@ -840,6 +840,7 @@ importLib=(path)->
       fullName = require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
       if fs.existsSync(fullName)
         text=fs.readFileSync(fullName, 'utf-8')
+        module.paths.push require('path').dirname(fullName)
         return transToJs(fullName,text,false)
     throw new Error("Cant find file "+fullName)
   else if path.match(/\//)
