@@ -296,4 +296,25 @@ module.exports={
       $endif
     return  $ out
 
+  $case: (sig)->
+    return (block)=>
+      cond_hold=[]
+      for i in block().reverse()
+        if i.cond? and i.cond.str!='null'
+          cond_hold.push(i.cond)
+          if i.value?
+            if cond_hold.length==1
+              $if(sig==i.cond) => i.value()
+              $endif
+            else
+              tmp = $reduce(cond_hold,(sum,item,first,last)=>
+                if first
+                  $ (sig==item)
+                else
+                  $ sum||(sig==item)
+              )
+              $if(tmp) => i.value()
+            cond_hold=[]
+        else
+          i.value()
 }

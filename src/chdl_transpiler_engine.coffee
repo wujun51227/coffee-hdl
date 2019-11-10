@@ -675,6 +675,13 @@ extractLogic = (tokens)->
         ['PROPERTY', '_lazy_cond', {}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
+      if tokens[callEnd+1][0]!='CALL_START'
+        append_list=[
+          ['CALL_START',"(",{}]
+          ['NULL',"null",{}]
+          ['CALL_END',")",{}]
+        ]
+        tokens.splice callEnd+1, 0, append_list...
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]

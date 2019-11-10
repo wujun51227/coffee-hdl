@@ -42,6 +42,11 @@ class BranchTest extends Module
           c: reg(10)
     )
 
+    Wire(
+      casein: wire(10)
+      caseout: wire(10)
+    )
+
   build: ->
     assign(@w2.w4)
       $if(@in1==hex(5,1))
@@ -101,9 +106,18 @@ class BranchTest extends Module
 
     always_if(@a.b.c==1) => assign(@r3) = 100
 
-    console.log @r2.getDepNames()
-    console.log @syncOut.getDepNames()
-    console.log @w2.w4.getDepNames()
+    always
+      $case(@casein) =>
+        [
+          $lazy_cond(10) =>
+            assign(@caseout) = 100
+          $lazy_cond(20)
+          $lazy_cond(30)
+          $lazy_cond(40) =>
+            assign(@caseout) = 200
+          $lazy_cond(null) =>
+            assign(@caseout) = 300
+        ]
 
 module.exports=BranchTest
 
