@@ -26,6 +26,7 @@ class BranchTest extends Module
         w8: wire(32)
         w9: wire(32)
         w10: wire(32)
+        w11: wire(32)
       syncIn: wire()
       syncOut: wire()
     )
@@ -74,8 +75,21 @@ class BranchTest extends Module
         [
           $cond(@in1(1)) => $ @w2.w3(9:7)
           $cond(@in1(2)) => $ @w2.w3(3:1)
+          $cond(@in1(3))
+          $cond(@in1(4)) => $ 100
         ],
         $ @w2.w3(6:4)
+      )
+
+    assign(@w2.w11)
+      $order(
+        [
+          $cond(@in1(1)) => $ @w2.w3(9:7)
+          $cond(@in1(2)) => $ @w2.w3(3:1)
+          $cond(@in1(3))
+          $cond(@in1(4)) => $ 100
+          $cond(null) => $ 200
+        ]
       )
 
     assign(@w2.w8) = $ expand(@w2.w5.getWidth(), @w2.w3(9:7))

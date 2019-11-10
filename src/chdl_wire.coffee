@@ -105,6 +105,12 @@ class Wire extends CircuitEl
   getMsb: (n)=> @msb
   getLsb: (n)=> @lsb
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
   bit: (n)->
     wire= Wire.create(1)
     wire.link(@cell,@hier)

@@ -144,6 +144,12 @@ class Reg extends CircuitEl
     else
       return null
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
   bit: (n)->
     reg= Reg.create(1)
     reg.link(@cell,@hier)

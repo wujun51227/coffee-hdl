@@ -116,9 +116,26 @@ module.exports={
 
   $order: (list,defaultValue=0)->
     plist=[]
+    conds=[]
+    findDefault=false
     for {cond,value} in list
-      plist.push [cond,value()]
-    plist.push(defaultValue)
+      conds.push cond
+      if value?
+        if conds.length==1
+          if conds[0].str=='null'
+            plist.push(value())
+            findDefault=true
+          else
+            plist.push [conds[0],value()]
+        else
+          tmp=$join(conds,(a,b)=>$ (a)||(b))
+          plist.push [tmp,value()]
+        conds=[]
+    unless findDefault
+      console.log '##################################'
+      console.log 'Use defaultValue in $order is deprecated, please use $cond(null) => $ default_value'
+      console.log '##################################'
+      plist.push(defaultValue)
     return $reduceRight(plist,(sum,item,first,last)=>
       if first
         $ item
@@ -295,6 +312,16 @@ module.exports={
         assign(latch) = $ sig
       $endif
     return  $ out
+
+  $oneOf: (sig,list)->
+    return $reduce(list,(sum,item,first,last)=>
+      if first
+        $ (sig==item)
+      else if last
+        $ (sum||(sig==item))
+      else
+        $ sum||(sig==item)
+    )
 
   $case: (sig)->
     return (block)=>

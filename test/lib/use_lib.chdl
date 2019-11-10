@@ -52,6 +52,7 @@ class UseLib extends Module
       dout: wire(1)
       dout1: wire(1)
       dout2: wire(1)
+      dout3: wire(1)
     )
 
     Channel(
@@ -81,5 +82,6 @@ class UseLib extends Module
 
     assign(@dout2) = $arrayDecode(@w,@select,10)
 
+    assign(@dout3) = $oneOf(@clk1,[@x[0],@x[1],@x[2]])
 
 module.exports=UseLib

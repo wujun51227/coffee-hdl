@@ -74,6 +74,12 @@ class Port extends Wire
     @isReset=true
     return packEl('port',this)
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
   bit: (n)->
     if @isReg
       @shadowReg.bit(n)
