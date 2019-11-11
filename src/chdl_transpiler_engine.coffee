@@ -608,7 +608,10 @@ extractLogic = (tokens)->
         ['PROPERTY', '_if', {}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
-      [dummy,outdentIndex]=findIndentSlice(tokens,callEnd)
+      if tokens[callEnd+1][0]=='CALL_START'
+        [dummy,outdentIndex]=findCallSlice(tokens,callEnd+1)
+      else
+        [dummy,outdentIndex]=findIndentSlice(tokens,callEnd+1)
       find=false
       if tokens[outdentIndex+1][0]=='TERMINATOR'
         if tokenIsElseIf(tokens,outdentIndex+2) or tokenIsElse(tokens,outdentIndex+2) or tokenIsEndIf(tokens,outdentIndex+2)
@@ -640,7 +643,10 @@ extractLogic = (tokens)->
         tokens.splice i-1, 1
         i--
       [callStart,callEnd]=findCallSlice(tokens,i)
-      [dummy,outdentIndex]=findIndentSlice(tokens,callEnd)
+      if tokens[callEnd+1][0]=='CALL_START'
+        [dummy,outdentIndex]=findCallSlice(tokens,callEnd+1)
+      else
+        [dummy,outdentIndex]=findIndentSlice(tokens,callEnd+1)
       find=false
       if tokens[outdentIndex+1][0]=='TERMINATOR'
         if tokenIsElseIf(tokens,outdentIndex+2) or tokenIsElse(tokens,outdentIndex+2) or tokenIsEndIf(tokens,outdentIndex+2)
@@ -671,7 +677,10 @@ extractLogic = (tokens)->
         ['NUMBER',"'"+String(lineno)+"'",{}]
         ['CALL_END',  ')', {} ]
       ]
-      [dummy,outdentIndex]=findIndentSlice(tokens,i)
+      if tokens[i+1][0]=='CALL_START'
+        [dummy,outdentIndex]=findCallSlice(tokens,i+1)
+      else
+        [dummy,outdentIndex]=findIndentSlice(tokens,i+1)
       unless tokens[outdentIndex+1][0]=='TERMINATOR' and  tokenIsEndIf(tokens,outdentIndex+2)
         append_list=[
           ['.', '.', {}]
