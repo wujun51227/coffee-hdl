@@ -39,7 +39,6 @@ class RegSimple extends Module
         assign(@aa.bb.asreg(0)) = 1
         assign(@aa.bb.asreg(8:1)) = 100
         assign(@ff8) = 200
-      $endif
 
     assign(@ff4) = $ @aa.bb.asreg
 
