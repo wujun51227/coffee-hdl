@@ -151,6 +151,9 @@ module.exports={
     return $reduce(list,(sum,item,first,last)=>
       if first
         $ item
+      else if last
+        tmp=func(sum,item)
+        $ (tmp)
       else
         func(sum,item)
     )
@@ -251,20 +254,38 @@ module.exports={
       $endif
     return  $ cnt=={n-1}
 
-  $count: (n,enable,clock=null,reset=null)->
+  $delay: (n,sig,clock=null,reset=null)->
+    width=sig.getWidth()
+    if clock?
+      list=(local_reg(width).clock(clock).reset(reset) for i in _.range(n))
+    else
+      list=(local_reg(width) for i in _.range(n))
+    for i in _.range(n)
+      if i==0
+        assign(list[0]) = sig
+      else
+        assign(list[i]) = list[i-1]
+    return $ list[n-1]
+
+  $count: (n,enable,clear,clock=null,reset=null)->
     width=Math.ceil(Math.log2(n))
     if clock?
       cnt = local_reg(width,'cnt').clock(clock).reset(reset)
     else
       cnt = local_reg(width,'cnt')
     assign(cnt)
-      $if(enable)
+      $if(clear) => $ 0
+      $elseif(enable)
         $if(cnt=={n-1}) => $ 0
         $else => $ cnt+1
         $endif
-      $else => $ 0
+      $else => $ cnt
       $endif
     return  $ cnt=={n-1}
+
+  $count1: (sig)->
+    list=sig.toList()
+    return $join(list,(a,b)=>$ a+b)
 
   $hold1: (sig,clear,clock=null,reset=null)->
     out = local_wire(1,'hold')
@@ -322,6 +343,29 @@ module.exports={
       else
         $ sum||(sig==item)
     )
+
+  $same: (list)->
+    sig=list[0]
+    return $reduce(list[1...],(sum,item,first,last)=>
+      if first
+        $ (sig==item)
+      else if last
+        $ (sum&&(sig==item))
+      else
+        $ sum&&(sig==item)
+    )
+
+  $inRange: (sig,low,high,inc_low=true,inc_high=true)->
+    if inc_low
+      if inc_high
+        return $ (low<=sig)&&(sig<=high)
+      else
+        return $ (low<=sig)&&(sig<high)
+    else
+      if inc_high
+        return $ (low<sig)&&(sig<=high)
+      else
+        return $ (low<sig)&&(sig<high)
 
   $case: (sig)->
     return (block)=>

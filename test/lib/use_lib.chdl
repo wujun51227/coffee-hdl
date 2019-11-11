@@ -53,6 +53,10 @@ class UseLib extends Module
       dout1: wire(1)
       dout2: wire(1)
       dout3: wire(1)
+      dout4: wire(1)
+      dout5: wire(1)
+      dout6: wire(1)
+      dout7: wire(1)
     )
 
     Channel(
@@ -83,5 +87,13 @@ class UseLib extends Module
     assign(@dout2) = $arrayDecode(@w,@select,10)
 
     assign(@dout3) = $oneOf(@clk1,[@x[0],@x[1],@x[2]])
+
+    assign(@dout4) = $same([@x[0],@x[1],@x[2]])
+
+    assign(@dout5) = $count1(@select)
+
+    assign(@dout6) = $inRange(@select,@dout1,@dout2)
+
+    assign(@dout7) = $delay(5,@dout6)
 
 module.exports=UseLib
