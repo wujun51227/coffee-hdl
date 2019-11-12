@@ -113,6 +113,35 @@ findPropertyBound=(tokens,index)->
   else
     return [start,i-1]
 
+findAssignBound=(tokens,index)->
+  i=index
+  start=index
+  first=true
+  while token = tokens[i]
+    if first and token[0]=='IDENTIFIER'
+      i+=1
+      first=false
+      continue
+    if first and token[0]=='@'
+      i+=2
+      first=false
+      continue
+    if token[0]=='.' and tokens[i+1][0]=='PROPERTY'
+      i+=2
+      continue
+    else if token[0]=='CALL_START'
+      [dummy,stop_index]=findCallBound(tokens,i)
+      i=stop_index+1
+    else if token[0]=='INDEX_START'
+      [dummy,stop_index]=findIndexBound(tokens,i)
+      i=stop_index+1
+    else
+      break
+  if i==start
+    return [start,-1]
+  else
+    return [start,i-1]
+
 findIndentSlice=(tokens,index)->
   i=index
   cnt=0
@@ -363,6 +392,12 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_assign', {}]
       ]
+      if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
+        [dummy,callEnd]=findCallSlice(tokens,i)
+        [dummy,stopIndex]=findAssignBound(tokens,i+2)
+        tokens.splice callEnd, 1
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{}]
+
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
         [',',',',{}],
