@@ -7,6 +7,20 @@ chdl_base = require 'chdl_base'
 
 debugExpr=''
 
+printTokens=(tokens)->
+  printOut=''
+  for token in tokens
+    if token[0]=='TERMINATOR'
+      console.log printOut
+      printOut=''
+    else if token[0]=='INDENT'
+      printOut+="<<INDENT>>"
+    else if token[0]=='OUTDENT'
+      printOut+="<<OUTDENT>>"
+    else
+      printOut+=token[1]+' '
+  console.log printOut
+
 getArgs= (tokens)->
   cnt=0
   ret=[]
@@ -905,9 +919,10 @@ transToJs= (fullFileName,text,debug=false) ->
   text+="\nreturn module.exports"
   tokens = coffee.tokens text
   if debug
-    log ">>>>>>origin Tokens\n"
-    for token in tokens
-      log token[0],token[1]
+    log "========================="
+    log "origin Tokens"
+    log "========================="
+    printTokens(tokens)
   extractLogic(tokens)
   options={
     referencedVars : ( token[1] for token in tokens when token[0] is 'IDENTIFIER')
@@ -915,16 +930,19 @@ transToJs= (fullFileName,text,debug=false) ->
   }
 
   if debug
-    log ">>>>>>extract Tokens\n"
-    for token in tokens
-      log token[0],token[1]
-    log '>>>>>expr ',debugExpr
+    log "========================="
+    log "extract Tokens"
+    log "========================="
+    printTokens(tokens)
+    log "========================="
+    log 'expr'
+    log "========================="
+    log debugExpr
   nodes = coffee.nodes tokens
   fragments=nodes.compileToFragments options
   javaScript = ''
   for fragment in fragments
     javaScript += fragment.code
-  log ">>>>>>Javascript\n",javaScript if debug
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
   return require("#{fullFileName}.js")
 
