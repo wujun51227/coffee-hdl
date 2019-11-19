@@ -7,6 +7,20 @@ chdl_base = require 'chdl_base'
 
 debugExpr=''
 
+printTokens=(tokens)->
+  printOut=''
+  for token in tokens
+    if token[0]=='TERMINATOR'
+      console.log printOut
+      printOut=''
+    else if token[0]=='INDENT'
+      printOut+="<<INDENT>>"
+    else if token[0]=='OUTDENT'
+      printOut+="<<OUTDENT>>"
+    else
+      printOut+=token[1]+' '
+  console.log printOut
+
 getArgs= (tokens)->
   cnt=0
   ret=[]
@@ -97,6 +111,35 @@ findPropertyBound=(tokens,index)->
   i=index
   start=index
   while token = tokens[i]
+    if token[0]=='.' and tokens[i+1][0]=='PROPERTY'
+      i+=2
+      continue
+    else if token[0]=='CALL_START'
+      [dummy,stop_index]=findCallBound(tokens,i)
+      i=stop_index+1
+    else if token[0]=='INDEX_START'
+      [dummy,stop_index]=findIndexBound(tokens,i)
+      i=stop_index+1
+    else
+      break
+  if i==start
+    return [start,-1]
+  else
+    return [start,i-1]
+
+findAssignBound=(tokens,index)->
+  i=index
+  start=index
+  first=true
+  while token = tokens[i]
+    if first and token[0]=='IDENTIFIER'
+      i+=1
+      first=false
+      continue
+    if first and token[0]=='@'
+      i+=2
+      first=false
+      continue
     if token[0]=='.' and tokens[i+1][0]=='PROPERTY'
       i+=2
       continue
@@ -363,6 +406,12 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_assign', {}]
       ]
+      if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
+        [dummy,callEnd]=findCallSlice(tokens,i)
+        [dummy,stopIndex]=findAssignBound(tokens,i+2)
+        tokens.splice callEnd, 1
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{}]
+
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
         [',',',',{}],
@@ -870,9 +919,10 @@ transToJs= (fullFileName,text,debug=false) ->
   text+="\nreturn module.exports"
   tokens = coffee.tokens text
   if debug
-    log ">>>>>>origin Tokens\n"
-    for token in tokens
-      log token[0],token[1]
+    log "========================="
+    log "origin Tokens"
+    log "========================="
+    printTokens(tokens)
   extractLogic(tokens)
   options={
     referencedVars : ( token[1] for token in tokens when token[0] is 'IDENTIFIER')
@@ -880,16 +930,19 @@ transToJs= (fullFileName,text,debug=false) ->
   }
 
   if debug
-    log ">>>>>>extract Tokens\n"
-    for token in tokens
-      log token[0],token[1]
-    log '>>>>>expr ',debugExpr
+    log "========================="
+    log "extract Tokens"
+    log "========================="
+    printTokens(tokens)
+    log "========================="
+    log 'expr'
+    log "========================="
+    log debugExpr
   nodes = coffee.nodes tokens
   fragments=nodes.compileToFragments options
   javaScript = ''
   for fragment in fragments
     javaScript += fragment.code
-  log ">>>>>>Javascript\n",javaScript if debug
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
   return require("#{fullFileName}.js")
 
