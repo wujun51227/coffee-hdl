@@ -35,6 +35,10 @@ class Wire extends CircuitEl
       alwaysList:null
       pendingValue:null
     }
+    @type=null
+
+  setType: (t)=> @type=t
+  getType: => @type
 
   attach:(clock,reset)=>
     if _.isString(clock)

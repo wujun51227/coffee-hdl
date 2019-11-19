@@ -63,6 +63,21 @@ module.exports={
       clone_list.push(dst)
       i+=1
 
+  $channelPortHub:(list...)->
+    clone_list=list[...]
+    i=0
+    while i<clone_list.length
+      dst=clone_list.shift()
+      for [name,port] in toFlatten(dst)
+        el=_.get(dst,name)
+        if port.getType()=='input'
+          for n in clone_list
+            find=_.get(n,name)
+            if find? and find.getType()=='output'
+              assign(el) = find
+      clone_list.push(dst)
+      i+=1
+
   bundleClone:(i)->
     iterator=new RecursiveIterator(i)
     item=iterator.next()

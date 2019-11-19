@@ -658,10 +658,12 @@ class Module
           if name
             net.link(channel.cell,toHier(channel.hier,name))
             netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
             _.set(channel.Port,name,netEl)
           else
             net.link(channel.cell,channel.hier)
             netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
             channel.Port=netEl
 
   __link: (name)-> @__instName=name
