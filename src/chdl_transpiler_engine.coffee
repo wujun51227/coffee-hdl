@@ -471,6 +471,53 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='net'
+      netName = tokens[i+2][1]
+      if tokens[i+3][0]==','
+        width= tokens[i+4][1]
+        list =[
+          ['IDENTIFIER',netName,{}]
+          ['=','=',{}]
+          ['@', '@', {}]
+          ['PROPERTY', '_localWire', {}]
+          [ 'CALL_START',  '(',     { } ]
+          [ 'NUMBER',  width,     { } ]
+          [',',',',{}]
+          ['STRING',"'"+netName+"'",{}]
+          [ 'CALL_END',     ')',    { } ]
+          [ 'TERMINATOR',   '\n',    { } ]
+          ['@', '@', {}]
+          ['PROPERTY', '_assign', {}]
+        ]
+      else
+        list =[
+          ['IDENTIFIER',netName,{}]
+          ['=','=',{}]
+          ['@', '@', {}]
+          ['PROPERTY', '_localWire', {}]
+          [ 'CALL_START',  '(',     { } ]
+          [ 'NUMBER',  '1',     { } ]
+          [',',',',{}]
+          ['STRING',"'"+netName+"'",{}]
+          [ 'CALL_END',     ')',    { } ]
+          [ 'TERMINATOR',   '\n',    { } ]
+          ['@', '@', {}]
+          ['PROPERTY', '_assign', {}]
+        ]
+      if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
+        [dummy,callEnd]=findCallSlice(tokens,i)
+        [dummy,stopIndex]=findAssignBound(tokens,i+2)
+        tokens.splice callEnd, 1
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{}]
+
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      tokens.splice(callEnd,0,
+        [',',',',{}],
+        ['NUMBER',"'"+String(lineno)+"'",{}]
+      )
+      patchLength=findAssignBlock(tokens,callEnd+2)
+      tokens.splice i, 1, list...
+      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='local_reg'
       list =[
         ['@', '@', {}]

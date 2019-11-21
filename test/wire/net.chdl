@@ -1,0 +1,17 @@
+#########################################################3
+# Design
+#########################################################3
+
+class NetSimple extends Module
+  constructor: ->
+    super()
+    Port(
+      din: input(5)
+      dout: input(6)
+    )
+
+  build: ->
+    net(aaa,6) = @din
+
+module.exports=NetSimple
+

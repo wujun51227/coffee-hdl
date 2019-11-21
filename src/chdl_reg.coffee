@@ -488,4 +488,22 @@ class Reg extends CircuitEl
       out.assign=list
       return out
 
+  reverse: ()=>
+    tempWire=@cell._localWire(@width,'reverse')
+    list=[]
+    for i in [0...@width]
+      list.push @bit(i)
+    tempWire.assign((=> cat(list)))
+    return tempWire
+
+  select: (cb)=>
+    list=[]
+    for i in [0...@width]
+      index = @width-1-i
+      if cb(index)
+        list.push @bit(index)
+    tempWire=@cell._localWire(list.length,'select')
+    tempWire.assign((=> cat(list)))
+    return tempWire
+
 module.exports=Reg

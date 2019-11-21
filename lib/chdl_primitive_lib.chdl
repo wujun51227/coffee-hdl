@@ -403,4 +403,26 @@ module.exports={
             cond_hold=[]
         else
           i.value()
+
+  $headPadding:(sig,num,v=0)->
+    return $ cat(bin(num,v),sig)
+
+  $tailPadding:(sig,num,v=0)->
+    return $ cat(sig,bin(num,v))
+
+  $headPaddingTo:(sig,total,v=0)->
+    w = sig.getWidth()
+    if w<total
+      num = total-w
+      return $ cat(bin(num,v),sig)
+    else
+      sig
+
+  $tailPaddingTo:(sig,total,v=0)->
+    w = sig.getWidth()
+    if w<total
+      num = total-w
+      return $ cat(sig,bin(num,v))
+    else
+      sig
 }
