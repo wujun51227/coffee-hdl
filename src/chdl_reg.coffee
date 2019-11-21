@@ -1,7 +1,7 @@
 CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
 _ = require 'lodash'
-{rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
+{cat,rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
   resetMode: 'async' #async or sync
@@ -48,19 +48,31 @@ class Reg extends CircuitEl
       @bindClockName=clock.getName()
     return packEl('reg',this)
 
+  reset:(reset,mode='async',assertValue=false)=>
+    if reset==null
+      @resetMode=null
+      @resetName=null
+    else
+      if _.isString(reset)
+        @resetName=reset
+      else
+        @resetName=reset.getName()
+      @resetMode=mode
+      @assertHigh= assertValue
+    return packEl('reg',this)
+
   negedge: =>
     @negClock=true
     return packEl('reg',this)
 
-  syncReset: (reset)=>
+  syncReset: ()=>
     @resetMode='sync'
-    if _.isString(reset)
-      @resetName=reset
-    else
-      @resetName=reset.getName()
     return packEl('reg',this)
 
   asyncReset: (reset=null)=>
+    console.log '=========================='
+    console.log 'Deprecated use reset(name,mode,assertValue)'
+    console.log '=========================='
     @resetMode='async'
     if _.isString(reset)
       @resetName=reset

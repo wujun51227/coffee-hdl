@@ -117,23 +117,23 @@ module.exports={
     if clkr==null or rstr==null
       throw new Error("Please attch clock/reset to #{pop.getName()}")
 
-    prefetched = local_reg(1,'prefetched').clock(clkr).asyncReset(rstr)
-    empty_flag = local_reg(1,'empty_flag').clock(clkr).asyncReset(rstr)
+    prefetched = local_reg(1,'prefetched').clock(clkr).reset(rstr)
+    empty_flag = local_reg(1,'empty_flag').clock(clkr).reset(rstr)
     read = local_wire(1,'read')
 
     assign(read) = $ !empty_flag && ( pop || !prefetched)
     empty = $ !prefetched
 
     w={
-      code: local_reg(addrWidth+1,'w_code').clock(clkw).asyncReset(rstw)
-      rd_s1: local_reg(addrWidth+1,'rd_s1').clock(clkw).asyncReset(rstw)
-      rd_s0: local_reg(addrWidth+1,'rd_s0').clock(clkw).asyncReset(rstw)
+      code: local_reg(addrWidth+1,'w_code').clock(clkw).reset(rstw)
+      rd_s1: local_reg(addrWidth+1,'rd_s1').clock(clkw).reset(rstw)
+      rd_s0: local_reg(addrWidth+1,'rd_s0').clock(clkw).reset(rstw)
     }
 
     r={
-      code: local_reg(addrWidth+1,'r_code').clock(clkr).asyncReset(rstr)
-      wr_s1: local_reg(addrWidth+1,'wr_s1').clock(clkr).asyncReset(rstr)
-      wr_s0: local_reg(addrWidth+1,'wr_s0').clock(clkr).asyncReset(rstr)
+      code: local_reg(addrWidth+1,'r_code').clock(clkr).reset(rstr)
+      wr_s1: local_reg(addrWidth+1,'wr_s1').clock(clkr).reset(rstr)
+      wr_s0: local_reg(addrWidth+1,'wr_s0').clock(clkr).reset(rstr)
     }
 
     next_rd = local_wire(addrWidth+1,'next_rd')
@@ -175,7 +175,7 @@ module.exports={
     assign(w.rd_s0) = $ r.code
     assign(w.code) = $ succeeding_code_wr
 
-    full = local_reg(1,'full').clock(clkw).asyncReset(rstw)
+    full = local_reg(1,'full').clock(clkw).reset(rstw)
     inv_w = $ ~w.rd_s1.fromMsb(2)
     assign(full) = $ succeeding_code_wr == cat(inv_w ,w.rd_s1.fromLsb(addrWidth-1))
 
