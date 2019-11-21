@@ -187,7 +187,6 @@ assign(@dout)
   $elseif(@sel2)  =>   $ @din+2
   $elseif(@sel3)  =>   $ @din+3
   $else          =>    $ @din
-  $endif
 ```
 
 生成代码
@@ -223,16 +222,16 @@ assign(@w2.w6)
   $order([
     $cond(@in1(1)) => $ @w2.w3(9:7)
     $cond(@in1(2)) => $ @w2.w3(3:1)
-    ],
-    $ @w2.w3(6:4)
+	  $cond(@in1(3))
+    $cond(@in1(4)) => $ 100
+    $cond(null) => $ @w2.w3(6:4)
+    ]
   )
 ```
 
 生成代码
 ```verilog
-assign w2__w6 = (in1[1])?(w2__w3[9:7]):                             
-    (in1[2])?(w2__w3[3:1]):                                     
-    (w2__w3[6:4]);         
+assign w2__w6 =(in1[1])?(w2__w3[9:7]):(in1[2])?(w2__w3[3:1]):(((in1[3])||(in1[4])))?(100):w2__w3[6:4];
 ```
 通过和coffeescript语言结合,可以基于规格化输入格式生成verilog代码(demo/rsicv32i_decoder.chdl).
 
@@ -371,7 +370,7 @@ Reg ff_simple: reg(16)
 指定clock,reset信号的寄存器申明如下
 	
 ```coffeescript
-Reg ff_full: reg(16).clock('clock').init(0).asyncReset('rstn')
+Reg ff_full: reg(16).clock('clock').init(0).reset('rstn')
 ```
 
 coffee-hdl中reg是一个大幅度增强语义的类型元素,在声明的时候可以指定相关时钟信号名字,复位信号名和复位值,还可以指定式异步复位还是同步复位,编译器会产生对应的verilog代码来表现这些特性,coffee-hdl编程的时候可以过滤这些特性获取reg列表.
@@ -398,8 +397,8 @@ end
 	
 	* enable(signal,enable_value) reg使能信号,可以根据全局策略自动生成clock gating电路
 	* clock(clock_name) 指定clock信号名
+	* reset(reset_name,'async'|'sync',0|1)
 	* syncReset()  同步复位
-	* noReset() 无复位
 	* highReset() 复位信号高有效,缺省是低有效
  ~~maxcut(value) 赋值如果大于最大值截断到最大值~~
 
@@ -659,7 +658,6 @@ $sequence('writesSeq') =>
 		assign(@aa) = $ 4
 	 $else
 	 	assign(@aa) = $ 5
-	 $endif
 .wait($(@aa==1)) =>
 	assign(@aa) = $ 6
 .end()
@@ -677,7 +675,6 @@ $elseif(cond)
   block_code2
 $else
   block_code3
-$endif
 ```
 在assign环境下,分支语句块的返回值自动生成?:表达式,在always环境下,分支语句生成if elseif形式的组合逻辑.
 示例代码(test/branch/branch_test.chdl)
@@ -687,7 +684,6 @@ assign(@w2.w4)
     $ @w2.w3+1
   $elseif(@in1==hex(5,2))
     $ @w2.w3+2
-  $endif
 
 assign(@w2.w4)
   $balance([
@@ -700,7 +696,6 @@ always
     assign(@r1(3,1)) = $ @din(4,2)+0x100
   $elseif(@in1==hex(5,2))
     assign(@r1(3,1)) = $ @din(4,2)+0x200
-  $endif()
 ```
 生成代码
 ```verilog
@@ -756,8 +751,9 @@ class HubSimple extends Module
 ## 关键字
 操作符
 
-* assign(signal) = or block
+* assign signal [= expr || block]
 * always block
+* always_if(cond) block
 * expand(times,signal)
 * cat(signal1,signal2...)
 
@@ -770,6 +766,8 @@ class HubSimple extends Module
 * reg(width:number)
 * channel()
 * wire(width:number)
+* local_reg(width:number)
+* local_wire(width:number)
 * hex(width:number,value:number)
 * oct(width:number,value:number)
 * bin(width:number,value:number)
@@ -781,9 +779,8 @@ class HubSimple extends Module
 * $if(expr)
 * $elseif(expr)
 * $else
-* $endif
 * $balance(list:array,number?)
-* $order(list:array,default_expr)
+* $order(list:array)
 * $cond(expr) =>
 * $ expr
 
@@ -796,8 +793,6 @@ class HubSimple extends Module
 * Mem()
 * Reg()
 * Hub()
-* local_wire()
-* local_reg()
 
 模块自带方法
 

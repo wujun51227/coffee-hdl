@@ -100,6 +100,9 @@ class Reg extends CircuitEl
   getPending: => @share.pendingValue ? @getName()
 
   noReset: =>
+    console.log '=========================='
+    console.log 'Deprecated use reset(null)'
+    console.log '=========================='
     @resetMode=null
     @resetName=null
     return packEl('reg',this)
