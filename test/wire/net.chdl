@@ -11,7 +11,10 @@ class NetSimple extends Module
     )
 
   build: ->
-    net(aaa,6) = @din
+    Net(aaa,6) = @din
+    Net bbb = @din
+    Net(ccc)
+    assign ccc = @din
 
 module.exports=NetSimple
 

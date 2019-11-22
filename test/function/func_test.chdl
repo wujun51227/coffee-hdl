@@ -35,7 +35,7 @@ class FuncTest extends Module
     assign(@w1) = @add(@mul(hex(10,0x123),@in1),@in2)
     assign(@w2) = cat(@in1,@in2,@w1)
     list=[@w1,@w2,hex(5,0x1f)]
-    assign(@w3) = $ cat(list)
+    assign(@w3) = cat(3\b0,list...)
 
     always
       assign(@r1)

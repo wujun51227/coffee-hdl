@@ -366,11 +366,17 @@ tokenIsEndIf=(tokens,index)->
 
 expandOp=(tokens)->
   out=[]
-  for i in tokens
-    if i[0]=='IDENTIFIER' and i[1].match(/^\$/)
+  skip=0
+  for i,index in tokens
+    if skip>0
+      skip-=1
+    else if i[0]=='IDENTIFIER' and i[1].match(/^\$/)
       m=i[1].match(/^\$(.*)/)
       out.push( ['@', '@', {}])
       out.push( ['PROPERTY', '_'+m[1], {}])
+    else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
+      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+      skip=2
     else
       out.push(i)
   return out
@@ -471,7 +477,7 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='net'
+    else if token[0] is 'IDENTIFIER' and token[1]=='Net'
       netName = tokens[i+2][1]
       if tokens[i+3][0]==','
         width= tokens[i+4][1]
