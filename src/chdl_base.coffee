@@ -142,7 +142,7 @@ statementGen=(statement)->
   else
     null
 
-sim_gen= (inst)=>
+sim_gen= (inst,out=[])=>
   buildName = do ->
     if inst.__specify
       if inst.__uniq
@@ -163,7 +163,7 @@ sim_gen= (inst)=>
     moduleCache[buildName]=true
 
   for i in getCellList(inst)
-    sim_gen(i.inst)
+    sim_gen(i.inst,out)
 
   instEnv.register(inst)
   inst.__setSim()
@@ -178,7 +178,9 @@ sim_gen= (inst)=>
     cell    : inst.__dumpCell()
     channel : inst.__dumpChannel()
   }
-  console.log JSON.stringify(simPackage,null,'  ')
+  out.push simPackage
+  return out
+  #console.log JSON.stringify(simPackage,null,'  ')
 
 code_gen= (inst)=>
   buildName = do ->
@@ -451,6 +453,21 @@ getVerilogParameter=(inst)->
       list.push(".#{i.key}(#{i.value})")
     return " #(\n  "+list.join(",\n  ")+"\n) "
 
+toSim=(inst)->
+  if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
+    if inst.__defaultClock==null
+      inst.__setDefaultClock('_clock')
+      inst.__addPort('_clock','input',1)
+    if inst.__defaultReset==null
+      inst.__setDefaultReset('_resetn')
+      inst.__addPort('_resetn','input',1)
+  cell_build(inst)
+  setSim()
+  out=sim_gen(inst)
+  inst._clean()
+  return out
+
+
 toVerilog=(inst)->
   if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
     if inst.__defaultClock==null
@@ -460,11 +477,7 @@ toVerilog=(inst)->
       inst.__setDefaultReset('_resetn')
       inst.__addPort('_resetn','input',1)
   cell_build(inst)
-  if config.sim
-    setSim()
-    sim_gen(inst)
-  else
-    code_gen(inst)
+  code_gen(inst)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   inst._clean()
@@ -508,6 +521,7 @@ instEnv= do ->
 module.exports.Module    = Module
 module.exports.Expr      = Expr
 module.exports.toVerilog   = toVerilog
+module.exports.toSim       = toSim
 module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind

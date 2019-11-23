@@ -998,6 +998,14 @@ class Module
       for i in cellInst.__bindChannels
         connList.push {port:i.portName,channel:i.channel.hier}
       cellInfo.conn=connList
+      if cellInst.__defaultClock
+        clockPort=cellInst.__ports[cellInst.__defaultClock]
+        if not clockPort.isBinded()
+          connList.push {port:clockPort.elName,signal:@__defaultClock}
+      if cellInst.__defaultReset
+        resetPort=cellInst.__ports[cellInst.__defaultReset]
+        if not resetPort.isBinded()
+          connList.push {port:resetPort.elName,signal:@__defaultReset}
     return cellList
 
   __dumpChannel: =>

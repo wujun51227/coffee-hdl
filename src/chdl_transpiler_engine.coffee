@@ -958,6 +958,10 @@ buildCode= (fullFileName,text,debug=false,param=null) ->
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
 
+buildSim= (fullFileName,text,debug=false,param=null) ->
+  design=transToJs(fullFileName,text,debug)
+  return chdl_base.toSim(new design(param))
+
 buildLib= (fullFileName,text,debug=false,param=null) ->
   chdl_base.configBase({noLineno:true})
   transToJs(fullFileName,text,debug)
@@ -1030,6 +1034,7 @@ importLib=(path)->
 
 
 module.exports.buildCode= buildCode
+module.exports.buildSim= buildSim
 module.exports.buildLib= buildLib
 module.exports.setPaths= (paths)=>
   module.paths=(i for i in paths)

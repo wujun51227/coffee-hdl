@@ -5,7 +5,7 @@ path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
-{buildCode,setPaths}=require 'chdl_transpiler_engine'
+{buildSim,buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
@@ -64,24 +64,34 @@ processFile= (fileName,outDir) ->
       log.error error
       return
     try
-      buildCode(path.resolve(fileName),text,debug,programParam)
-      printBuffer.flush()
-      flist=[]
-      for i,index in printBuffer.getBin()
-        code= i.list.join("\n")
-        do ->
+      if cfg.sim
+        out=buildSim(path.resolve(fileName),text,debug,programParam)
+        for i in out
+          fname= do ->
+            if outDir?
+              outDir+'/'+i.name+'.sim.json'
+            else
+              i.name+'.sim.json'
+          fs.writeFileSync(fname,JSON.stringify(i,null,'  '),'utf8')
+      else
+        buildCode(path.resolve(fileName),text,debug,programParam)
+        printBuffer.flush()
+        flist=[]
+        for i,index in printBuffer.getBin()
+          code= i.list.join("\n")
           fname= do ->
             if outDir?
               outDir+'/'+i.name
             else
               i.name
-          flist.push(fname+'.sv')
-          fs.writeFile fname+'.sv', code, (err) =>
-            throw err if err
-            log "generate code",fname+".sv"
+          do(fname,code) ->
+            flist.push(fname+'.sv')
+            fs.writeFile fname+'.sv', code, (err) =>
+              throw err if err
+              log "generate code",fname+".sv"
 
-      if program.flist
-        fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
+        if program.flist
+          fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)
