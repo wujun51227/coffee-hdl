@@ -55,8 +55,9 @@ class FuncTest extends Module
         [
           $cond(@w1==2) => $ @w2
           $cond(@w3>1)  => $ @w4.w5
+          $cond(null)  => $ 0
         ]
-      ,0)
+      )
 
     assign(@w8) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
       if first

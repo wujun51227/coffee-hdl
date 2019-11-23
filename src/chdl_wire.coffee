@@ -165,7 +165,7 @@ class Wire extends CircuitEl
         else
           @hier+".slice("+@msb+","+@lsb+")"
       else
-        @hier+'.getQ()'
+        @hier+'.getValue()'
     else
       if @lsb>=0
         if @width==1
