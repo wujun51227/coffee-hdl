@@ -370,7 +370,7 @@ expandOp=(tokens)->
   for i,index in tokens
     if skip>0
       skip-=1
-    else if i[0]=='IDENTIFIER' and i[1].match(/^\$/)
+    else if i[0]=='IDENTIFIER' and i[1].match(/^\$\w+/)
       m=i[1].match(/^\$(.*)/)
       out.push( ['@', '@', {}])
       out.push( ['PROPERTY', '_'+m[1], {}])
@@ -397,16 +397,19 @@ extractLogic = (tokens)->
     if token[0] is 'IDENTIFIER' and token[1]=='$'
       list =[['IDENTIFIER', '_expr', {}]]
       [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      extractSlice=expandOp(extractSlice)
-      exprExpand(extractSlice)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
-      list.push tokens[callEnd]
-      tokens.splice i, callEnd-i+1, list...
-      i+=list.length
+      if callStart>0 and callEnd>0
+        extractSlice=tokens.slice(callStart+1,callEnd)
+        extractSlice=expandOp(extractSlice)
+        exprExpand(extractSlice)
+        list.push tokens[callStart]
+        list.push extractSlice...
+        list.push [',',',',{}]
+        list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+        list.push tokens[callEnd]
+        tokens.splice i, callEnd-i+1, list...
+        i+=list.length
+      else
+        throw new Error("Syntax error at #{lineno}")
     else if token[0] is 'IDENTIFIER' and token[1]=='assign'
       list =[
         ['@', '@', {}]
@@ -865,6 +868,11 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_'+m[1], {}]
       ]
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      if callStart>0 and callEnd>0
+        extractSlice=tokens.slice(callStart+1,callEnd)
+        expandTokens=expandOp(extractSlice)
+        tokens.splice(callStart+1,extractSlice.length,expandTokens...)
       tokens.splice i, 1, list...
       i+=list.length
     else if findstartPos and token[0] is 'CALL_START'
