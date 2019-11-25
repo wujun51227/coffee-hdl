@@ -33,29 +33,29 @@ getCellList= (inst)->
   return _.sortBy(list,['name'])
 
 cell_build = (inst) =>
-  inst.__setConfig(config)
-  inst.__elaboration()
+  inst._setConfig(config)
+  inst._elaboration()
   for i in getCellList(inst)
-    i.inst.__link(i.name)
+    i.inst._link(i.name)
     #log 'Link cell',i.name
-    i.inst.__setParentNode(inst)
+    i.inst._setParentNode(inst)
     if not i.inst.__isCombModule
       if i.inst.__defaultClock==null
         if inst.__defaultClock
-          i.inst.__setDefaultClock(inst.__defaultClock)
-          i.inst.__addPort(inst.__defaultClock,'input',1)
+          i.inst._setDefaultClock(inst.__defaultClock)
+          i.inst._addPort(inst.__defaultClock,'input',1)
         else if config.autoClock && i.inst.__autoClock
-          i.inst.__setDefaultClock('_clock')
-          i.inst.__addPort('_clock','input',1)
+          i.inst._setDefaultClock('__clock')
+          i.inst._addPort('__clock','input',1)
       if i.inst.__defaultReset==null
         if inst.__defaultReset
-          i.inst.__setDefaultReset(inst.__defaultReset)
-          i.inst.__addPort(inst.__defaultReset,'input',1)
+          i.inst._setDefaultReset(inst.__defaultReset)
+          i.inst._addPort(inst.__defaultReset,'input',1)
         else if config.autoClock && i.inst.__autoClock
-          i.inst.__setDefaultReset('_resetn')
-          i.inst.__addPort('_resetn','input',1)
+          i.inst._setDefaultReset('__resetn')
+          i.inst._addPort('__resetn','input',1)
     cell_build(i.inst)
-  inst.__postElaboration()
+  inst._postElaboration()
 
 get_module_build_name= (inst)->
   baseName=inst.constructor.name
@@ -152,12 +152,12 @@ sim_gen= (inst,out=[])=>
         inst.__specifyModuleName
     else
       get_module_build_name(inst)
-  inst.__overrideModuleName(buildName)
-  log 'Build cell',inst.__getPath(),'(',buildName,')'
+  inst._overrideModuleName(buildName)
+  log 'Build cell',inst._getPath(),'(',buildName,')'
   if moduleCache[buildName]?
     return
   else if inst.isBlackBox()
-    log 'Warning:',inst.__getPath(),'is blackbox'
+    log 'Warning:',inst._getPath(),'is blackbox'
     return
   else
     moduleCache[buildName]=true
@@ -166,17 +166,17 @@ sim_gen= (inst,out=[])=>
     sim_gen(i.inst,out)
 
   instEnv.register(inst)
-  inst.__setSim()
+  inst._setSim()
   inst.build()
   simPackage={
     name    : buildName
-    port    : inst.__dumpPort()
-    reg     : inst.__dumpReg()
-    wire    : inst.__dumpWire()
-    var     : inst.__dumpVar()
-    event   : inst.__dumpEvent()
-    cell    : inst.__dumpCell()
-    channel : inst.__dumpChannel()
+    port    : inst._dumpPort()
+    reg     : inst._dumpReg()
+    wire    : inst._dumpWire()
+    var     : inst._dumpVar()
+    event   : inst._dumpEvent()
+    cell    : inst._dumpCell()
+    channel : inst._dumpChannel()
   }
   out.push simPackage
   return out
@@ -192,12 +192,12 @@ code_gen= (inst)=>
         inst.__specifyModuleName
     else
       get_module_build_name(inst)
-  inst.__overrideModuleName(buildName)
-  log 'Build cell',inst.__getPath(),'(',buildName,')'
+  inst._overrideModuleName(buildName)
+  log 'Build cell',inst._getPath(),'(',buildName,')'
   if moduleCache[buildName]?
     return
   else if inst.isBlackBox()
-    log 'Warning:',inst.__getPath(),'is blackbox'
+    log 'Warning:',inst._getPath(),'is blackbox'
     return
   else
     moduleCache[buildName]=true
@@ -217,7 +217,7 @@ code_gen= (inst)=>
   ).join(",\n")
   printBuffer.add ');'
   printBuffer.blank('//parameter declare')
-  printBuffer.add inst.__parameterDeclare()
+  printBuffer.add inst._parameterDeclare()
   printBuffer.blank('//port declare')
   _.map(toFlatten(inst.__ports), (i)=>
     printBuffer.add i[1].portDeclare()+";"
@@ -456,11 +456,11 @@ getVerilogParameter=(inst)->
 toSim=(inst)->
   if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
     if inst.__defaultClock==null
-      inst.__setDefaultClock('_clock')
-      inst.__addPort('_clock','input',1)
+      inst._setDefaultClock('__clock')
+      inst._addPort('__clock','input',1)
     if inst.__defaultReset==null
-      inst.__setDefaultReset('_resetn')
-      inst.__addPort('_resetn','input',1)
+      inst._setDefaultReset('__resetn')
+      inst._addPort('__resetn','input',1)
   cell_build(inst)
   setSim()
   out=sim_gen(inst)
@@ -471,11 +471,11 @@ toSim=(inst)->
 toVerilog=(inst)->
   if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
     if inst.__defaultClock==null
-      inst.__setDefaultClock('_clock')
-      inst.__addPort('_clock','input',1)
+      inst._setDefaultClock('__clock')
+      inst._addPort('__clock','input',1)
     if inst.__defaultReset==null
-      inst.__setDefaultReset('_resetn')
-      inst.__addPort('_resetn','input',1)
+      inst._setDefaultReset('__resetn')
+      inst._addPort('__resetn','input',1)
   cell_build(inst)
   code_gen(inst)
   if config.tree
@@ -504,7 +504,7 @@ instEnv= do ->
     register: (i)-> inst=i
     getWire: (name,path=null)-> inst._getChannelWire(name,path)
     hasChannel: (name)-> inst.__channels[name]?
-    cell: (name)-> inst.__getCell(name)
+    cell: (name)-> inst._getCell(name)
     infer: (number,offset=0)->
       actWidth=inst.__assignWidth+offset
       if _.isNumber(number)

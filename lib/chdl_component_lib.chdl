@@ -213,32 +213,33 @@ module.exports={
     $order(condList)
 
   $roundArbiter: (list,enable,defaultIndex=0,clock=null,reset=null)->
+    dataWidth=list[0].getWidth()
     width = Math.floor(Math.log2(list.length))+1
     if clock?
       roundReg = local_reg(width,'round').clock(clock).reset(reset)
     else
       roundReg = local_reg(width,'round')
+    Net(ret,width)
     assign(roundReg)
       $if(enable)
-        $if(roundReg==list.length-1) => $ 0
-        $else => $ roundReg+1
+        $if(ret==list.length-1) => $ 0
+        $else => $ ret+1
         $endif
       $else
         $ roundReg
-      $endif
-    indexArray=(local_wire(width,'index') for i in [0...list.length])
-    assign(indexArray[0]) = roundReg
+    indexArray=(local_wire(dataWidth,'index') for i in [0...list.length])
+    assign(indexArray[0]) = $arrayDecode(list,roundReg)
     for i,index in indexArray when index>0
       assign(indexArray[index])
         $if((roundReg+index)>=list.length)
-          $ roundReg+index-list.length
+          $arrayDecode(list,$ roundReg+index-list.length)
         $else
-          $ roundReg+index
-        $endif
+          $arrayDecode(list,$ roundReg+index)
     condList=[]
-    for i,index in list
-      condList.push($cond(i) =>indexArray[index])
+    for i,index in indexArray
+      condList.push($cond(i) =>index)
     condList.push($cond(null) =>defaultIndex)
-    $order(condList)
+    assign ret=$order(condList)
+    return $(ret)
 
 }

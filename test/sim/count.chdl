@@ -47,8 +47,8 @@ class bench_top extends Module
       enable: @en_channel
     )
 
-    @__setDefaultClock('clk')
-    @__setDefaultReset('rstn')
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
 
   build: ->
     assign(@en_channel.Port) = @en

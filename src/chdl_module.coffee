@@ -43,13 +43,13 @@ class Module
       @__cells.push({name:name,inst:inst})
       @[name]=inst
 
-  __getCell: (name)=>
+  _getCell: (name)=>
     p=Object.getPrototypeOf(this)
     for k,v of p when typeof(v)=='object' and v instanceof Module
       return v if k==name
     return _.find(@__cells,{name:name})
 
-  __setConfig: (v) -> @__config=v
+  _setConfig: (v) -> @__config=v
 
   _reg: (obj) ->
     for k,v of obj
@@ -112,9 +112,9 @@ class Module
           hierName=toHier(k,name)
           inst.link(this,hierName)
           if inst.isClock
-            @__setDefaultClock(sigName)
+            @_setDefaultClock(sigName)
           if inst.isReset
-            @__setDefaultReset(sigName)
+            @_setDefaultReset(sigName)
           if inst.isReg
             createReg=new Reg(inst.getWidth())
             createReg.config(inst.isRegConfig)
@@ -122,7 +122,7 @@ class Module
             createReg.link(this,sigName)
             inst.setShadowReg(createReg)
 
-  __overrideModuleName: (name)-> @__moduleName=name
+  _overrideModuleName: (name)-> @__moduleName=name
   setUniq: -> @__uniq=true
   getModuleName: -> @__moduleName
   setCombModule: -> @__isCombModule=true
@@ -182,23 +182,28 @@ class Module
     @_mixin require('chdl_primitive_lib.chdl.js')
     @__sim=false
 
-  __setSim: ->
+  _setSim: ->
     @__sim=true
 
-  __setParentNode: (node)->
+  _setParentNode: (node)->
     @__parentNode=node
 
-  __setDefaultClock: (clock)->
-    @__defaultClock=clock if @__defaultClock==null
+  _setDefaultClock: (clock)->
+    if @__defaultClock==null
+      @__defaultClock=clock
 
-  __setDefaultReset: (reset)->
-    @__defaultReset=reset if @__defaultReset==null
+  _setDefaultReset: (reset)->
+    if @__defaultReset==null
+      @__defaultReset=reset
 
   setDefaultClock: (clock)=>
     @__defaultClock=clock
 
   setDefaultReset: (reset)=>
     @__defaultReset=reset
+
+  _clock: => @__defaultClock
+  _reset: => @__defaultReset
 
   setBlackBox: ()=> @__isBlackBox=true
 
@@ -213,33 +218,33 @@ class Module
       console.error 'Channel',channelName,'not found'
       console.trace()
 
-  __dumpPort: ->
+  _dumpPort: ->
     out={}
     for [name,item] in toFlatten(@__ports)
       _.set(out,name,{dir:item.getType(),width:item.getWidth()})
     return out
 
-  __dumpReg: ->
+  _dumpReg: ->
     out={}
     for [name,item] in toFlatten(@__regs)
       if item.constructor.name=='Reg'
         _.set(out,name,{width:item.getWidth(),property:item.simProperty(),simList:item.simList()})
     return out
 
-  __dumpVar: ->
+  _dumpVar: ->
     out={}
     for [name,item] in toFlatten(@__regs)
       if item.constructor.name=='Vreg'
         _.set(out,name,{width:item.getWidth()})
     return out
 
-  __dumpWire: ->
+  _dumpWire: ->
     out={}
     for [name,item] in toFlatten(@__wires)
       _.set(out,name,{width:item.getWidth(),simList:item.simList()})
     return out
 
-  __addWire: (name,width)->
+  _addWire: (name,width)->
     wire= Wire.create(width)
     wire.link(this,name)
     pack=packEl('wire',wire)
@@ -247,7 +252,7 @@ class Module
     this[name]=pack
     return wire
 
-  __addPort: (name,dir,width)->
+  _addPort: (name,dir,width)->
     port=do ->
       if dir=='input'
         Port.in(width)
@@ -265,18 +270,18 @@ class Module
       @__wires[name]=port
       return port
 
-  __dragPort: (inst,dir,width,pathList,portName)->
+  _dragPort: (inst,dir,width,pathList,portName)->
     nextInst=_.get(inst,pathList[0])
     if nextInst? and nextInst instanceof Module
       newPortName=toSignal([pathList[1..]...,portName].join('.'))
-      port=nextInst.__addPort(newPortName,dir,width)
+      port=nextInst._addPort(newPortName,dir,width)
       if port?
         port.setBindSignal(toSignal([pathList...,portName].join('.')))
         #nextInst.addWire(newPortName,width)
         #nextInst.dumpPorts()
-        @__dragPort(nextInst,dir,width,pathList[1..],portName)
+        @_dragPort(nextInst,dir,width,pathList[1..],portName)
 
-  __removeNode:(list)->
+  _removeNode:(list)->
     if list.length==1
       leaf=list[0]
       delete this[leaf]
@@ -290,7 +295,7 @@ class Module
       delete @__ports[leaf]
       delete @__wires[leaf]
 
-  __findChannel: (inst,list)->
+  _findChannel: (inst,list)->
     if _.get(inst,list)?
       return _.get(inst,list)
 
@@ -299,35 +304,36 @@ class Module
       return out
     else
       nextInst=inst[list[0]]
-      return @__findChannel(nextInst,list.slice(1))
+      return @_findChannel(nextInst,list.slice(1))
 
-  __channelExpand:(channelType,localName,channelInfo)->
+  _channelExpand:(channelType,localName,channelInfo)->
     localport=null
     nodeList=[]
-    if channelType=='hub'
-      nodeList=_.toPath(localName)
-    else
-      for [name,port] in toFlatten(@__ports)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
-      for [name,port] in toFlatten(@__channels)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
-      for [name,port] in toFlatten(@__wires)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
+    #if channelType=='hub'
+    #  nodeList=_.toPath(localName)
+    #else
+    for [name,port] in toFlatten(@__ports)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
+    for [name,port] in toFlatten(@__channels)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
+    for [name,port] in toFlatten(@__wires)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
 
     type=null
     if localport?
       type=localport.constructor.name
       if localport?.width==0
-        @__removeNode(nodeList) if channelType!='hub'
+        #@__removeNode(nodeList) if channelType!='hub'
+        @_removeNode(nodeList)
 
     if _.isString(channelInfo)
-      channel=@__findChannel(this,_.toPath(channelInfo))
+      channel=@_findChannel(this,_.toPath(channelInfo))
       channelName=channelInfo
     else
       channel=channelInfo
@@ -336,10 +342,10 @@ class Module
       bindPort=obj.port
       dir=bindPort.type
       width=bindPort.width
-      @__dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
+      @_dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
       if dir=='output' or dir=='input'
         wireName=toSignal([channelName,obj.node...].join('.'))
-        wire=@__addWire(wireName,width)
+        wire=@_addWire(wireName,width)
         newPath=[nodeList...,obj.node...].join('.')
         if type=='Port'
           net=new Port(dir,width)
@@ -358,6 +364,7 @@ class Module
             netEl=packEl('wire',net)
             _.set(this,newPath,netEl)
             _.set(@__wires,newPath,netEl)
+            netEl.setType(dir)
           else
             net=_.get(this,newPath)
         if dir=='input'
@@ -384,11 +391,11 @@ class Module
       i.channel.portList.length=0
       i.channel.bindPort(this,i.portName)
 
-  __postElaboration: ->
+  _postElaboration: ->
     for i in @__postProcess
-      @__channelExpand(i.type,i.elName,i.bindChannel)
+      @_channelExpand(i.type,i.elName,i.bindChannel)
 
-  __elaboration: ->
+  _elaboration: ->
     if @__config.info
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
@@ -467,12 +474,12 @@ class Module
     for evalFunc in @__alwaysList
       evalFunc()
 
-  _hub: (arg)->
-    for hubName,list of arg
-      #@__addWire(hubName,0) unless this[hubName]?
-      for channelPath in list
-        #console.log '>>>>add hub',hubName,channelPath
-        @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
+  #_hub: (arg)->
+  #  for hubName,list of arg
+  #    #@_addWire(hubName,0) unless this[hubName]?
+  #    for channelPath in list
+  #      #console.log '>>>>add hub',hubName,channelPath
+  #      @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
 
   #logic: (expressFunc)=> expressFunc().str
 
@@ -666,8 +673,7 @@ class Module
             netEl.setType(sig.getType())
             channel.Port=netEl
 
-  __link: (name)-> @__instName=name
-
+  _link: (name)-> @__instName=name
 
   _localWire: (width=1,name='t')->
     pWire=Wire.create(Number(width))
@@ -928,14 +934,14 @@ class Module
       delete @__signature[i]
           
           
-  __getPath:(cell=null,list=[])->
+  _getPath:(cell=null,list=[])->
     cell=this if cell==null
     if cell.__parentNode==null
       list.push(cell.__moduleName)
       return list.reverse().join('.')
     else
       list.push(cell.__instName)
-      @__getPath(cell.__parentNode,list)
+      @_getPath(cell.__parentNode,list)
 
   _assign: (signal,lineno=-1)=>
     self=this
@@ -966,14 +972,14 @@ class Module
         else
           signal.assign((->block),lineno)
 
-  __parameterDeclare: ->
+  _parameterDeclare: ->
     out=''
     if @__moduleParameter?
       for i in @__moduleParameter
         out+="parameter #{i.key} = #{i.value};\n"
     return out
 
-  __dumpEvent: =>
+  _dumpEvent: =>
     out=[]
     for seqBlock in @__initialList when seqBlock.length>0
       seq={type:'initial',list:[]}
@@ -987,13 +993,13 @@ class Module
         toEventList(item.bin,seq.list)
     return out
 
-  __dumpCell: =>
+  _dumpCell: =>
     p = Object.getPrototypeOf(this)
     cellList=({inst:k,module:v.getModuleName()} for k,v of p when typeof(v)=='object' and v instanceof Module)
     for i in @__cells
       cellList.push({inst:i.name,module:i.inst.getModuleName()}) unless _.find(cellList,(n)-> n.inst.__id==i.inst.__id)
     for cellInfo in cellList
-      cellInst=@__getCell(cellInfo.inst)
+      cellInst=@_getCell(cellInfo.inst)
       connList=[]
       for i in cellInst.__bindChannels
         connList.push {port:i.portName,channel:i.channel.hier}
@@ -1008,7 +1014,7 @@ class Module
           connList.push {port:resetPort.elName,signal:@__defaultReset}
     return cellList
 
-  __dumpChannel: =>
+  _dumpChannel: =>
     out={}
     for [name,channel] in toFlatten(@__channels)
       for [path,port] in toFlatten(channel.Port)
