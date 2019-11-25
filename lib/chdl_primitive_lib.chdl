@@ -137,7 +137,7 @@ module.exports={
       conds.push cond
       if value?
         if conds.length==1
-          if conds[0].str=='null'
+          if conds[0]==null or conds[0].str=='null'
             plist.push(value())
             findDefault=true
           else

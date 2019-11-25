@@ -825,7 +825,10 @@ extractLogic = (tokens)->
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
-      list.push extractSlice...
+      if extractSlice.length==0
+        list.push ['NULL',"null",{}]
+      else
+        list.push extractSlice...
       list.push [',',',',{}]
       list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]
@@ -847,7 +850,10 @@ extractLogic = (tokens)->
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
-      list.push extractSlice...
+      if extractSlice.length==0
+        list.push ['NULL',"null",{}]
+      else
+        list.push extractSlice...
       list.push [',',',',{}]
       list.push ['NUMBER',"'"+String(lineno)+"'",{}]
       list.push tokens[callEnd]

@@ -534,7 +534,7 @@ class Module
           @__regAssignList.push ["endif"]
     }
 
-  _cond: (cond,lineno=-1)=>
+  _cond: (cond=null,lineno=-1)=>
     return (block)=>
       if block?
         value=block()
@@ -542,7 +542,7 @@ class Module
       else
         {cond:cond,value:null,lineno:lineno}
 
-  _lazy_cond: (cond,lineno=-1)=>
+  _lazy_cond: (cond=null,lineno=-1)=>
     return (block)=> {cond:cond,value:block,lineno:lineno}
 
   _wireProcess: (list=[],lineno)=>

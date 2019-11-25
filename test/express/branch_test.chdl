@@ -76,7 +76,7 @@ class BranchTest extends Module
           $cond(@in1(2)) => $ @w2.w3(3:1)
           $cond(@in1(3))
           $cond(@in1(4)) => $ 100
-          $cond(null) => $ @w2.w3(6:4)
+          $cond() => $ @w2.w3(6:4)
         ]
       )
 
@@ -87,7 +87,7 @@ class BranchTest extends Module
           $cond(@in1(2)) => $ @w2.w3(3:1)
           $cond(@in1(3))
           $cond(@in1(4)) => $ 100
-          $cond(null) => $ 200
+          $cond() => $ 200
         ]
       )
 
@@ -127,7 +127,7 @@ class BranchTest extends Module
           $lazy_cond(30)
           $lazy_cond(40) =>
             assign(@caseout) = 200
-          $lazy_cond(null) =>
+          $lazy_cond() =>
             assign(@caseout) = 300
         ]
 
