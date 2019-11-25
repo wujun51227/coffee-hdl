@@ -48,24 +48,23 @@ class riscv32i_decoder extends Module
   sliceInstr: (lsb,width)-> $ (@instrLatch>>lsb) & @mask(width)
 
   build: ->
-    assign(@alu.op) = @opLatch
-    assign(@alu.pc) = @pcLatch
-    assign(@alu.instr) = @instrLatch
+    assign @alu.op = @opLatch
+    assign @alu.pc = @pcLatch
+    assign @alu.instr = @instrLatch
     for name in Object.keys(@slice)
       property =instTable.fieldProperty[name]
-      assign(@slice[name]) = $ @sliceInstr(property.lsb,property.width)
+      assign @slice[name] = @sliceInstr(property.lsb,property.width)
 
     for name in Object.keys(@regFile)
       property =instTable.fieldProperty[name]
-      assign(@regFile[name])    = $ @sliceInstr(property.lsb,property.width)
+      assign @regFile[name] = @sliceInstr(property.lsb,property.width)
     
     @opLatch.stateDef(instTable.instList)
       
     always
       $if(!@stall)
-        assign(@instrLatch) = $ @fetch.instr
-        assign(@pcLatch) = $ @fetch.pc
-      $endif
+        assign @instrLatch = @fetch.instr
+        assign @pcLatch = @fetch.pc
 
     always
       for item in instTable.table
@@ -75,12 +74,10 @@ class riscv32i_decoder extends Module
             for checkItem in instTable.checkList when i[checkItem]?
               cond.push($ @slice[checkItem]==bin(@fieldWidth(checkItem),i[checkItem]))
             if cond.length>0
-              setCond=$opJoin('&&',cond)
+              setCond=$join(cond,(a,b)=>a&&b)
               $if(setCond)
                 @opLatch.setState i.name
-              $endif
             else
               @opLatch.setState i.name
-        $endif
 
 module.exports=riscv32i_decoder
