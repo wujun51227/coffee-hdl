@@ -39,19 +39,19 @@ cell_build = (inst) =>
     i.inst._link(i.name)
     #log 'Link cell',i.name
     i.inst._setParentNode(inst)
-    if not i.inst.__isCombModule
+    if (not i.inst.__isCombModule) and i.inst.__autoClock
       if i.inst.__defaultClock==null
         if inst.__defaultClock
           i.inst._setDefaultClock(inst.__defaultClock)
           i.inst._addPort(inst.__defaultClock,'input',1)
-        else if config.autoClock && i.inst.__autoClock
+        else if config.autoClock
           i.inst._setDefaultClock('__clock')
           i.inst._addPort('__clock','input',1)
       if i.inst.__defaultReset==null
         if inst.__defaultReset
           i.inst._setDefaultReset(inst.__defaultReset)
           i.inst._addPort(inst.__defaultReset,'input',1)
-        else if config.autoClock && i.inst.__autoClock
+        else if config.autoClock
           i.inst._setDefaultReset('__resetn')
           i.inst._addPort('__resetn','input',1)
     cell_build(i.inst)
@@ -410,14 +410,14 @@ code_gen= (inst)=>
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
     printBuffer.add i.inst.getModuleName()+paramDeclare+i.name+'('
-    if not i.inst.__isCombModule
+    if (not i.inst.__isCombModule) and i.inst.__autoClock
       if i.inst.__defaultClock
         clockPort=i.inst.__ports[i.inst.__defaultClock]
-        if not clockPort.isBinded()
+        if (!clockPort.isBinded())
           clockPort.setBindSignal(inst.__defaultClock)
       if i.inst.__defaultReset
         resetPort=i.inst.__ports[i.inst.__defaultReset]
-        if not resetPort.isBinded()
+        if (!resetPort.isBinded())
           resetPort.setBindSignal(inst.__defaultReset)
     [pinConn,pinAssigns]=i.inst._pinConnect(inst)
     printBuffer.add pinConn.join(",\n")
