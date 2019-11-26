@@ -423,7 +423,7 @@ class Reg extends CircuitEl
             @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
             @cell.__regAssignList.push ["end",-1]
           else
-            @cell.__regAssignList.push ["else","#{item.cond.str}",-1]
+            @cell.__regAssignList.push ["else",-1]
             @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
             @cell.__regAssignList.push ["end",-1]
       @cell.__regAssignList.push ["end",-1]

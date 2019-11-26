@@ -968,7 +968,10 @@ class Module
     else
       return (block)->
         if _.isFunction(block)
-          signal.assign(block,lineno)
+          if signal?
+            signal.assign(block,lineno)
+          else
+            throw new Error("Assign to signal is undefined at line: #{lineno}")
         else
           signal.assign((->block),lineno)
 
