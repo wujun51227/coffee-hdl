@@ -366,21 +366,14 @@ tokenIsEndIf=(tokens,index)->
 
 expandOp=(tokens)->
   out=[]
-  skip=0
   for i,index in tokens
-    if skip>0
-      skip-=1
-    else if i[0]=='IDENTIFIER' and i[1].match(/^\$\w+/)
+    if i[0]=='IDENTIFIER' and i[1].match(/^\$\w+/)
       m=i[1].match(/^\$(.*)/)
       out.push( ['@', '@', {}])
       out.push( ['PROPERTY', '_'+m[1], {}])
-    else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
-      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
-      skip=2
     else
       out.push(i)
   return out
-
 
 extractLogic = (tokens)->
   i = 0
@@ -868,11 +861,6 @@ extractLogic = (tokens)->
         ['@', '@', {}]
         ['PROPERTY', '_'+m[1], {}]
       ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      if callStart>0 and callEnd>0
-        extractSlice=tokens.slice(callStart+1,callEnd)
-        expandTokens=expandOp(extractSlice)
-        tokens.splice(callStart+1,extractSlice.length,expandTokens...)
       tokens.splice i, 1, list...
       i+=list.length
     else if findstartPos and token[0] is 'CALL_START'
@@ -994,6 +982,7 @@ transToJs= (fullFileName,text,debug=false) ->
     log "origin Tokens"
     log "========================="
     printTokens(tokens)
+  tokens=expandNum(tokens)
   extractLogic(tokens)
   options={
     referencedVars : ( token[1] for token in tokens when token[0] is 'IDENTIFIER')
@@ -1046,6 +1035,18 @@ importLib=(path)->
         return transToJs(fullName,text,false)
     throw new Error("Cant find file "+path)
 
+expandNum=(tokens)->
+  out=[]
+  skip=0
+  for i,index in tokens
+    if skip>0
+      skip-=1
+    else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
+      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+      skip=2
+    else
+      out.push(i)
+  return out
 
 module.exports.buildCode= buildCode
 module.exports.buildSim= buildSim
