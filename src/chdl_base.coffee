@@ -72,6 +72,8 @@ get_module_build_name= (inst)->
   #    s+='_'+k+v
   return baseName+s+suffix
 
+lineComment=(lineno)-> " /* #{lineno} */ "
+
 rhsExpand=(expandItem)->
   if _.isString(expandItem) or _.isNumber(expandItem)
     return expandItem
@@ -80,7 +82,7 @@ rhsExpand=(expandItem)->
     for item,index in expandItem
       anno= do->
         if item.lineno>=0
-          "/*#{item.lineno}*/"
+          "#{lineComment(item.lineno)}"
         else
           ""
       v= if _.isArray(item.value) then rhsExpand(item.value) else item.value
@@ -104,7 +106,7 @@ statementGen=(statement)->
     if lhs.constructor?.name is 'Port'
       lhs=lhs.refName()
     if lineno? and lineno>=0
-      "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+      "  #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
     else
       "  #{lhs} = #{rhsExpand(rhs)};"
   else if statement[0]=='assign_vreg'
@@ -112,7 +114,7 @@ statementGen=(statement)->
     rhs=statement[2]
     lineno=statement[3]
     if lineno? and lineno>=0
-      "  #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+      "  #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
     else
       "  #{lhs} = #{rhsExpand(rhs)};"
   else if statement[0]=='end'
@@ -123,20 +125,20 @@ statementGen=(statement)->
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  if(#{toSignal cond}) begin /*#{lineno}*/"
+      "  if(#{toSignal cond}) begin #{lineComment(lineno)}"
     else
       "  if(#{toSignal cond}) begin"
   else if statement[0]=='elseif'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  else if(#{toSignal cond}) begin /*#{lineno}*/"
+      "  else if(#{toSignal cond}) begin #{lineComment(lineno)}"
     else
       "  else if(#{toSignal cond}) begin"
   else if statement[0]=='else'
     lineno=statement[1]
     if lineno? and lineno>=0
-      "  else begin /*#{lineno}*/"
+      "  else begin #{lineComment(lineno)}"
     else
       "  else begin"
   else
@@ -257,7 +259,7 @@ code_gen= (inst)=>
       name=statement[2]
       lineno=statement[3]
       if lineno? and lineno>=0
-        printBuffer.add "reg #{name}/*#{lineno}*/;"
+        printBuffer.add "reg #{name}#{lineComment(lineno)};"
       else
         printBuffer.add "reg #{name};"
     else if statement[0]=='assign'
@@ -271,7 +273,7 @@ code_gen= (inst)=>
       else if lhs.constructor?.name is 'Port'
         lhs=lhs.refName()
       if lineno? and lineno>=0
-        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
       else
         printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
     else if statement[0]=='assign_vreg'
@@ -279,7 +281,7 @@ code_gen= (inst)=>
       rhs=statement[2]
       lineno=statement[3]
       if lineno? and lineno>=0
-        printBuffer.add "assign #{lhs}/*#{lineno}*/ = #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
       else
         printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
 
@@ -341,7 +343,7 @@ code_gen= (inst)=>
   printBuffer.blank('//register update logic') if inst.__alwaysList.length>0
   for [assignList,updateWires,lineno] in inst.__alwaysList when assignList? and assignList.length>0
     if lineno? and lineno>=0
-      printBuffer.add 'always_comb begin'+"/*#{lineno}*/"
+      printBuffer.add 'always_comb begin'+"#{lineComment(lineno)}"
     else
       printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
@@ -358,7 +360,7 @@ code_gen= (inst)=>
   printBuffer.blank('//sequence logic')
   for [seqBlockList,lineno] in inst.__sequenceAlwaysList
     for seqBlock in seqBlockList
-      printBuffer.blank("//sequence #{seqBlock.name} #{lineno}")
+      printBuffer.blank("//sequence #{seqBlock.name}#{lineComment(lineno)}")
       stateReg=seqBlock.stateReg
       nextState=seqBlock.nextState
       updateWires=seqBlock.update

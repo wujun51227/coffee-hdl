@@ -313,7 +313,7 @@ module.exports._expr= (s,lineno=null) ->
   else
     append=''
     if lineno? and lineno>=0
-      append='/*'+lineno+'*/'
+      append=' /* '+lineno+' */ '
     if s.str?
       toSignal(s.str+append)
     else if _.isArray(s)
