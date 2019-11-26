@@ -212,7 +212,7 @@ module.exports.packEl = (type,bin)->
 
 __v=(width,number)->
   if width==null
-    width=getWidth(number)
+    width=''
   if _.isString(number)
     if number.match(/^0x/)
       m=number.match(/^0x(.*)/)
@@ -224,9 +224,9 @@ __v=(width,number)->
       m=number.match(/^0b(.*)/)
       return "#{width}'b#{m[1]}"
     else
-      return "#{number}"
+      return "#{width}'d#{number}"
   else if _.isNumber(Number(number))
-    return "#{number}"
+    return "#{width}'d#{number}"
   else
     throw new Error("const value error")
 
@@ -240,29 +240,25 @@ getWidth = (number)->
 
 module.exports.hex = (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0x'+(n>>>0).toString(16))
+    __v(null,'0x'+(n>>>0).toString(16))
   else
     __v(n,'0x'+(m>>>0).toString(16))
 
 module.exports.dec= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,n>>>0)
+    __v(null,n>>>0)
   else
     __v(n,m>>>0)
 
 module.exports.oct= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0o'+(n>>>0).toString(8))
+    __v(null,'0o'+(n>>>0).toString(8))
   else
     __v(n, '0o'+(m>>>0).toString(8))
 
 module.exports.bin= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0b'+(n>>>0).toString(2))
+    __v(null,'0b'+(n>>>0).toString(2))
   else
     __v(n, '0b'+(m>>>0).toString(2))
 
