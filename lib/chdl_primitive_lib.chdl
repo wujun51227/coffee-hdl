@@ -311,9 +311,12 @@ module.exports={
     out = wire(1,'hold')
     if clock?
       latch = reg(1,'hold').clock(clock).reset(reset)
+      latch_clear = reg(1,'clear').clock(clock).reset(reset)
     else
       latch = reg(1,'hold')
-    assign(out) = $ sig | latch
+      latch_clear = reg(1,'clear')
+    assign(out) = $ (sig | latch)&(!latch_clear)
+    assign latch_clear = clear
     always
       $if(clear)
         assign(latch) = $ 0
@@ -325,10 +328,13 @@ module.exports={
   $hold0: (sig,clear,clock=null,reset=null)->
     out = wire(1,'hold')
     if clock?
-      latch = reg(1,'hold').clock(clock).reset(reset)
+      latch = reg(1,'hold').init(1).clock(clock).reset(reset)
+      latch_clear = reg(1,'clear').clock(clock).reset(reset)
     else
-      latch = reg(1,'hold')
-    assign(out) = $ sig & latch
+      latch = reg(1,'hold').init(1)
+      latch_clear = reg(1,'clear')
+    assign(out) = $ (sig & latch) | latch_clear
+    assign latch_clear = clear
     always
       $if(clear)
         assign(latch) = $ 1

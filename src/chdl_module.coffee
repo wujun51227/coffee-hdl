@@ -12,7 +12,7 @@ uuid  = require 'uuid/v1'
 localCnt=0
 
 _id=(name)=>
-  ret="#{name}#{localCnt}"
+  ret="#{name}_#{localCnt}"
   localCnt+=1
   return ret
 
