@@ -4,16 +4,21 @@ _ = require 'lodash'
 
 module.exports={
   createSigArray: (type,number,width=1)->
-    return (type(width) for i in [0...number])
+    throw new Error('createSigArray is deprecated, use createArray(number,func)')
+    #return (type(width) for i in [0...number])
+
+  createArray: (number,func)->
+    return (func() for i in _.range(number))
 
   createChannelArray: (number)->
-    return (channel() for i in [0...number])
+    throw new Error('createSigArray is deprecated, use createArray(number,func)')
+    #return (channel() for i in [0...number])
 
   numWidth: (number)->
     Math.floor(Math.log2(number))+1
 
   $sigMux:(select,sig1,sig2)->
-    selSig=local_wire(sig1.getWidth(),'sel')
+    selSig=wire(sig1.getWidth(),'sel')
     assign(selSig)
       $if(select) => $ sig1
       $else => $ sig2
@@ -148,7 +153,7 @@ module.exports={
         conds=[]
     unless findDefault
       console.log '##################################'
-      console.log 'Use defaultValue in $order is deprecated, please use $cond(null) => $ default_value'
+      console.log 'Use defaultValue in $order will be deprecated, please use $cond(null) => $ default_value'
       console.log '##################################'
       plist.push(defaultValue)
     return $reduceRight(plist,(sum,item,first,last)=>
@@ -185,11 +190,11 @@ module.exports={
   $doubleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
     if clock?
-      d1 = local_reg(width,'sync').clock(clock).noReset()
-      d2 = local_reg(width,'sync').clock(clock).noReset()
+      d1 = reg(width,'sync').clock(clock).noReset()
+      d2 = reg(width,'sync').clock(clock).noReset()
     else
-      d1 = local_reg(width,'sync').noReset()
-      d2 = local_reg(width,'sync').noReset()
+      d1 = reg(width,'sync').noReset()
+      d2 = reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     return $ d2
@@ -197,13 +202,13 @@ module.exports={
   $tripleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
     if clock?
-      d1 = local_reg(width,'sync').clock(clock).noReset()
-      d2 = local_reg(width,'sync').clock(clock).noReset()
-      d3 = local_reg(width,'sync').clock(clock).noReset()
+      d1 = reg(width,'sync').clock(clock).noReset()
+      d2 = reg(width,'sync').clock(clock).noReset()
+      d3 = reg(width,'sync').clock(clock).noReset()
     else
-      d1 = local_reg(width,'sync').noReset()
-      d2 = local_reg(width,'sync').noReset()
-      d3 = local_reg(width,'sync').noReset()
+      d1 = reg(width,'sync').noReset()
+      d2 = reg(width,'sync').noReset()
+      d3 = reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     assign(d3) = $ d2
@@ -223,7 +228,7 @@ module.exports={
 
   $grayNextCode: (code_word)->
     width = code_word.getWidth()+1
-    w= local_wire(width)
+    w= wire(width)
     assign(w) = $ code_word + 1
     gray_code=new Array(width-1)
     for i in [0...width-1]
@@ -246,23 +251,23 @@ module.exports={
 
   $rise: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'r_').clock(clock).noReset()
+      d1 = reg(1,'r_').clock(clock).noReset()
     else
-      d1 = local_reg(1,'r_').noReset()
+      d1 = reg(1,'r_').noReset()
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
   $fall: (sig,clock=null)->
     if clock?
-      d1 = local_reg(1,'f_').clock(clock).noReset()
+      d1 = reg(1,'f_').clock(clock).noReset()
     else
-      d1 = local_reg(1,'f_').noReset()
+      d1 = reg(1,'f_').noReset()
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 
   $divider: (clk,n)->
     width=Math.ceil(Math.log2(n))
-    cnt = local_reg(width,'cnt')
+    cnt = reg(width,'cnt')
     assign(cnt)
       $if(cnt=={n-1}) => $ 0
       $else => $ cnt+1
@@ -272,9 +277,9 @@ module.exports={
   $delay: (n,sig,clock=null,reset=null)->
     width=sig.getWidth()
     if clock?
-      list=(local_reg(width).clock(clock).reset(reset) for i in _.range(n))
+      list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
     else
-      list=(local_reg(width) for i in _.range(n))
+      list=(reg(width) for i in _.range(n))
     for i in _.range(n)
       if i==0
         assign(list[0]) = sig
@@ -285,9 +290,9 @@ module.exports={
   $count: (n,enable,clear,clock=null,reset=null)->
     width=Math.ceil(Math.log2(n))
     if clock?
-      cnt = local_reg(width,'cnt').clock(clock).reset(reset)
+      cnt = reg(width,'cnt').clock(clock).reset(reset)
     else
-      cnt = local_reg(width,'cnt')
+      cnt = reg(width,'cnt')
     assign(cnt)
       $if(clear) => $ 0
       $elseif(enable)
@@ -303,11 +308,11 @@ module.exports={
     return $join(list,(a,b)=>$ a+b)
 
   $hold1: (sig,clear,clock=null,reset=null)->
-    out = local_wire(1,'hold')
+    out = wire(1,'hold')
     if clock?
-      latch = local_reg(1,'hold').clock(clock).reset(reset)
+      latch = reg(1,'hold').clock(clock).reset(reset)
     else
-      latch = local_reg(1,'hold')
+      latch = reg(1,'hold')
     assign(out) = $ sig | latch
     always
       $if(clear)
@@ -318,11 +323,11 @@ module.exports={
     return  $ out
 
   $hold0: (sig,clear,clock=null,reset=null)->
-    out = local_wire(1,'hold')
+    out = wire(1,'hold')
     if clock?
-      latch = local_reg(1,'hold').clock(clock).reset(reset)
+      latch = reg(1,'hold').clock(clock).reset(reset)
     else
-      latch = local_reg(1,'hold')
+      latch = reg(1,'hold')
     assign(out) = $ sig & latch
     always
       $if(clear)
@@ -333,11 +338,11 @@ module.exports={
     return  $ out
 
   $holdData: (sig,enable,clock=null,reset=null)->
-    out = local_wire(sig.getWidth(),'hold')
+    out = wire(sig.getWidth(),'hold')
     if clock?
-      latch = local_reg(sig.getWidth(),'hold').clock(clock).reset(reset)
+      latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset)
     else
-      latch = local_reg(sig.getWidth(),'hold')
+      latch = reg(sig.getWidth(),'hold')
     assign(out)
       $if(enable) => $ sig
       $else => $ latch

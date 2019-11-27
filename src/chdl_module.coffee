@@ -58,8 +58,9 @@ class Module
         throw new Error('Register name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'reg')
           inst.link(this,toHier(k,name))
+          inst.setGlobal()
 
   _wire: (obj) ->
     for k,v of obj
@@ -68,8 +69,9 @@ class Module
         throw new Error('Wire name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'wire')
           inst.link(this,toHier(k,name))
+          inst.setGlobal()
 
   _mem: (obj) ->
     for k,v of obj
@@ -78,7 +80,7 @@ class Module
         throw new Error('Vec name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'vec')
           inst.link(this,toHier(k,name))
 
   _channel: (obj) ->
@@ -87,7 +89,7 @@ class Module
       if this[k]?
         throw new Error('Channel name conflicted '+k)
       else
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'channel')
           inst.link(this,toHier(k,name))
         this[k]=v
 
@@ -107,7 +109,7 @@ class Module
         throw new Error('Port name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'port')
           sigName=toSignal(k+'.'+name)
           hierName=toHier(k,name)
           inst.link(this,hierName)

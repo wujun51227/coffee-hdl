@@ -23,8 +23,8 @@ class LocalRegTest extends Module
 
   doSync: (sigIn,sigOut)->
     width=sigIn.getWidth()
-    d1 = local_reg(width,'sync').clock(@clk1).reset(@reset1)
-    d2 = local_reg(width,'sync').clock(@clk1).reset(@reset1)
+    d1 = reg(width,'sync').clock(@clk1).reset(@reset1)
+    d2 = reg(width,'sync').clock(@clk1).reset(@reset1)
     assign d1 = $ sigIn
     assign d2 = $ d1
     assign sigOut = $ d2
@@ -33,8 +33,8 @@ class LocalRegTest extends Module
     @doSync(@in1,@sync_sig)
 
     ff={
-      d1: local_reg(32)
-      d2: local_reg(32)
+      d1: reg(32)
+      d2: reg(32)
     }
     assign ff.d1  = $ @in1
     assign ff.d2

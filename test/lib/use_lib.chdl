@@ -31,7 +31,7 @@ class UseLib extends Module
           ]
     }
     Port(
-      in: @yyy.createSigArray(input,10,10)
+      in: @yyy.createArray(10,=>input(10))
       a: a
       t:@mirrorPort(a)
       clk1: input(1).asClock()
@@ -43,7 +43,7 @@ class UseLib extends Module
     }
 
     Wire(
-      w: @createSigArray(wire,10,32)
+      w: @createArray(32,=>wire(10))
       select: wire(3)
       d: @bundleClone(template)
       g: @bundleClone(template)
@@ -60,7 +60,7 @@ class UseLib extends Module
     )
 
     Channel(
-      x: @createChannelArray(10)
+      x: @createArray(10,=>channel())
     )
 
     @u0_cell1.bind(

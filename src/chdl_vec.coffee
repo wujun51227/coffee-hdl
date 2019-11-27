@@ -9,6 +9,7 @@ class Vec extends CircuitEl
     super()
     @width=width
     @depth=depth
+    @__type='vec'
 
   set: (n,data)=>
     addr=0

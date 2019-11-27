@@ -467,12 +467,13 @@ extractLogic = (tokens)->
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='local_wire'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_localWire', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
+      throw new Error('local_wire is deprecated,use wire')
+    #  list =[
+    #    ['@', '@', {}]
+    #    ['PROPERTY', '_localWire', {}]
+    #  ]
+    #  tokens.splice i, 1, list...
+    #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Net'
       netName = tokens[i+2][1]
       if tokens[i+3][0]==','
@@ -521,12 +522,13 @@ extractLogic = (tokens)->
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='local_reg'
-      list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_localReg', {}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
+      throw new Error('local_reg is deprecated,use reg')
+    #  list =[
+    #    ['@', '@', {}]
+    #    ['PROPERTY', '_localReg', {}]
+    #  ]
+    #  tokens.splice i, 1, list...
+    #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Reg'
       list =[
         ['@', '@', {}]
@@ -581,9 +583,8 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='reg'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'reg', {}]
+        ['@', '@', {}]
+        ['PROPERTY', '_localReg', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -605,9 +606,8 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='wire'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'wire', {}]
+        ['@', '@', {}]
+        ['PROPERTY', '_localWire', {}]
       ]
       tokens.splice i, 1, list...
       i+=list.length

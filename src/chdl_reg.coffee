@@ -32,9 +32,9 @@ class Reg extends CircuitEl
       pendingValue:null
     }
 
-  setLocal: =>
-    @local=true
-    return packEl('reg',this)
+  setLocal: => @local=true
+
+  setGlobal: => @local=false
 
   init: (v,initial=false)=>
     @resetValue=v

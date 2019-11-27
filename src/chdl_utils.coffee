@@ -44,34 +44,45 @@ toNumber=(s)->
 
 module.exports.toNumber=toNumber
 
-toFlatten = (data,root='') ->
+toFlatten = (data,target=null,root='') ->
   result = []
 
   recurse = (cur, prop) ->
+    checkTarget=->
+      if target? and cur.__type? and cur.__type!=target
+        throw new Error("Flatten target is #{target} but find type #{cur.__type}")
     if Object(cur) != cur
       result.push [prop, cur]
     else if cur.__type=='reg'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.__type=='port'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.__type=='wire'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.constructor?.name=='Port'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Channel'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Wire'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Reg'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Vec'
+      checkTarget()
       result.push [prop, cur]
       return
     else if _.isPlainObject(cur) and cur.leaf==true

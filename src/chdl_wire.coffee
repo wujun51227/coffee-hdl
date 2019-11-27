@@ -65,9 +65,9 @@ class Wire extends CircuitEl
     else
       null
 
-  setLocal: =>
-    @local=true
-    return packEl('wire',this)
+  setLocal: => @local=true
+
+  setGlobal: => @local=false
 
   init: (v)->
     @value=v

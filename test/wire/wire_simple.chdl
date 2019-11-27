@@ -25,6 +25,11 @@ class WireSimple extends Module
         )
     )
 
+  adder: (a,b)->
+    c = wire(12,'carry')
+    assign c = a + b
+    return $ c
+
   build: ->
     assign(@w1) = @din
     assign(@w2(2:0)) = @din(4:2)
@@ -47,7 +52,7 @@ class WireSimple extends Module
 
     always
       $if(@w1>2)
-        assign(@w5) = 200
+        assign(@w5) = @adder(@w1,@w2)
       $endif
 
     @w1(1).drive(@sel1,@sel2,@sel3)

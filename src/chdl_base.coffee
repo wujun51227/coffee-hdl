@@ -233,7 +233,7 @@ code_gen= (inst)=>
     if wire.constructor.name=='Wire'
       printBuffer.add wire.verilogDeclare()
   for [name,wire] in toFlatten(inst.__local_wires)
-    if wire.constructor.name=='Wire'
+    if wire.constructor.name=='Wire' and wire.local
       printBuffer.add wire.verilogDeclare()
   printBuffer.blank('//port wire declare')
   for [name,port] in toFlatten(inst.__ports)
@@ -249,9 +249,10 @@ code_gen= (inst)=>
     printBuffer.add reg.verilogUpdate()
     printBuffer.blank()
   for [name,reg] in toFlatten(inst.__local_regs)
-    printBuffer.add reg.verilogDeclare()
-    printBuffer.add reg.verilogUpdate()
-    printBuffer.blank()
+    if reg.local
+      printBuffer.add reg.verilogDeclare()
+      printBuffer.add reg.verilogUpdate()
+      printBuffer.blank()
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   for statement in inst.__wireAssignList
     if statement[0]=='reg'
@@ -489,15 +490,11 @@ input=(width=1)->packEl('port',Port.in(width))
 output=(width=1)->packEl('port',Port.out(width))
 
 bind= (name)-> Port.bind(name)
-probe= (name)-> Wire.bind(name)
-
-reg= (width=1)-> packEl('reg', Reg.create(width))
 
 vreg= (width=1)-> packEl('reg', new Vreg(width))
 
-wire= (width=1)->packEl('wire', Wire.create(width))
-
 vec= (width,depth)-> Vec.create(width,depth)
+
 channel= (path=null)-> Channel.create(path)
 
 instEnv= do ->
@@ -527,11 +524,8 @@ module.exports.toSim       = toSim
 module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind
-#module.exports.probe       = probe
 module.exports.channel     = channel
-module.exports.reg         = reg
 module.exports.vreg        = vreg
-module.exports.wire        = wire
 module.exports.vec         = vec
 module.exports.channel_wire = instEnv.getWire
 module.exports.channel_exist = instEnv.hasChannel
