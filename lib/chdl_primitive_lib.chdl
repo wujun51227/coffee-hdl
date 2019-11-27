@@ -223,7 +223,7 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='port' or state.node.__type=='wire' or state.node.__type=='reg'
           toPoint=_.get(to,state.path)
-          assign(state.node) = $ toPoint
+          assign toPoint = state.node
       item = iterator.next()
 
   $grayNextCode: (code_word)->
