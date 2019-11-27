@@ -224,7 +224,7 @@ assign(@w2.w6)
     $cond(@in1(2)) => $ @w2.w3(3:1)
 	  $cond(@in1(3))
     $cond(@in1(4)) => $ 100
-    $cond(null) => $ @w2.w3(6:4)
+    $cond() => $ @w2.w3(6:4)
     ]
   )
 ```
@@ -497,7 +497,7 @@ always
     ]
     'pending': [
       $cond(@readEnable==1) => 'read'
-      $cond(null) => 'idle'
+      $cond() => 'idle'
       ]
   )
 ```
@@ -723,15 +723,13 @@ always_comb begin
 示例代码(test/function/func_test.chdl)
 	 
 ##  集成
-除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,coffee-hdl还可以使用Hub方式集成.
+除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,coffee-hdl还可以使用hub方式集成.
 
 申明方式如下:
 ```coffeescript
-Hub(
-    connect_name: ['channel_name1','channel_name2',...]
-    )
+$channelPortHub(channel1,channel2,...)
 ```
-当前层会产生一套以connect_name名字开头的线,互联列表中的所有channel所关联的信号名字,根据名字和方向匹配,完成互联.互联完成以后如果有浮空的input会报错.
+当前层会产生一套互联列表中的所有channel所关联的信号名字,根据名字和方向匹配,完成互联.互联完成以后如果有浮空的input会报错.
 
 示例代码(test/integration/hub_simple.chdl)
 ```coffeescript
@@ -742,10 +740,13 @@ class HubSimple extends Module
   constructor: ->
     super()
 
-    Hub(
-      bus_channel: ['u0_cell1.master_channel','u0_cell2.slave_channel']
-      )
+    Probe(
+      aaa: 'u0_cell1.master_channel'
+      bbb: 'u0_cell2.slave_channel'
+    )
+
   build: ->
+    $channelPortHub(@aaa,@bbb)
 ```
 
 ## 关键字
@@ -766,13 +767,10 @@ class HubSimple extends Module
 * reg(width:number)
 * channel()
 * wire(width:number)
-* local_reg(width:number)
-* local_wire(width:number)
 * hex(width:number,value:number)
 * oct(width:number,value:number)
 * bin(width:number,value:number)
 * dec(width:number,value:number)
-
 
 电路生成
 
@@ -789,10 +787,10 @@ class HubSimple extends Module
 * Port()
 * Probe()
 * Wire()
+* Net()
 * Channel()
 * Mem()
 * Reg()
-* Hub()
 
 模块自带方法
 
