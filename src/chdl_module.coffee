@@ -182,6 +182,7 @@ class Module
     @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
+    @_mixin require('verilog_assert.chdl.js')
     @__sim=false
 
   _setSim: ->
@@ -798,7 +799,7 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
@@ -809,7 +810,7 @@ class Module
             @__regAssignList=[]
             func(active,next)
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin)
@@ -820,7 +821,7 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('fall')
-            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
@@ -831,7 +832,7 @@ class Module
             @__regAssignList=[]
             func(active,next)
             id = stepName ? _id('fall')
-            bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin)

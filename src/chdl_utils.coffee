@@ -386,11 +386,11 @@ module.exports.toEventList=(initSegmentList,list=[])=>
     else if item.type=='posedge'
       block=[]
       ifToCond(item.list,0,block)
-      list.push {type:'posedge',e:item.signal.hier,block:block}
+      list.push {type:'posedge',e:item.signal,block:block}
     else if item.type=='negedge'
       block=[]
       ifToCond(item.list,0,block)
-      list.push {type:'negedge',e:item.signal.hier,block:block}
+      list.push {type:'negedge',e:item.signal,block:block}
     else if item.type=='wait'
       block=[]
       ifToCond(item.list,0,block)

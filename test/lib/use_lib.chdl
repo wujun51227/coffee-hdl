@@ -96,4 +96,6 @@ class UseLib extends Module
 
     assign(@dout7) = $delay(5,@dout6)
 
+    @dumpWave('hello.fsdb',1000)
+
 module.exports=UseLib

@@ -1,0 +1,47 @@
+module.exports={
+  dumpWave: (fileName,timeout)->
+    initial
+      $sequence() =>
+        if fileName.match(/\.fsdb$/)
+          @verilog("$fsdbDumpfile(\"#{fileName}\");")
+          @verilog("$fsdbDumpvars;")
+        else
+          @verilog("$dumpfile(\"#{fileName}\");")
+          @verilog("$dumpvars;")
+        if timeout>0
+          @verilog("##{timeout}")
+          @verilog("$finish;")
+      .end()
+
+  assert_1: (sig,message)->
+    $if(sig!=1)
+      @verilog("$display(\"%t Error: #{sig.getName()} should be 1\",$time);")
+
+  assert_0: (sig,message)->
+    $if(sig!=0)
+      @verilog("$display(\"%t Error: #{sig.getName()} should be 1\",$time);")
+
+  assert_eq: (sig,value,message)->
+    $if(sig!=value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should be #{value}\",$time);")
+
+  assert_ne: (sig,value,message)->
+    $if(sig==value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should NOT be #{value}\",$time);")
+
+  assert_ge: (sig,value,message)->
+    $if(sig<value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should >= #{value}\",$time);")
+
+  assert_gt: (sig,value,message)->
+    $if(sig<=value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should > #{value}\",$time);")
+
+  assert_le: (sig,value,message)->
+    $if(sig>value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should <= #{value}\",$time);")
+
+  assert_lt: (sig,value,message)->
+    $if(sig>=value)
+      @verilog("$display(\"%t Error: #{sig.getName()} should < #{value}\",$time);")
+}

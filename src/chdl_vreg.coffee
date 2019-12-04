@@ -80,15 +80,6 @@ class Vreg extends Reg
       reg.setLsb(m)
       return packEl('reg',reg)
 
-  refName: ->
-    if @lsb>=0
-      if @width==1
-        @elName+"["+@lsb+"]"
-      else
-        @elName+"["+@msb+":"+@lsb+"]"
-    else
-      @elName
-
   get: -> @value
 
   set: (v)-> @value=v
@@ -114,5 +105,23 @@ class Vreg extends Reg
     else
       @cell.__wireAssignList.push ["assign_vreg",this, assignFunc(),-1]
     @cell.__assignWaiting=false
+
+  refName: =>
+    if @cell.__sim
+      if @lsb>=0
+        if @width==1
+          @hier+".bit("+@lsb+")"
+        else
+          @hier+".slice("+@msb+","+@lsb+")"
+      else
+        @hier+'.getValue()'
+    else
+      if @lsb>=0
+        if @width==1
+          @elName+"["+@lsb+"]"
+        else
+          @elName+"["+@msb+":"+@lsb+"]"
+      else
+        @elName
 
 module.exports=Vreg

@@ -5,6 +5,8 @@ log = require 'fancy-log'
 {printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'
 chdl_base = require 'chdl_base'
 
+reloadList=[]
+
 debugExpr=''
 
 printTokens=(tokens)->
@@ -956,6 +958,8 @@ tokenExpand = (tokens,skip_indent=false)->
       i++
 
 buildCode= (fullFileName,text,debug=false,param=null) ->
+  for i in reloadList
+    delete require.cache[i]
   printBuffer.reset()
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
@@ -1004,6 +1008,7 @@ transToJs= (fullFileName,text,debug=false) ->
   for fragment in fragments
     javaScript += fragment.code
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
+  reloadList.push("#{fullFileName}.js")
   return require("#{fullFileName}.js")
 
 importLib=(path)->

@@ -61,16 +61,19 @@ class bench_top extends Module
 
     s1= =>
       $sequence('delay') =>
-          assign(@rstn) =>  1
+          assign(@rstn) =  1
         .delay(10) =>
-          assign(@rstn) =>  0
+          assign(@rstn) =  0
         .delay(10) =>
-          assign(@rstn) =>  1
+          assign(@rstn) =  1
         .delay(10) =>
-          assign(@en) => 1
+          assign(@en) = 1
         .delay(1000) =>
-          assign(@en) => 0
-        .delay(100) =>
+          assign(@en) = 0
+        .posedge(@clk) =>
+          assign(@en) = 1
+        .wait($ @clk==1) =>
+          assign(@en) = 1
         .end()
 
     initial

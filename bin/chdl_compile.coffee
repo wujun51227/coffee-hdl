@@ -124,6 +124,6 @@ if program.watch
   watch.on('change',(path)->
     resetBase()
     printBuffer.clearBin()
-    banner()
+    banner(fileName)
     processFile(fileName,outDir.replace(/\/$/,''))
   )

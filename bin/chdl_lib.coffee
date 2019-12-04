@@ -58,6 +58,6 @@ unless fileName
   log 'No file specified'
   process.exit()
 
-banner()
+#banner()
 processFile(fileName)
 
