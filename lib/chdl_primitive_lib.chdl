@@ -59,12 +59,17 @@ module.exports={
     while i<clone_list.length
       dst=clone_list.shift()
       for [name,port] in toFlatten(dst)
-        el=_.get(dst,name)
-        if port.getType()=='input'
-          for n in clone_list
-            find=_.get(n,name)
-            if find? and find.getType()=='output'
-              assign(find) = el
+        if name
+          el=_.get(dst,name)
+          if port.getType()=='input'
+            for n in clone_list
+              find=_.get(n,name)
+              if find? and find.getType()=='output'
+                assign(find) = el
+        else
+          for n in clone_list when n.__type=='port'
+            if n.getType()=='output'
+              assign(port) = n
       clone_list.push(dst)
       i+=1
 
@@ -74,12 +79,17 @@ module.exports={
     while i<clone_list.length
       dst=clone_list.shift()
       for [name,port] in toFlatten(dst)
-        el=_.get(dst,name)
-        if port.getType()=='input'
-          for n in clone_list
-            find=_.get(n,name)
-            if find? and find.getType()=='output'
-              assign(el) = find
+        if name
+          el=_.get(dst,name)
+          if port.getType()=='input'
+            for n in clone_list
+              find=_.get(n,name)
+              if find? and find.getType()=='output'
+                assign(el) = find
+        else
+          for n in clone_list when n.__type=='wire'
+            if n.getType()=='output'
+              assign(port) = n
       clone_list.push(dst)
       i+=1
 
