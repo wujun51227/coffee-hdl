@@ -406,24 +406,31 @@ module.exports={
   $case: (sig)->
     return (block)=>
       cond_hold=[]
-      for i in block().reverse()
-        if i.cond? and i.cond.str!='null'
-          cond_hold.push(i.cond)
-          if i.value?
-            if cond_hold.length==1
-              $if(sig==i.cond) => i.value()
-              $endif
-            else
-              tmp = $reduce(cond_hold,(sum,item,first,last)=>
-                if first
-                  $ (sig==item)
-                else
-                  $ sum||(sig==item)
-              )
-              $if(tmp) => i.value()
-            cond_hold=[]
+      list=[]
+      for i in block()
+        cond_hold.push(i)
+        if i.value?
+          list.push cond_hold
+          cond_hold=[]
+      if cond_hold.length>0
+        throwe new Error('last cond function is null')
+
+      for conds in list.reverse()
+        if conds.length==1
+          if conds[0].cond? and conds[0].cond.str!='null'
+            $if(sig==conds[0].cond) => conds[0].value()
+          else
+            conds[0].value()
         else
-          i.value()
+          lastCond=_.last(conds)
+          condList=_.map(conds,(i)=>i.cond)
+          tmp = $reduce(condList,(sum,item,first,last)=>
+            if first
+              $ (sig==item)
+            else
+              $ sum||(sig==item)
+          )
+          $if(tmp) => lastCond.value()
 
   $headPadding:(sig,num,v=0)->
     return $ cat(bin(num,v),sig)
