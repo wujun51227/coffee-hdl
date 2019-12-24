@@ -358,57 +358,6 @@ code_gen= (inst)=>
     printBuffer.add 'end'
     printBuffer.blank()
 
-  printBuffer.blank('//sequence logic')
-  for [seqBlockList,lineno] in inst.__sequenceAlwaysList
-    for seqBlock in seqBlockList
-      printBuffer.blank("//sequence #{seqBlock.name}#{lineComment(lineno)}")
-      stateReg=seqBlock.stateReg
-      nextState=seqBlock.nextState
-      updateWires=seqBlock.update
-      printBuffer.add "always_comb begin"
-      printBuffer.add "  #{nextState.getName()}=#{stateReg.getName()};"
-      for i,index in seqBlock.bin
-        console.log i.isLast,i.type
-        if index==0
-          lastState=stateReg.getState('idle')
-          lastBin=null
-        else
-          lastState=stateReg.getState(seqBlock.bin[index-1].id)
-          lastBin=seqBlock.bin[index-1]
-        currentState=stateReg.getState(i.id)
-        if i.type=='next'
-          printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
-          if i.expr==null
-            printBuffer.add "    #{nextState.getName()}=#{currentState};"
-          else
-            printBuffer.add "    if(#{i.expr}) begin"
-            printBuffer.add "      #{nextState.getName()}=#{currentState};"
-            printBuffer.add "    end"
-          printBuffer.add "  end"
-        else if i.type=='posedge' or i.type=='negedge' or i.type=='wait'
-          printBuffer.add "  if(#{stateReg.getName()}==#{lastState}) begin"
-          printBuffer.add "    if(#{i.expr}) begin"
-          printBuffer.add "      #{nextState.getName()}=#{currentState};"
-          printBuffer.add "    end"
-          if i.isLast
-            printBuffer.add "    else begin"
-            printBuffer.add "      #{nextState.getName()}=#{stateReg.getState('idle')};"
-            printBuffer.add "    end"
-          printBuffer.add "  end"
-      printBuffer.add "end"
-      printBuffer.add "always_comb begin"
-      for i in _.uniqBy(updateWires,(n)=>n.name)
-        if i.type=='reg'
-          printBuffer.add '  _'+i.name+'='+getValue(i.inst.getPending())+';'
-        if i.type=='wire'
-          printBuffer.add '  '+i.name+'='+getValue(i.inst.getPending())+';'
-      for i,index in seqBlock.bin when i.list.length>0
-        printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
-        for statement in i.list
-          printBuffer.add statementGen(statement)
-        printBuffer.add "  end"
-      printBuffer.add "end"
-
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
