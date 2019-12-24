@@ -8,6 +8,7 @@
     "test": "test"
   },
   "dependencies": {
+    "@marp-team/marp-cli": "^0.16.2",
     "chokidar": "^3.0.2",
     "coffeescript": "^2.3.2",
     "commander": "^2.19.0",
@@ -16,6 +17,7 @@
     "lodash": "^4.17.11",
     "mkdirp": "^0.5.1",
     "recursive-iterator": "^3.3.0",
+    "remarker": "^1.11.2",
     "rimraf": "^2.6.2",
     "stringify-tree": "^1.0.2",
     "table": "^5.4.6",

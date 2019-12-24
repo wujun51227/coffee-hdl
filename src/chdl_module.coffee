@@ -463,7 +463,9 @@ class Module
     @__regAssignList=[]
     @__updateWires=[]
     @__sequenceBlock=[]
+    @__assignEnv = 'always'
     block()
+    @__assignEnv = null
     for seqList in @__sequenceBlock
       for i in seqList.bin
         if i.type=='delay' or i.type=='trigger' or i.type=='event' or i.type=='repeat'
@@ -867,7 +869,7 @@ class Module
               enable=null
             else
               enable=@_localWire(1,'enable')
-              expr=@_count(num,enable,@__sequenceClock)
+              expr=@_count(num,enable,0,@__sequenceClock)
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
             @__assignEnv=env
@@ -895,6 +897,7 @@ class Module
             stateReg=@_localReg(bitWidth,name)
             lastStateReg=@_localReg(bitWidth,name+'_last')
           nextState=@_localWire(bitWidth,name+'_next')
+          nextState.unsetStaticWire()
           stateNameList=[]
           for i in bin
             stateNameList.push(i.id)
@@ -914,7 +917,7 @@ class Module
           @_assign(lastStateReg) => stateReg.getName()
           for i in bin when i.type=='next' and i.enable?
             @_assign(i.enable) => stateReg.isState(i.id)
-          for i,index in bin when i.active? and index>0
+          for i,index in bin when i.active? and index>0 and (index!=bin.length-1)
             @_assign(i.active) => "(#{stateReg.isState(i.id)})&&(#{lastStateReg.isState(bin[index-1].id)})"
           cache={}
           for i,index in bin when i.next?

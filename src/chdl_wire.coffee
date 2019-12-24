@@ -40,6 +40,8 @@ class Wire extends CircuitEl
   setType: (t)=> @type=t
   getType: => @type
 
+  unsetStaticWire: => @staticWire=false
+
   attach:(clock,reset)=>
     if _.isString(clock)
       @clockName=clock

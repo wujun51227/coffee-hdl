@@ -365,8 +365,8 @@ code_gen= (inst)=>
       stateReg=seqBlock.stateReg
       nextState=seqBlock.nextState
       updateWires=seqBlock.update
-      printBuffer.add "always_combo begin"
-      printBuffer.add "  #{nextState.getName()}=#{stateReg.getName()}"
+      printBuffer.add "always_comb begin"
+      printBuffer.add "  #{nextState.getName()}=#{stateReg.getName()};"
       for i,index in seqBlock.bin
         console.log i.isLast,i.type
         if index==0
@@ -396,12 +396,12 @@ code_gen= (inst)=>
             printBuffer.add "    end"
           printBuffer.add "  end"
       printBuffer.add "end"
-      printBuffer.add "always_combo begin"
+      printBuffer.add "always_comb begin"
       for i in _.uniqBy(updateWires,(n)=>n.name)
         if i.type=='reg'
           printBuffer.add '  _'+i.name+'='+getValue(i.inst.getPending())+';'
         if i.type=='wire'
-          printBuffer.add '  _'+i.name+'='+getValue(i.inst.getPending())+';'
+          printBuffer.add '  '+i.name+'='+getValue(i.inst.getPending())+';'
       for i,index in seqBlock.bin when i.list.length>0
         printBuffer.add "  if(#{stateReg.isState(i.id)}) begin"
         for statement in i.list
