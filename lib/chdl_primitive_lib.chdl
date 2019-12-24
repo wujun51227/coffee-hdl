@@ -450,8 +450,8 @@ module.exports={
   $seqState:(stateReg,nextState,lastStateReg,bin)->
     assign(stateReg) = nextState
     assign(lastStateReg) = stateReg
-    for i in bin when i.type=='next' and i.enable?
-      assign(i.enable) = stateReg.isState(i.id)
+    for i,index in bin when i.type=='next' and i.enable?
+      assign(i.enable) = stateReg.isState(bin[index-1].id)
     for i,index in bin when i.active? and index>0 and (index!=bin.length-1)
       assign(i.active) = (stateReg.isState(i.id))&&(lastStateReg.isState(bin[index-1].id))
     cache={}
