@@ -9,7 +9,7 @@ class RegSimple extends Module
     Port(
       hclk: input().asClock()
       rstn: input().asReset()
-      dout: output(5).fromReg('ff1')
+      dout: output(5)
       din: input(9)
       clear: input()
       aa:
@@ -18,39 +18,44 @@ class RegSimple extends Module
     )
 
     Reg(
-      ff1: reg(5).init(0).clock('hclk').syncReset('rstn')
-      ff2: reg(6).init(100).clock('hclk').noReset()
+      ff1: reg(5).init(0).clock('hclk').reset('rstn').syncReset()
+      ff2: reg(6).init(100).clock('hclk').reset(null)
       ff3: reg(7).init(0xff).clock('hclk').highReset().clear('clear')
-      ff4: reg(8).clock('hclk').syncReset('rstn').highReset()
+      ff4: reg(8).clock('hclk').reset('rstn','async',true)
       ff5: reg(9)
       ff6: reg(9)
+      ff7: reg(9).clock('hclk').negedge()
+      ff8: reg(9)
     )
 
 
   build: ->
+    assign(@dout) = @ff1+ $clock()
     assign(@ff6) = $ @ff5.fromMsb(8)
 
     always
+      @aa.bb.asreg.pending(@dout)
       $if(@ff1)
-        assign(@aa.bb.asreg) = $ 100
+        assign(@aa.bb.asreg(0)) = 1
+        assign(@aa.bb.asreg(8:1)) = 100
+        assign(@ff8) = 200
+
+    assign(@ff4) = $ @aa.bb.asreg
+
+    assign(@ff5) =>
+      $if(@ff2)
+        $ @aa.bb.asreg
+      $elseif(@ff3)
+        $if(@ff4)
+          $ @aa.bb.asreg+1
+        $else
+          $ 32\h123
+        $endif
+      $else
+        $ 32\h456
       $endif
 
-    pass_always
-      assign(@ff5) = $ @aa.bb.asreg
-
-    always
-      assign(@ff5)
-        $if(@ff2)
-          $ @aa.bb.asreg
-        $elseif(@ff3)
-          $if(@ff4)
-            $ @aa.bb.asreg+1
-          $else
-            $ 32\h123
-          $endif
-        $else
-          $ 32\h456
-        $endif
+    @ff5.drive(@ff7)
 
 module.exports=RegSimple
 

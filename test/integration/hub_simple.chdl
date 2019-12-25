@@ -66,11 +66,16 @@ class HubSimple extends Module
   constructor: ->
     super()
 
-    Hub(
-      bus_connect: ['u0_cell1.master_channel','u0_cell2.slave_channel']
-      )
+    Probe(
+      aaa: 'u0_cell1.master_channel'
+      bbb: 'u0_cell2.slave_channel'
+    )
+    #Hub(
+    #  bus_connect: ['u0_cell1.master_channel','u0_cell2.slave_channel']
+    #  )
 
   build: ->
+    $channelPortHub(@aaa,@bbb)
 
 module.exports=HubSimple
 

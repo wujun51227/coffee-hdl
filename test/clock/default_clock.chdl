@@ -29,15 +29,36 @@ class cell2 extends Module
 
   build: ->
 
+class cell3 extends Module
+  constructor: ->
+    super()
+
+    @disableAutoClock()
+
+    Port(
+      din: input(10)
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      count: reg(10)
+    )
+
+  build: ->
+    always =>
+      assign(@count) => $ @din + 1
+
 class DefaultClock extends Module
   u0_cell1: new cell1()
   u0_cell2: new cell2()
+  u0_cell3: new cell3()
 
   constructor: ->
     super()
     Port(
-      axi_clock: input().asClock()
-      reset: input().asReset()
+      ex_clock: input().asClock()
+      ex_reset: input().asReset()
     )
 
   build: ->

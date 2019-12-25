@@ -1,6 +1,6 @@
 Wire=require 'chdl_wire'
-ElementSets = require 'chdl_el_sets'
-{toSignal,portDeclare,packEl}=require 'chdl_utils'
+Reg=require 'chdl_reg'
+{toSignal,portDeclare,packEl,toNumber}=require 'chdl_utils'
 _ = require 'lodash'
 
 class Port extends Wire
@@ -37,10 +37,9 @@ class Port extends Wire
   constructor: (type,width)->
     super(width)
     @type=type
-    @reg=null
     @isReg=false
+    @shadowReg=null
     @isRegConfig={}
-    @pendingValue=null
     @bindChannel=null
     @bindSignal=null
     @depNames=[]
@@ -55,6 +54,18 @@ class Port extends Wire
     else
       return ''
 
+  pending: (v)=>
+    if @isReg
+      @shadowReg.pending(v)
+    else
+      @share.pendingValue=v
+
+  getPending: =>
+    if @isReg
+      @shadowReg.getPending()
+    else
+      @share.pendingValue ? 0
+
   asClock: =>
     @isClock=true
     return packEl('port',this)
@@ -63,36 +74,70 @@ class Port extends Wire
     @isReset=true
     return packEl('port',this)
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
+  bit: (n)->
+    if @isReg
+      @shadowReg.bit(n)
+    else
+      wire= Wire.create(1)
+      wire.link(@cell,@hier)
+      if n.constructor.name=='Expr'
+        wire.setLsb(n.str)
+        wire.setMsb(n.str)
+        wire.share=@share
+        return packEl('wire',wire)
+      else
+        wire.setLsb(n)
+        wire.setMsb(n)
+        wire.share=@share
+        return packEl('wire',wire)
+
+  slice: (n,m)->
+    if @isReg
+      @shadowReg.slice(n,m)
+    else
+      if n.constructor.name=='Expr'
+        wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
+        wire.link(@cell,@hier)
+        wire.setLsb(m.str)
+        wire.setMsb(n.str)
+        wire.share=@share
+        return packEl('wire',wire)
+      else
+        wire= Wire.create(toNumber(n)-toNumber(m)+1)
+        wire.link(@cell,@hier)
+        wire.setLsb(m)
+        wire.setMsb(n)
+        wire.share=@share
+        return packEl('wire',wire)
+
   assign: (assignFunc,lineno)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    ElementSets.clear()
     if @cell.__assignEnv=='always'
-      if @staticAssign
-        throw new Error("This wire have been static assigned")
-      else if @firstCondAssign and !@isReg
-        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
-        @cell.__wireAssignList.push ["assign", "#{@elName}"," _#{@elName}",lineno]
-        @firstCondAssign=false
-      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),-1]
+      if !@isReg
+        @staticWire=false
+        if @staticAssign
+          throw new Error("This wire have been static assigned")
+        @cell.__regAssignList.push ["assign",this,assignFunc(),-1]
+        @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
+      else
+        @shadowReg.assign(assignFunc,lineno)
     else
-      @cell.__wireAssignList.push ["assign", "#{@refName()}",assignFunc(),lineno]
+      if @staticWire==false or @staticAssign
+        throw new Error("This wire have been assigned again")
+      assignItem=["assign",this,assignFunc(),lineno]
+      @cell.__wireAssignList.push assignItem
+      @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    if @isReg
-      @cell.__updateWires.push({type:'wire',name:@elName,pending:@elName})
-    else
-      @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
-
-  fromReg: (name)=>
-    if @type=='output'
-      @reg=toSignal(name)
-    else
-      throw new Error('Only output port can be aliased to a register')
-    return packEl('port',this)
 
   asReg: (config={})=>
     if @type=='output'
@@ -104,10 +149,6 @@ class Port extends Wire
 
   portDeclare: ->portDeclare(@type,this)
 
-  verilogAssign: ->
-    if @reg?
-      return "\nassign #{@refName()} = #{@reg};"
-    else
-      return ''
+  setShadowReg: (i)=> @shadowReg = i
 
 module.exports=Port

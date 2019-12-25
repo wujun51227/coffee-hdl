@@ -72,14 +72,14 @@ class SequenceInAlways extends Module
     #    assign(@aa) = $ @out2
     #  .end()
 
-    sequence_always
+    always
       #write()
-      sequence_series(write(),read(@addr1))
+      read(@addr1)
       #write()
       #@series(write,read,read)
       #@series('write','read')
 
-    sequence_always
+    always
       write()
 
 module.exports=SequenceInAlways

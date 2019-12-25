@@ -22,6 +22,9 @@ class UseComponent extends Module
       clk2:wire()
       rst1:wire()
       rst2:wire()
+      arb:wire()
+      arb1:wire()
+      arb2:wire()
     )
 
 
@@ -32,6 +35,12 @@ class UseComponent extends Module
     @pop.attach(@clk2,@rst2)
 
     assign({empty:@empty,full:@full}) = $asyncFifo(8,@din,@push,@pop)
+
+    assign(@arb) = $fixArbiter([@full,@clk1,@clk2])
+    list=[@full,@clk1,@clk2]
+    assign(@arb1) = $roundArbiter(list,$join(list,(a,b)=>$ a|b))
+    assign(@arb2) = $fixArbiter(@din.toList())
+
 
 
 module.exports=UseComponent

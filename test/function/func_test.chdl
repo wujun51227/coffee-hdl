@@ -18,6 +18,9 @@ class FuncTest extends Module
       w3: wire(15)
       w4:
         w5: wire(10)
+      w6: wire(15)
+      w7: wire(15)
+      w8: wire(15)
     )
 
     Reg(
@@ -32,14 +35,14 @@ class FuncTest extends Module
     assign(@w1) = @add(@mul(hex(10,0x123),@in1),@in2)
     assign(@w2) = cat(@in1,@in2,@w1)
     list=[@w1,@w2,hex(5,0x1f)]
-    assign(@w3) = $ cat(list)
+    assign(@w3) = cat(3\b0,list...)
 
     always
-      assign(@r1) =>
+      assign(@r1)
         @verilog('$display("data is %d",ff1);')
         $ 100
 
-    assign(@w3) = $reduce([@w1,@w2,@w3,@w4.w5],(a,b,first,last)=>
+    assign(@w6) = $reduce([@w1,@w2,@w3,@w4.w5],(a,b,first,last)=>
         if first
           $ b
         else
@@ -48,14 +51,15 @@ class FuncTest extends Module
 
     ##assign(@w3) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
     
-    assign(@w3) = $order(
+    assign(@w7) = $order(
         [
           $cond(@w1==2) => $ @w2
           $cond(@w3>1)  => $ @w4.w5
+          $cond(null)  => $ 0
         ]
-      ,0)
+      )
 
-    assign(@w3) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
+    assign(@w8) = $reduceRight([[$(@w1==2),@w2],[$(@w3>1),@w4.w5],0],(sum,a,first,last)=>
       if first
         $ a
       else
@@ -65,8 +69,6 @@ class FuncTest extends Module
           $ sum
         $endif
     )
-
-    console.log @w3.getDepNames()
 
 module.exports=FuncTest
 

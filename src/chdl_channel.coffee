@@ -10,6 +10,7 @@ class Channel extends CircuitEl
     @bindPortPath=null
     @Port={}
     @portList= []
+    @__type='channel'
     if path!=null
       @probeChannel=path
     else
@@ -49,7 +50,7 @@ class Channel extends CircuitEl
     else
       portBundle=_.get(moduleInst.__ports,bindPortPath)
       @bindPortPath=bindPortPath
-      list=toFlatten(portBundle,bindPortPath)
+      list=toFlatten(portBundle,null,bindPortPath)
       for [portPath,port] in list
         pathList=_.toPath(bindPortPath)
         pinPath=_.toPath(portPath)

@@ -31,7 +31,7 @@ class UseLib extends Module
           ]
     }
     Port(
-      in: @yyy.createSigArray(input,10,10)
+      in: @yyy.createArray(10,=>input(10))
       a: a
       t:@mirrorPort(a)
       clk1: input(1).asClock()
@@ -43,17 +43,24 @@ class UseLib extends Module
     }
 
     Wire(
-      w: @createSigArray(wire,10,32)
+      w: @createArray(32,=>wire(10))
       select: wire(3)
       d: @bundleClone(template)
       g: @bundleClone(template)
       h: @bundleClone(template)
       syncin: wire(1)
       dout: wire(1)
+      dout1: wire(1)
+      dout2: wire(1)
+      dout3: wire(1)
+      dout4: wire(1)
+      dout5: wire(1)
+      dout6: wire(1)
+      dout7: wire(1)
     )
 
     Channel(
-      x: @createChannelArray(10)
+      x: @createArray(10,=>channel())
     )
 
     @u0_cell1.bind(
@@ -70,12 +77,25 @@ class UseLib extends Module
 
   build: ->
     $channelMux(@select,@x[0],@x[1],@x[2])
-    $bundleUniOp('~',@g,@d)
-    $bundleReduceOp('+',@d,[@g,@h])
+    $bundleMap(@g,@d,all1)
+    $bundleJoin(@d,[@g,@h],(a,b)=>$ a+b)
 
-    assign(@dout) = $oneHot($doubleSync(@syncin))
+    assign(@dout) = $rise($doubleSync(@syncin))
 
-    assign(@dout) = $divider(@clk1,4)
+    assign(@dout1) = $divider(@clk1,4)
 
+    assign(@dout2) = $arrayDecode(@w,@select,10)
+
+    assign(@dout3) = $oneOf(@clk1,[@x[0],@x[1],@x[2]])
+
+    assign(@dout4) = $same([@x[0],@x[1],@x[2]])
+
+    assign(@dout5) = $count1(@select)
+
+    assign(@dout6) = $inRange(@select,@dout1,@dout2)
+
+    assign(@dout7) = $delay(5,@dout6)
+
+    @dumpWave('hello.fsdb',1000)
 
 module.exports=UseLib

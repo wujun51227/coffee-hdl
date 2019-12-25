@@ -1,0 +1,135 @@
+#########################################################3
+# Design
+#########################################################3
+
+class BranchTest extends Module
+  constructor: ->
+    super()
+
+    Port(
+      in1: input(5)
+      din: input(5)
+      enable: input()
+      clock: input().asClock()
+      rstn: input().asReset()
+      clock1: input().asClock()
+    )
+
+    Wire(
+      w1: wire(5)
+      w2:
+        w3: wire(16)
+        w4: wire(32)
+        w5: wire(32)
+        w6: wire(32)
+        w7: wire(32)
+        w8: wire(32)
+        w9: wire(32)
+        w10: wire(32)
+        w11: wire(32)
+      syncIn: wire()
+      syncOut: wire()
+    )
+
+    Reg(
+      r1: reg(5).init(0)
+      r2: reg(5).init(0)
+      r3: reg(5).init(0)
+      a:
+        b:
+          c: reg(10)
+      b:
+        b:
+          c: reg(10)
+    )
+
+    Wire(
+      casein: wire(10)
+      caseout: wire(10)
+    )
+
+  build: ->
+    assign(@w2.w4)
+      $if(@in1==hex(5,1))
+        $ @w2.w3+1
+      $elseif(@in1==hex(5,2))
+        $ @w2.w3+2
+      $else
+        0
+
+    assign(@w2.w5)
+      $balance [
+        $cond(@in1(1)) => $ @w2.w4
+        $cond(@in1(2)) => $ @w2.w5
+      ]
+
+    assign(@w2.w7)
+      $balance [
+        $cond(@in1(1)) => $ @w2.w4
+        $cond(@in1(2)) => $ @w2.w5
+      ], 11
+
+    assign(@w2.w6)
+      $order(
+        [
+          $cond(@in1(1)) => $ @w2.w3(9:7)
+          $cond(@in1(2)) => $ @w2.w3(3:1)
+          $cond(@in1(3))
+          $cond(@in1(4)) => $ 100
+          $cond() => $ @w2.w3(6:4)
+        ]
+      )
+
+    assign(@w2.w11)
+      $order(
+        [
+          $cond(@in1(1)) => $ @w2.w3(9:7)
+          $cond(@in1(2)) => $ @w2.w3(3:1)
+          $cond(@in1(3))
+          $cond(@in1(4)) => $ 100
+          $cond() => $ 200
+        ]
+      )
+
+    assign(@w2.w8) = $ expand(@w2.w5.getWidth(), @w2.w3(9:7))
+
+    assign(@w2.w9) = $ expand(5, @w2.w3(9:7))
+
+    list=[]
+    for i in [0..1]
+      do(i)=>
+        list.push(
+          $lazy_cond(@in1(i)) => assign(@w2.w3(9:7)) = i
+        )
+
+    always
+      $if_blocks(list)
+
+    always
+      $if(@in1==hex(5,1))
+        assign(@r1(3:1)) = $ @din(4:2)+0x100
+      $elseif(@in1==hex(5,2))
+        assign(@r1(3:1)) = $ @din(4:2)+12\h200 + 12\h400
+
+    assign(@syncOut) = $doubleSync(@syncIn,@clock1)
+    assign(@r2) = $ @syncOut + 1
+
+    $bundleAssign(@a,@b)
+
+    always_if(@a.b.c==1) => assign(@r3) = 100
+
+    always
+      $case(@casein) =>
+        [
+          $lazy_cond(10) =>
+            assign(@caseout) = 100
+          $lazy_cond(20)
+          $lazy_cond(30)
+          $lazy_cond(40) =>
+            assign(@caseout) = 200
+          $lazy_cond() =>
+            assign(@caseout) = 300
+        ]
+
+module.exports=BranchTest
+

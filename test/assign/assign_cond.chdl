@@ -7,7 +7,7 @@ class AssignCond extends Module
     Port(
       add1: input(width)
       add2: input(width)
-      dout_q: output(width+1).fromReg('dout')
+      dout_q: output(width+1)
     )
 
     Reg(
@@ -24,6 +24,7 @@ class AssignCond extends Module
 
 
   build: ->
+    assign(@dout_q) = @dout
     assign(@dout) =>
       if(@dout.getWidth()<=64)
         $ @add1 + @add2

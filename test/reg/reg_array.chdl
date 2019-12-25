@@ -24,9 +24,8 @@ class RegArray extends Module
     )
 
   build: ->
-    pass_always
-      for i in [0...@ff1.length]
-        assign(@ff1[i]) = $ @ff2[i] + @ff3[i]
+    for i in [0...@ff1.length]
+      assign(@ff1[i]) = $ @ff2[i] + @ff3[i]
 
 module.exports=RegArray
 

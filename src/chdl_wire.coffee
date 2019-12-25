@@ -1,7 +1,6 @@
 CircuitEl=require 'chdl_el'
-ElementSets = require 'chdl_el_sets'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{rhsTraceExpand,_expr,packEl,toNumber,cat}=require 'chdl_utils'
 
 class Wire extends CircuitEl
   width: 0
@@ -20,11 +19,8 @@ class Wire extends CircuitEl
     super()
     @width=width
     @value=0
-    @pendingValue=null
     @lsb= -1
     @msb= -1
-    @staticAssign=false
-    @firstCondAssign=true
     @states=[]
     @bindChannel=null
     @fieldMap={}
@@ -32,6 +28,19 @@ class Wire extends CircuitEl
     @local=false
     @clockName=null
     @resetName=null
+    @staticWire=true
+    @staticAssign=false
+    @share={
+      assignList:[]
+      alwaysList:null
+      pendingValue:null
+    }
+    @type=null
+
+  setType: (t)=> @type=t
+  getType: => @type
+
+  unsetStaticWire: => @staticWire=false
 
   attach:(clock,reset)=>
     if _.isString(clock)
@@ -58,17 +67,17 @@ class Wire extends CircuitEl
     else
       null
 
-  setLocal: =>
-    @local=true
-    return packEl('wire',this)
+  setLocal: => @local=true
+
+  setGlobal: => @local=false
 
   init: (v)->
     @value=v
     return this
 
-  defaultValue: (v)=>
-    @pendingValue=v
-    return packEl('wire',this)
+  pending: (v)=> @share.pendingValue=v
+
+  getPending: => @share.pendingValue ? 0
 
   setField: (name,msb=0,lsb=null)=>
     if _.isString(name)
@@ -102,16 +111,24 @@ class Wire extends CircuitEl
   getMsb: (n)=> @msb
   getLsb: (n)=> @lsb
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
   bit: (n)->
     wire= Wire.create(1)
-    wire.link(@cell,@elName)
+    wire.link(@cell,@hier)
     if n.constructor.name=='Expr'
       wire.setLsb(n.str)
       wire.setMsb(n.str)
+      wire.share=@share
       return packEl('wire',wire)
     else
       wire.setLsb(n)
       wire.setMsb(n)
+      wire.share=@share
       return packEl('wire',wire)
 
   fromMsb: (n)=>
@@ -129,15 +146,17 @@ class Wire extends CircuitEl
   slice: (n,m)->
     if n.constructor.name=='Expr'
       wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
-      wire.link(@cell,@elName)
+      wire.link(@cell,@hier)
       wire.setLsb(m.str)
       wire.setMsb(n.str)
+      wire.share=@share
       return packEl('wire',wire)
     else
       wire= Wire.create(toNumber(n)-toNumber(m)+1)
-      wire.link(@cell,@elName)
+      wire.link(@cell,@hier)
       wire.setLsb(m)
       wire.setMsb(n)
+      wire.share=@share
       return packEl('wire',wire)
 
   refName: =>
@@ -160,24 +179,27 @@ class Wire extends CircuitEl
     else
       return ''
 
+  drive: (list...)=>
+    for i in list
+      i.assign(=>_expr(@refName()))
+
   assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    ElementSets.clear()
     if @cell.__assignEnv=='always'
+      @staticWire=false
       if @staticAssign
-        throw new Error("This wire have been static assigned")
-      else if @firstCondAssign
-        @cell.__wireAssignList.push ["reg", @width,"_"+@elName,lineno]
-        @cell.__wireAssignList.push ["assign", "#{@elName}","_#{@elName}",lineno]
-        @firstCondAssign=false
-      @cell.__regAssignList.push ["assign","_#{@refName()}",assignFunc(),lineno]
-      @cell.__updateWires.push({type:'wire',name:@elName,pending:@pendingValue})
+        throw new Error("This wire have been static assigned #{@elName}")
+      @cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
+      @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
     else
-      @cell.__wireAssignList.push ["assign","#{@refName()}",assignFunc(),lineno]
+      if @staticWire==false or @staticAssign
+        throw new Error("This wire have been assigned again #{@elName}")
+      assignItem=["assign",this,assignFunc(),lineno]
+      @cell.__wireAssignList.push assignItem
+      @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
 
@@ -189,9 +211,15 @@ class Wire extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
     if @width==1
-      list.push "wire "+@elName+";"
+      if @staticWire
+        list.push "wire "+@elName+";"
+      else
+        list.push "reg "+@elName+";"
     else if @width>1
-      list.push "wire ["+(@width-1)+":0] "+@elName+";"
+      if @staticWire
+        list.push "wire ["+(@width-1)+":0] "+@elName+";"
+      else
+        list.push "reg ["+(@width-1)+":0] "+@elName+";"
     return list.join("\n")
 
   setWidth:(w)-> @width=w
@@ -209,34 +237,29 @@ class Wire extends CircuitEl
       throw new Error('Set sateMap error')
 
   isState: (name)=>
-    "#{@refName()}==#{@elName+'__'+name}"
+    _expr "#{@refName()}==#{@elName+'__'+name}"
 
   notState: (name)=>
-    "#{@refName()}!=#{@elName+'__'+name}"
-
-  setState: (name)=>
-    @cell.__wireAssignList.push ["assign","_#{@refName()}","#{@elName+'__'+name}",-1]
+    _expr "#{@refName()}!=#{@elName+'__'+name}"
 
   getState: (name)=> @elName+'__'+name
 
   reverse: ()=>
-    wire= Wire.create(@width)
+    tempWire=@cell._localWire(@width,'reverse')
     list=[]
     for i in [0...@width]
       list.push @bit(i)
-    name='{'+_.map(list,(i)=>i.refName()).join(',')+'}'
-    wire.link(@cell,name)
-    return packEl('wire',wire)
+    tempWire.assign((=> cat(list)))
+    return tempWire
 
   select: (cb)=>
-    wire= Wire.create(@width)
     list=[]
     for i in [0...@width]
       index = @width-1-i
       if cb(index)
         list.push @bit(index)
-    name='{'+_.map(list,(i)=>i.refName()).join(',')+'}'
-    wire.link(@cell,name)
-    return packEl('wire',wire)
+    tempWire=@cell._localWire(list.length,'select')
+    tempWire.assign((=> cat(list)))
+    return tempWire
 
 module.exports=Wire

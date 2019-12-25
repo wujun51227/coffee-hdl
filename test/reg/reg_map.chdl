@@ -21,7 +21,6 @@ class RegMap extends Module
         data:
           addr: reg(16)
           din: reg(16)
-          clk: reg()
     )
 
   build: ->
@@ -29,9 +28,6 @@ class RegMap extends Module
       $if(@group1.enable)
         assign(@group2.data.addr) = $ @group1.data.addr
         assign(@group2.data.din) = $ @group1.data.dout>>1
-
-    pass_always
-      assign(@group2.data.clk) = $ !@group2.data.clk
 
 module.exports=RegMap
 

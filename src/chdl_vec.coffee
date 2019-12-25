@@ -9,34 +9,32 @@ class Vec extends CircuitEl
     super()
     @width=width
     @depth=depth
-    @bin=(Reg.create(width) for i in [0...depth])
-    for i in @bin
-      i.setMem()
+    @__type='vec'
 
-  index: (n)->
+  set: (n,data)=>
+    addr=0
     if n.constructor?.name=='Expr'
-      return packEl('reg',@bin[Number(n.str)])
+      addr=Number(n.str)
     else if _.isNumber(n)
-      return packEl('reg',@bin[n])
+      addr=n
     else if _.isFunction(n)
-      reg=Reg.create(@width)
-      reg.link(@cell, @elName+'['+n().elName+']')
-      reg.setMem()
-      return packEl('reg',reg)
+      addr=n().hier
     else
-      reg=Reg.create(@width)
-      reg.link(@cell, @elName+'['+n.elName+']')
-      reg.setMem()
-      return packEl('reg',reg)
+      addr=n.hier
+    @cell.verilog(@elName+"[#{addr}] = #{data};")
 
-  link: (cell,name)->
-    @cell=cell
-    @elName=name
-    for i,index in @bin
-      i.link(cell,name+'['+index+']')
-
-  refName: -> @elName
-
+  get: (n)->
+    addr=0
+    if n.constructor?.name=='Expr'
+      addr=Number(n.str)
+    else if _.isNumber(n)
+      addr=n
+    else if _.isFunction(n)
+      addr=n().hier
+    else
+      addr=n.hier
+    return @elName+"[#{addr}]"
+    
   @create: (width,depth)-> new Vec(width,depth)
 
   verilogDeclare: ()->

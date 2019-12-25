@@ -1,10 +1,9 @@
 CircuitEl = require 'chdl_el'
-ElementSets = require 'chdl_el_sets'
+Wire = require 'chdl_wire'
 _ = require 'lodash'
-{packEl,toNumber,hex}=require 'chdl_utils'
+{cat,rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
 
 class Reg extends CircuitEl
-  value: 0
   resetMode: 'async' #async or sync
   resetValue: 0
 
@@ -16,8 +15,8 @@ class Reg extends CircuitEl
     @states=[]
     @lsb= -1
     @msb= -1
-    @isMem=false
     @assertHigh=false
+    @negClock=false
     @enableSignal=null
     @enableValue=null
     @clearSignal=null
@@ -27,15 +26,17 @@ class Reg extends CircuitEl
     @depNames=[]
     @local=false
     @staticAssign=false
+    @share={
+      assignList:[]
+      alwaysList:null
+      pendingValue:null
+    }
 
-  setLocal: =>
-    @local=true
-    return packEl('reg',this)
+  setLocal: => @local=true
 
-  setMem: -> @isMem=true
+  setGlobal: => @local=false
 
   init: (v,initial=false)=>
-    @value=v
     @resetValue=v
     @needInitial=initial
     return packEl('reg',this)
@@ -47,15 +48,31 @@ class Reg extends CircuitEl
       @bindClockName=clock.getName()
     return packEl('reg',this)
 
-  syncReset: (reset)=>
-    @resetMode='sync'
-    if _.isString(reset)
-      @resetName=reset
+  reset:(reset,mode='async',assertValue=false)=>
+    if reset==null
+      @resetMode=null
+      @resetName=null
     else
-      @resetName=reset.getName()
+      if _.isString(reset)
+        @resetName=reset
+      else
+        @resetName=reset.getName()
+      @resetMode=mode
+      @assertHigh= assertValue
+    return packEl('reg',this)
+
+  negedge: =>
+    @negClock=true
+    return packEl('reg',this)
+
+  syncReset: ()=>
+    @resetMode='sync'
     return packEl('reg',this)
 
   asyncReset: (reset=null)=>
+    console.log '=========================='
+    console.log 'Deprecated use reset(name,mode,assertValue)'
+    console.log '=========================='
     @resetMode='async'
     if _.isString(reset)
       @resetName=reset
@@ -75,8 +92,17 @@ class Reg extends CircuitEl
       @bindClockName= data.clockName
     if data.resetValue?
       @resetValue= data.resetValue
+    if data.negedge?
+      @negClock=data.negedge
+
+  pending: (v)=> @share.pendingValue=v
+
+  getPending: => @share.pendingValue ? @getName()
 
   noReset: =>
+    console.log '=========================='
+    console.log 'Deprecated use reset(null)'
+    console.log '=========================='
     @resetMode=null
     @resetName=null
     return packEl('reg',this)
@@ -133,18 +159,24 @@ class Reg extends CircuitEl
     else
       return null
 
+  toList: =>
+    list=[]
+    for i in [0...@width]
+      list.push(@bit(i))
+    return list
+
   bit: (n)->
     reg= Reg.create(1)
-    reg.link(@cell,@elName)
+    reg.link(@cell,@hier)
     if n.constructor?.name=='Expr'
       reg.setLsb(n.str)
       reg.setMsb(n.str)
-      reg.isMem=@isMem
+      reg.share=@share
       return packEl('reg',reg)
     else
       reg.setLsb(n)
       reg.setMsb(n)
-      reg.isMem=@isMem
+      reg.share=@share
       return packEl('reg',reg)
 
   fromMsb: (n)=>
@@ -162,17 +194,17 @@ class Reg extends CircuitEl
   slice: (n,m)->
     if n.constructor?.name=='Expr'
       reg= Reg.create(toNumber(n.str)-toNumber(m.str)+1)
-      reg.link(@cell,@elName)
+      reg.link(@cell,@hier)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
-      reg.isMem=@isMem
+      reg.share=@share
       return packEl('reg',reg)
     else
       reg= Reg.create(toNumber(n)-toNumber(m)+1)
-      reg.link(@cell,@elName)
+      reg.link(@cell,@hier)
       reg.setMsb(n)
       reg.setLsb(m)
-      reg.isMem=@isMem
+      reg.share=@share
       return packEl('reg',reg)
 
   refName: ->
@@ -184,9 +216,21 @@ class Reg extends CircuitEl
     else
       @elName
 
-  get: -> @value
+  dName: ->
+    if @cell.__sim
+      @hier+'.getD()'
+    else
+      '_'+@refName()
 
-  set: (v)-> @value=v
+  getD: =>
+    if @cell.__sim
+      @hier+'.getD()'
+    else
+      wire= Wire.create(@width)
+      wire.link(@cell,'_'+@hier)
+      wire.setLsb(@lsb)
+      wire.setMsb(@msb)
+      return packEl('wire',wire)
 
   @create: (width=1)-> new Reg(width)
 
@@ -196,17 +240,17 @@ class Reg extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
     if @width==1
-      list.push "reg "+@elName+";"
+      list.push "reg "+@getName()+";"
       if @staticAssign
-        list.push "wire _"+@elName+";"
+        list.push "wire "+@dName()+";"
       else
-        list.push "reg _"+@elName+";"
+        list.push "reg "+@dName()+";"
     else if @width>1
-      list.push "reg ["+(@width-1)+":0] "+@elName+";"
+      list.push "reg ["+(@width-1)+":0] "+@getName()+";"
       if @staticAssign
-        list.push "wire ["+(@width-1)+":0] _"+@elName+";"
+        list.push "wire ["+(@width-1)+":0] "+@dName()+";"
       else
-        list.push "reg ["+(@width-1)+":0] _"+@elName+";"
+        list.push "reg ["+(@width-1)+":0] "+@dName()+";"
 
     if @needInitial
       list.push "initial begin"
@@ -218,13 +262,14 @@ class Reg extends CircuitEl
 
   verilogUpdate: ->
     list=[]
+    activeEdge= if @negClock then 'negedge' else 'posedge'
     if @resetMode=='async'
       if @assertHigh
-        list.push "always @(posedge "+@getClock()+" or posedge "+@getReset()+") begin"
+        list.push "always @(#{activeEdge} "+@getClock()+" or posedge "+@getReset()+") begin"
       else
-        list.push "always @(posedge "+@getClock()+" or negedge "+@getReset()+") begin"
+        list.push "always @(#{activeEdge} "+@getClock()+" or negedge "+@getReset()+") begin"
     else
-      list.push "always @(posedge "+@getClock()+") begin"
+      list.push "always @(#{activeEdge} "+@getClock()+") begin"
     if @getReset()?
       if @assertHigh
         list.push "  if("+@getReset()+") begin"
@@ -256,7 +301,7 @@ class Reg extends CircuitEl
       if @enableSignal?
         enableSig=_.get(@cell,@enableSignal)
         if enableSig?
-          list.push "  if(#{enableSig.elName}==#{@enableValue} )  begin"
+          list.push "  if(#{enableSig.getName()}==#{@enableValue} )  begin"
           list.push "    "+@elName+" <= #`UDLY _"+@elName+";"
           list.push "  end"
         else
@@ -273,24 +318,26 @@ class Reg extends CircuitEl
     else
       return ''
 
+  drive: (list...)=>
+    for i in list
+      i.assign(=>_expr(@refName()))
+
   assign: (assignFunc,lineno=-1)=>
-    ElementSets.clear()
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
-    if @isMem
-      @cell.__regAssignList.push ['assign',"#{@refName()}",assignFunc(),lineno]
-    else if @cell.__assignEnv=='always'
+    if @cell.__assignEnv=='always'
       if @staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__regAssignList.push ['assign',"_#{@refName()}",assignFunc(),lineno]
-      @cell.__updateWires.push({type:'reg',name:@elName,pending:@elName})
+      @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]
+      @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
     else
       if @staticAssign
         throw new Error("This wire have been static assigned")
-      @cell.__wireAssignList.push ["assign", "_#{@refName()}", assignFunc(),lineno]
+      assignItem=["assign",this,assignFunc(),lineno]
+      @cell.__wireAssignList.push assignItem
+      @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-    @depNames.push(ElementSets.get()...)
 
   getDepNames: => _.uniq(@depNames)
 
@@ -313,48 +360,65 @@ class Reg extends CircuitEl
 
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "_#{@refName()}==#{@elName+'__'+name}"
+    _expr "(#{@dName()}==#{@elName+'__'+name})"
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "#{@refName()}==#{@elName+'__'+name}"
+    _expr "(#{@refName()}==#{@elName+'__'+name})"
 
   isNthState: (n)=>
     item=@states[n]
-    "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
     item=@states[n]
-    @elName+'__'+item.state
+    _expr @elName+'__'+item.state
 
   isLastState: ()=>
     item=_.last(@states)
-    "#{@refName()}==#{@elName+'__'+item.state}"
+    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
-    "((#{@refName()}==#{@elName+'__'+prevState}) && (_#{@refName()}==#{@elName+'__'+nextState}))"
+    _expr "((#{@refName()}==#{@elName+'__'+prevState}) && (#{@dName()}==#{@elName+'__'+nextState}))"
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    "#{@refName()}!=#{@elName+'__'+name}"
+    _expr "(#{@refName()}!=#{@elName+'__'+name})"
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
-    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName+'__'+name}",-1]
-    @cell.__updateWires.push({type:'reg',name:@elName})
+    @cell.__regAssignList.push ['assign',this,"#{@elName+'__'+name}",-1]
+    @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
 	
-  getState: (name)=> @elName+'__'+name
+  getState: (name)=> _expr @elName+'__'+name
 
   stateSwitch: (obj)=>
-    @cell.__regAssignList.push ['assign',"_#{@refName()}","#{@elName}",-1]
-    for src,v of obj
-      for dst,condFunc of v
-          @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src} && #{condFunc()}",-1]
-          @cell.__regAssignList.push ["assign","_#{@refName()}", "#{@elName+'__'+dst}",-1]
-          @cell.__regAssignList.push ["end",-1]
+    @cell.__regAssignList.push ['assign',this,"#{@refName()}",-1]
+    for src,list of obj
+      @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src}",-1]
+      for item,index in list
+        dst = item.value()
+        if index==0
+          if item.cond? and item.cond.str!='null'
+            @cell.__regAssignList.push ["if","#{item.cond.str}",-1]
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["end",-1]
+          else
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+        else
+          if item.cond? and item.cond.str!='null'
+            @cell.__regAssignList.push ["elseif","#{item.cond.str}",-1]
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["end",-1]
+          else
+            @cell.__regAssignList.push ["else",-1]
+            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["end",-1]
+      @cell.__regAssignList.push ["end",-1]
+
   getWidth: => @width
 
   enable: (s,value=1)=>
@@ -366,5 +430,23 @@ class Reg extends CircuitEl
     @clearSignal=s
     @clearValue=value
     return packEl('reg',this)
+
+  reverse: ()=>
+    tempWire=@cell._localWire(@width,'reverse')
+    list=[]
+    for i in [0...@width]
+      list.push @bit(i)
+    tempWire.assign((=> cat(list)))
+    return tempWire
+
+  select: (cb)=>
+    list=[]
+    for i in [0...@width]
+      index = @width-1-i
+      if cb(index)
+        list.push @bit(index)
+    tempWire=@cell._localWire(list.length,'select')
+    tempWire.assign((=> cat(list)))
+    return tempWire
 
 module.exports=Reg

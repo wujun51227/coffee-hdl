@@ -29,6 +29,7 @@ program
   .option('-t, --tree')
   .option('-i, --info')
   .option('--flist <file list name>')
+  .option('--nolineno')
   .option('--debug')
   .parse(process.argv)
 
@@ -38,6 +39,7 @@ cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
   info: program.info ? false
+  noLineno: program.nolineno ? false
 }
 
 configBase(cfg)
@@ -65,12 +67,12 @@ processFile= (fileName,outDir) ->
       flist=[]
       for i,index in printBuffer.getBin()
         code= i.list.join("\n")
-        do ->
-          fname= do ->
-            if outDir?
-              outDir+'/'+i.name
-            else
-              i.name
+        fname= do ->
+          if outDir?
+            outDir+'/'+i.name
+          else
+            i.name
+        do(fname,code) ->
           flist.push(fname+'.sv')
           fs.writeFile fname+'.sv', code, (err) =>
             throw err if err
@@ -110,6 +112,6 @@ if program.watch
   watch.on('change',(path)->
     resetBase()
     printBuffer.clearBin()
-    banner()
+    banner(fileName)
     processFile(fileName,outDir.replace(/\/$/,''))
   )

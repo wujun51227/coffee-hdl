@@ -3,9 +3,8 @@ Expr    = require 'chdl_expr'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
-ElementSets = require 'chdl_el_sets'
 {table} = require 'table'
-{packEl,toSignal,toFlatten}=require('chdl_utils')
+{toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
@@ -13,7 +12,7 @@ uuid  = require 'uuid/v1'
 localCnt=0
 
 _id=(name)=>
-  ret="#{name}#{localCnt}"
+  ret="#{name}_#{localCnt}"
   localCnt+=1
   return ret
 
@@ -42,14 +41,15 @@ class Module
   _cellmap: (v) ->
     for name,inst of v
       @__cells.push({name:name,inst:inst})
+      @[name]=inst
 
-  __getCell: (name)=>
+  _getCell: (name)=>
     p=Object.getPrototypeOf(this)
     for k,v of p when typeof(v)=='object' and v instanceof Module
       return v if k==name
     return _.find(@__cells,{name:name})
 
-  __setConfig: (v) -> @__config=v
+  _setConfig: (v) -> @__config=v
 
   _reg: (obj) ->
     for k,v of obj
@@ -58,8 +58,9 @@ class Module
         throw new Error('Register name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+        for [name,inst] in toFlatten(v,'reg')
+          inst.link(this,toHier(k,name))
+          inst.setGlobal()
 
   _wire: (obj) ->
     for k,v of obj
@@ -68,8 +69,9 @@ class Module
         throw new Error('Wire name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+        for [name,inst] in toFlatten(v,'wire')
+          inst.link(this,toHier(k,name))
+          inst.setGlobal()
 
   _mem: (obj) ->
     for k,v of obj
@@ -78,8 +80,8 @@ class Module
         throw new Error('Vec name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+        for [name,inst] in toFlatten(v,'vec')
+          inst.link(this,toHier(k,name))
 
   _channel: (obj) ->
     for k,v of obj
@@ -87,8 +89,8 @@ class Module
       if this[k]?
         throw new Error('Channel name conflicted '+k)
       else
-        for [name,inst] in toFlatten(v)
-          inst.link(this,toSignal(k+'.'+name))
+        for [name,inst] in toFlatten(v,'channel')
+          inst.link(this,toHier(k,name))
         this[k]=v
 
   _probe: (obj) ->
@@ -107,20 +109,22 @@ class Module
         throw new Error('Port name conflicted '+k)
       else
         this[k]=v
-        for [name,inst] in toFlatten(v)
+        for [name,inst] in toFlatten(v,'port')
           sigName=toSignal(k+'.'+name)
-          inst.link(this,sigName)
+          hierName=toHier(k,name)
+          inst.link(this,hierName)
           if inst.isClock
-            @__setDefaultClock(sigName)
+            @_setDefaultClock(sigName)
           if inst.isReset
-            @__setDefaultReset(sigName)
+            @_setDefaultReset(sigName)
           if inst.isReg
             createReg=new Reg(inst.getWidth())
             createReg.config(inst.isRegConfig)
             @__regs[sigName]=createReg
             createReg.link(this,sigName)
+            inst.setShadowReg(createReg)
 
-  __overrideModuleName: (name)-> @__moduleName=name
+  _overrideModuleName: (name)-> @__moduleName=name
   setUniq: -> @__uniq=true
   getModuleName: -> @__moduleName
   setCombModule: -> @__isCombModule=true
@@ -142,7 +146,6 @@ class Module
     @__moduleParameter=null
 
     @__alwaysList     =  []
-    @__sequenceAlwaysList     =  []
     @__foreverList     =  []
     @__regs           =  {}
     @__wires          =  {}
@@ -177,21 +180,31 @@ class Module
     @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
+    @_mixin require('verilog_assert.chdl.js')
+    @__sim=false
 
-  __setParentNode: (node)->
+  _setSim: ->
+    @__sim=true
+
+  _setParentNode: (node)->
     @__parentNode=node
 
-  __setDefaultClock: (clock)->
-    @__defaultClock=clock if @__defaultClock==null
+  _setDefaultClock: (clock)->
+    if @__defaultClock==null
+      @__defaultClock=clock
 
-  __setDefaultReset: (reset)->
-    @__defaultReset=reset if @__defaultReset==null
+  _setDefaultReset: (reset)->
+    if @__defaultReset==null
+      @__defaultReset=reset
 
   setDefaultClock: (clock)=>
     @__defaultClock=clock
 
   setDefaultReset: (reset)=>
     @__defaultReset=reset
+
+  _clock: => @__defaultClock
+  _reset: => @__defaultReset
 
   setBlackBox: ()=> @__isBlackBox=true
 
@@ -206,13 +219,7 @@ class Module
       console.error 'Channel',channelName,'not found'
       console.trace()
 
-  __dumpPorts: ->
-    console.log 'Module',@__instName
-    for [name,port] in toFlatten(@__ports)
-      s=toSignal(port.getName())
-      console.log '  port',s
-
-  __addWire: (name,width)->
+  _addWire: (name,width)->
     wire= Wire.create(width)
     wire.link(this,name)
     pack=packEl('wire',wire)
@@ -220,7 +227,7 @@ class Module
     this[name]=pack
     return wire
 
-  __addPort: (name,dir,width)->
+  _addPort: (name,dir,width)->
     port=do ->
       if dir=='input'
         Port.in(width)
@@ -238,18 +245,18 @@ class Module
       @__wires[name]=port
       return port
 
-  __dragPort: (inst,dir,width,pathList,portName)->
+  _dragPort: (inst,dir,width,pathList,portName)->
     nextInst=_.get(inst,pathList[0])
     if nextInst? and nextInst instanceof Module
       newPortName=toSignal([pathList[1..]...,portName].join('.'))
-      port=nextInst.__addPort(newPortName,dir,width)
+      port=nextInst._addPort(newPortName,dir,width)
       if port?
         port.setBindSignal(toSignal([pathList...,portName].join('.')))
         #nextInst.addWire(newPortName,width)
         #nextInst.dumpPorts()
-        @__dragPort(nextInst,dir,width,pathList[1..],portName)
+        @_dragPort(nextInst,dir,width,pathList[1..],portName)
 
-  __removeNode:(list)->
+  _removeNode:(list)->
     if list.length==1
       leaf=list[0]
       delete this[leaf]
@@ -263,7 +270,7 @@ class Module
       delete @__ports[leaf]
       delete @__wires[leaf]
 
-  __findChannel: (inst,list)->
+  _findChannel: (inst,list)->
     if _.get(inst,list)?
       return _.get(inst,list)
 
@@ -272,35 +279,36 @@ class Module
       return out
     else
       nextInst=inst[list[0]]
-      return @__findChannel(nextInst,list.slice(1))
+      return @_findChannel(nextInst,list.slice(1))
 
-  __channelExpand:(channelType,localName,channelInfo)->
+  _channelExpand:(channelType,localName,channelInfo)->
     localport=null
     nodeList=[]
-    if channelType=='hub'
-      nodeList=_.toPath(localName)
-    else
-      for [name,port] in toFlatten(@__ports)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
-      for [name,port] in toFlatten(@__channels)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
-      for [name,port] in toFlatten(@__wires)
-        if toSignal(name)==localName
-          localport=port
-          nodeList=_.toPath(name)
+    #if channelType=='hub'
+    #  nodeList=_.toPath(localName)
+    #else
+    for [name,port] in toFlatten(@__ports)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
+    for [name,port] in toFlatten(@__channels)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
+    for [name,port] in toFlatten(@__wires)
+      if toSignal(name)==localName
+        localport=port
+        nodeList=_.toPath(name)
 
     type=null
     if localport?
       type=localport.constructor.name
       if localport?.width==0
-        @__removeNode(nodeList) if channelType!='hub'
+        #@__removeNode(nodeList) if channelType!='hub'
+        @_removeNode(nodeList)
 
     if _.isString(channelInfo)
-      channel=@__findChannel(this,_.toPath(channelInfo))
+      channel=@_findChannel(this,_.toPath(channelInfo))
       channelName=channelInfo
     else
       channel=channelInfo
@@ -309,10 +317,10 @@ class Module
       bindPort=obj.port
       dir=bindPort.type
       width=bindPort.width
-      @__dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
+      @_dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
       if dir=='output' or dir=='input'
         wireName=toSignal([channelName,obj.node...].join('.'))
-        wire=@__addWire(wireName,width)
+        wire=@_addWire(wireName,width)
         newPath=[nodeList...,obj.node...].join('.')
         if type=='Port'
           net=new Port(dir,width)
@@ -331,6 +339,7 @@ class Module
             netEl=packEl('wire',net)
             _.set(this,newPath,netEl)
             _.set(@__wires,newPath,netEl)
+            netEl.setType(dir)
           else
             net=_.get(this,newPath)
         if dir=='input'
@@ -357,11 +366,11 @@ class Module
       i.channel.portList.length=0
       i.channel.bindPort(this,i.portName)
 
-  __postElaboration: ->
+  _postElaboration: ->
     for i in @__postProcess
-      @__channelExpand(i.type,i.elName,i.bindChannel)
+      @_channelExpand(i.type,i.elName,i.bindChannel)
 
-  __elaboration: ->
+  _elaboration: ->
     if @__config.info
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
@@ -391,11 +400,34 @@ class Module
     @__assignEnv = 'always'
     @__regAssignList=[]
     @__updateWires=[]
+    @__sequenceBlock=[]
     block()
+    if @__sequenceBlock.length>0
+      for seqList in @__sequenceBlock
+        for i in seqList.bin
+          if i.type=='delay' or i.type=='trigger' or i.type=='event' or i.type=='repeat'
+            throw new Error("Can not use delay in always sequence")
+        @_buildSeqBlock(seqList)
+      @__sequenceBlock=null
     @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
+    for i in @__updateWires
+      i.inst.share.alwaysList=@__regAssignList
     @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
+
+  _always_if: (cond,lineno)=>
+    return (block)=>
+      @__assignEnv = 'always'
+      @__regAssignList=[]
+      @__updateWires=[]
+      @_regProcess()._if(cond,lineno)(block)._endif()
+      @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
+      for i in @__updateWires
+        i.inst.share.alwaysList=@__regAssignList
+      @__assignEnv = null
+      @__updateWires=[]
+      @__regAssignList=[]
 
   _passAlways: (lineno,block)=>
     @__assignEnv = 'always'
@@ -407,30 +439,16 @@ class Module
     @__updateWires=[]
     @__regAssignList=[]
 
-  _sequenceAlways: (lineno,block)=>
-    @__regAssignList=[]
-    @__updateWires=[]
-    @__sequenceBlock=[]
-    block()
-    for seqList in @__sequenceBlock
-      for i in seqList.bin
-        if i.type=='delay' or i.type=='trigger' or i.type=='event' or i.type=='repeat'
-          throw new Error("Can not use delay in always sequence")
-    @__sequenceAlwaysList.push([@__sequenceBlock,lineno])
-    @__sequenceBlock=null
-    @__updateWires=[]
-    @__regAssignList=[]
-
   eval: =>
     for evalFunc in @__alwaysList
       evalFunc()
 
-  _hub: (arg)->
-    for hubName,list of arg
-      #@__addWire(hubName,0) unless this[hubName]?
-      for channelPath in list
-        #console.log '>>>>add hub',hubName,channelPath
-        @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
+  #_hub: (arg)->
+  #  for hubName,list of arg
+  #    #@_addWire(hubName,0) unless this[hubName]?
+  #    for channelPath in list
+  #      #console.log '>>>>add hub',hubName,channelPath
+  #      @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
 
   #logic: (expressFunc)=> expressFunc().str
 
@@ -441,6 +459,18 @@ class Module
       return Array(@__indent+1).join('  ')
     else
       return ''
+
+  _if_blocks: (list)=>
+    ret=null
+    for item,index in list
+      if index==0
+        ret=@_regProcess()._if(item.cond,item.lineno)(item.value)
+      else
+        if item.cond? and item.cond.str!='null'
+          ret=ret._elseif(item.cond,item.lineno)(item.value)
+        else
+          ret=ret._else(item.lineno)(item.value)
+    ret._endif()
 
   _regProcess: ()=>
     self=this
@@ -470,10 +500,19 @@ class Module
           @__regAssignList.push ["end"]
           return @_regProcess()
       _endif: =>
+          @__regAssignList.push ["endif"]
     }
 
-  _cond: (cond,lineno=-1)=>
-    return (block)=> {cond:cond.str,value:block(),lineno:lineno}
+  _cond: (cond=null,lineno=-1)=>
+    return (block)=>
+      if block?
+        value=block()
+        {cond:cond,value:(=>value),lineno:lineno}
+      else
+        {cond:cond,value:null,lineno:lineno}
+
+  _lazy_cond: (cond=null,lineno=-1)=>
+    return (block)=> {cond:cond,value:block,lineno:lineno}
 
   _wireProcess: (list=[],lineno)=>
     return {
@@ -535,8 +574,11 @@ class Module
   _if: (cond,lineno=-1)->
     if @__assignWaiting
       return @_wireProcess()._if(cond,lineno)
-    else
+    else if @__assignEnv=='always'
       return @_regProcess()._if(cond,lineno)
+    else
+      return @_wireProcess()._if(cond,lineno)
+    #return @_regProcess()._if(cond,lineno)
 
   _pinConnect: ->
     out=[]
@@ -566,16 +608,18 @@ class Module
           else
             thisPin="#{i.channel.getName()}"
           usedPort=usedPorts[toSignal(port.getName())]
-          if usedPort.port.type=='output'
-            assignList.push({from:usedPort.pin,to:thisPin})
-          else if usedPort.port.type=='input'
-            assignList.push({from:thisPin,to:usedPort.pin})
+          if usedPort.pin!=thisPin
+            if usedPort.port.type=='output'
+              assignList.push({from:usedPort.pin,to:thisPin})
+            else if usedPort.port.type=='input'
+              assignList.push({from:thisPin,to:usedPort.pin})
     for [name,port] in toFlatten(@__ports)
       s=toSignal(port.getName())
-      if port.bindSignal?
-        out.push "  .#{s}( #{port.bindSignal} )"
-      else if not hitPorts[s]?
-        out.push "  .#{s}( )"
+      if not usedPorts[s]?
+        if port.bindSignal?
+          out.push "  .#{s}( #{port.bindSignal} )"
+        else if not hitPorts[s]?
+          out.push "  .#{s}( )"
 
     return [out,assignList]
 
@@ -588,24 +632,24 @@ class Module
           #console.log name,sig
           net=Wire.create(sig.getWidth())
           if name
-            wireName=channel.getName()+'__'+name
-            net.link(channel.cell,toSignal(wireName))
+            net.link(channel.cell,toHier(channel.hier,name))
             netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
             _.set(channel.Port,name,netEl)
           else
-            wireName=channel.getName()
-            net.link(channel.cell,toSignal(wireName))
+            net.link(channel.cell,channel.hier)
             netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
             channel.Port=netEl
 
-  __link: (name)-> @__instName=name
-
+  _link: (name)-> @__instName=name
 
   _localWire: (width=1,name='t')->
     pWire=Wire.create(Number(width))
     pWire.cell=this
     pWire.setLocal()
     pWire.elName=toSignal(_id('__'+name))
+    pWire.hier=pWire.elName
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
     return ret
@@ -615,6 +659,7 @@ class Module
     pReg.cell=this
     pReg.setLocal()
     pReg.elName=toSignal(_id('__'+name))
+    pReg.hier=pReg.elName
     ret = packEl('reg',pReg)
     @__local_regs.push(ret)
     return ret
@@ -635,30 +680,6 @@ class Module
     @__initialMode=false
     @__sequenceBlock=null
 
-  _series: (list...)->
-    if @__sequenceBlock==null
-      throw new Error("Series should put in initial or sequenceAlways")
-    for seq,index in list
-      if index!=list.length-1
-        lastBin=_.last(seq.bin)
-        lastBin.id='idle'
-        lastBin.isLast=false
-        lastBin.expr=list[index+1].stateReg.isState('idle')
-      else
-        lastBin=_.last(seq.bin)
-        lastBin.id='idle'
-        lastBin.type='next'
-        lastBin.expr=null
-
-      if index!=0
-        startCond={
-          type:'wait'
-          id:_id('wait')
-          expr:list[index-1].stateReg.isLastState()
-          list: []
-        }
-        seq.bin=[seq.bin[0],startCond,seq.bin[1...]...]
-
   _sequenceDef: (name='sequence')=>
     if @__sequenceBlock==null
       throw new Error("Sequence only can run in initial or always")
@@ -676,8 +697,7 @@ class Module
         next=@_localWire(1,'next')
         @__assignEnv='always'
         @__regAssignList=[]
-        func(next)
-        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
+        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next,func:func})
         @__assignEnv=null
         @__regAssignList=[]
       @_sequence(_id(name+'_'),bin)
@@ -685,23 +705,6 @@ class Module
   _sequence: (name,bin=[])->
     env='always'
     return {
-      #idle: (func)=>
-      #  if @__initialMode
-      #    @__assignEnv=env
-      #    @__regAssignList=[]
-      #    func()
-      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
-      #    @__assignEnv=null
-      #    @__regAssignList=[]
-      #  else
-      #    next=@_localWire(1,'next')
-      #    @__assignEnv=env
-      #    @__regAssignList=[]
-      #    func(next)
-      #    bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next})
-      #    @__assignEnv=null
-      #    @__regAssignList=[]
-      #  return @_sequence(name,bin)
       delay: (delay) =>
         return (func)=>
           @__assignEnv=env
@@ -736,7 +739,7 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
@@ -745,9 +748,8 @@ class Module
             next=@_localWire(1,'next')
             @__assignEnv=env
             @__regAssignList=[]
-            func(active,next)
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName(),func:func})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin)
@@ -758,7 +760,7 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('fall')
-            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
@@ -767,9 +769,8 @@ class Module
             next=@_localWire(1,'next')
             @__assignEnv=env
             @__regAssignList=[]
-            func(active,next)
             id = stepName ? _id('fall')
-            bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal})
+            bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName(),func:func})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin)
@@ -788,9 +789,8 @@ class Module
             @__regAssignList=[]
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
-            func(active,next)
             id = stepName ? _id('wait')
-            bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next})
+            bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next,func:func})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin)
@@ -804,14 +804,13 @@ class Module
               enable=null
             else
               enable=@_localWire(1,'enable')
-              expr=@_count(num,enable)
+              expr=@_count(num,enable,0)
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
             @__assignEnv=env
             @__regAssignList=[]
-            func(active,next)
             id = stepName ? _id('next_cycle')
-            bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next})
+            bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next,func:func})
             @__assignEnv=null
             @__regAssignList=[]
             return @_sequence(name,bin)
@@ -821,13 +820,10 @@ class Module
           @__sequenceBlock.push saveData
           @__updateWires=[]
         else
-          stateNum=0
-          for i in bin
-            stateNum+=1
-          bitWidth=Math.floor(Math.log2(stateNum))+1
+          bitWidth=Math.floor(Math.log2(bin.length))+1
           stateReg=@_localReg(bitWidth,name)
-          nextState=@_localWire(bitWidth,name+'_next')
           lastStateReg=@_localReg(bitWidth,name+'_last')
+          nextState=@_localWire(bitWidth,name+'_next')
           stateNameList=[]
           for i in bin
             stateNameList.push(i.id)
@@ -838,27 +834,15 @@ class Module
           finalJump.list=[]
           finalJump.isLast=true
           finalJump.next=null
+          finalJump.func=null
           bin.push(finalJump)
 
-          saveData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
-          @__sequenceBlock.push saveData
+          retData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
+          @__sequenceBlock.push retData
           @__updateWires=[]
-          @_assign(stateReg) => nextState.getName()
-          @_assign(lastStateReg) => stateReg.getName()
-          for i in bin when i.type=='next' and i.enable?
-            @_assign(i.enable) => stateReg.isState(i.id)
-          for i,index in bin when i.active? and index>0
-            @_assign(i.active) => "(#{stateReg.isState(i.id)})&&(#{lastStateReg.isState(bin[index-1].id)})"
-          cache={}
-          for i,index in bin when i.next?
-            expr="(#{stateReg.getState(bin[index+1].id)}==#{nextState.getName()})"
-            if cache[expr]?
-              @_assign(i.next) => cache[expr]
-            else
-              @_assign(i.next) => expr
-              cache[expr]=i.next.getName()
+          @_seqState(stateReg,nextState,lastStateReg,bin)
 
-        return saveData
+        return retData
     }
 
   verilog: (s)->
@@ -870,14 +854,14 @@ class Module
       delete @__signature[i]
           
           
-  __getPath:(cell=null,list=[])->
+  _getPath:(cell=null,list=[])->
     cell=this if cell==null
     if cell.__parentNode==null
       list.push(cell.__moduleName)
       return list.reverse().join('.')
     else
       list.push(cell.__instName)
-      @__getPath(cell.__parentNode,list)
+      @_getPath(cell.__parentNode,list)
 
   _assign: (signal,lineno=-1)=>
     self=this
@@ -904,15 +888,53 @@ class Module
     else
       return (block)->
         if _.isFunction(block)
-          signal.assign(block,lineno)
+          if signal?
+            signal.assign(block,lineno)
+          else
+            throw new Error("Assign to signal is undefined at line: #{lineno}")
         else
           signal.assign((->block),lineno)
 
-  __parameterDeclare: ->
+  _parameterDeclare: ->
     out=''
     if @__moduleParameter?
       for i in @__moduleParameter
         out+="parameter #{i.key} = #{i.value};\n"
     return out
+
+  _dumpEvent: =>
+    out=[]
+    for seqBlock in @__initialList when seqBlock.length>0
+      seq={type:'initial',list:[]}
+      out.push seq
+      for item in seqBlock
+        toEventList(item.bin,seq.list)
+    for seqBlock in @__foreverList when seqBlock.length>0
+      seq={type:'forever',list:[]}
+      out.push seq
+      for item in seqBlock
+        toEventList(item.bin,seq.list)
+    return out
+
+  _dumpCell: =>
+    p = Object.getPrototypeOf(this)
+    cellList=({inst:k,module:v.getModuleName()} for k,v of p when typeof(v)=='object' and v instanceof Module)
+    for i in @__cells
+      cellList.push({inst:i.name,module:i.inst.getModuleName()}) unless _.find(cellList,(n)-> n.inst.__id==i.inst.__id)
+    for cellInfo in cellList
+      cellInst=@_getCell(cellInfo.inst)
+      connList=[]
+      for i in cellInst.__bindChannels
+        connList.push {port:i.portName,channel:i.channel.hier}
+      cellInfo.conn=connList
+      if cellInst.__defaultClock
+        clockPort=cellInst.__ports[cellInst.__defaultClock]
+        if not clockPort.isBinded()
+          connList.push {port:clockPort.elName,signal:@__defaultClock}
+      if cellInst.__defaultReset
+        resetPort=cellInst.__ports[cellInst.__defaultReset]
+        if not resetPort.isBinded()
+          connList.push {port:resetPort.elName,signal:@__defaultReset}
+    return cellList
 
 module.exports=Module

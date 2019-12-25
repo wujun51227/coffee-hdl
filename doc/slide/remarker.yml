@@ -1,0 +1,51 @@
+assets: ['assets']
+scriptFiles: ['./mermaid.min.js']
+script: " slideshow.on('afterShowSlide', function (slide) {
+        var diagrams = document.querySelectorAll('.mermaid');
+        for(var i=0;i<diagrams.length;i++){
+          if(diagrams[i].offsetWidth>0){
+            mermaid.init(undefined, diagrams[i]);
+          }
+        }
+      });
+      mermaid.initialize({
+        startOnLoad:false,
+        cloneCssStyles: false
+      });
+"
+cssFiles: ['./mermaid.css']
+css: "@import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { 
+        font-family: -apple-system,BlinkMacSystemFont,Helvetica Neue,PingFang SC,Microsoft YaHei,Source Han Sans SC,Noto Sans CJK SC,WenQuanYi Micro Hei,sans-serif; 
+        }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz',Noto Sans CJK SC,WenQuanYi Micro Hei,sans-serif;
+        font-weight: normal;
+        color: #FC3F6B;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .remark-code {
+        border-radius: 5px;
+        font-size: 0.6em;
+      }
+      .inverse h1, .inverse h2 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+       .left-column {
+        width: 49%;
+        float: left;
+      }
+      .right-column {
+        width: 49%;
+        float: right;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+  "

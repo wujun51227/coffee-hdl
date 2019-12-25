@@ -6,30 +6,30 @@ module.exports={
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth))+1
     Exponential_Full_Flag= depth==(2**addrWidth)
-    level      = local_reg(addrWidth+1,'level')
-    full       = local_reg(1,'full')
-    raddr      = local_reg(addrWidth,'raddr')
-    waddr      = local_reg(addrWidth,'waddr')
-    empty_flag = local_reg().init(1)
-    prefetched = local_reg()
-    fifoUnit = (w)=> local_reg(w,'rff')
-    rff_data= @createSigArray(fifoUnit,depth,width)
-    rd_data= local_reg(width,'rd_data')
+    level      = reg(addrWidth+1,'level')
+    full       = reg(1,'full')
+    raddr      = reg(addrWidth,'raddr')
+    waddr      = reg(addrWidth,'waddr')
+    empty_flag = reg().init(1)
+    prefetched = reg()
+    rff_data= @createArray(depth,=>reg(width,'rff'))
+    rd_data= reg(width,'rd_data')
 
-    read = local_wire(1,'read')
+    read = wire(1,'read')
     assign(read)  = $ !empty_flag && (pop || !prefetched)
 
     empty = $ !prefetched
     dout = $ rd_data
 
-    next_level= local_wire(addrWidth+1,'next_level')
-    pass_always
+    next_level= wire(addrWidth+1,'next_level')
+
+    assign(next_level)
       $if(pop==0&&push==1)
-        assign(next_level) = $ level+1
+        $ level+1
       $elseif(pop==1&&push==0)
-        assign(next_level) = $ level-1
+        $ level-1
       $else
-        assign(next_level) = $ level
+        $ level
       $endif
 
     always
@@ -45,7 +45,7 @@ module.exports={
           $endif
       $endif
 
-    rdata= local_wire(width,'rdata')
+    rdata= wire(width,'rdata')
 
     assign(rdata) = $arrayDecode(rff_data,raddr)
 
@@ -116,30 +116,30 @@ module.exports={
     if clkr==null or rstr==null
       throw new Error("Please attch clock/reset to #{pop.getName()}")
 
-    prefetched = local_reg(1,'prefetched').clock(clkr).asyncReset(rstr)
-    empty_flag = local_reg(1,'empty_flag').clock(clkr).asyncReset(rstr)
-    read = local_wire(1,'read')
+    prefetched = reg(1,'prefetched').clock(clkr).reset(rstr)
+    empty_flag = reg(1,'empty_flag').clock(clkr).reset(rstr)
+    read = wire(1,'read')
 
     assign(read) = $ !empty_flag && ( pop || !prefetched)
     empty = $ !prefetched
 
     w={
-      code: local_reg(addrWidth+1,'w_code').clock(clkw).asyncReset(rstw)
-      rd_s1: local_reg(addrWidth+1,'rd_s1').clock(clkw).asyncReset(rstw)
-      rd_s0: local_reg(addrWidth+1,'rd_s0').clock(clkw).asyncReset(rstw)
+      code: reg(addrWidth+1,'w_code').clock(clkw).reset(rstw)
+      rd_s1: reg(addrWidth+1,'rd_s1').clock(clkw).reset(rstw)
+      rd_s0: reg(addrWidth+1,'rd_s0').clock(clkw).reset(rstw)
     }
 
     r={
-      code: local_reg(addrWidth+1,'r_code').clock(clkr).asyncReset(rstr)
-      wr_s1: local_reg(addrWidth+1,'wr_s1').clock(clkr).asyncReset(rstr)
-      wr_s0: local_reg(addrWidth+1,'wr_s0').clock(clkr).asyncReset(rstr)
+      code: reg(addrWidth+1,'r_code').clock(clkr).reset(rstr)
+      wr_s1: reg(addrWidth+1,'wr_s1').clock(clkr).reset(rstr)
+      wr_s0: reg(addrWidth+1,'wr_s0').clock(clkr).reset(rstr)
     }
 
-    next_rd = local_wire(addrWidth+1,'next_rd')
-    next_wr = local_wire(addrWidth+1,'next_wr')
+    next_rd = wire(addrWidth+1,'next_rd')
+    next_wr = wire(addrWidth+1,'next_wr')
 
-    succeeding_code_rd = local_wire(addrWidth+1)
-    succeeding_code_wr = local_wire(addrWidth+1)
+    succeeding_code_rd = wire(addrWidth+1)
+    succeeding_code_wr = wire(addrWidth+1)
 
     assign(succeeding_code_rd)
       $if(read) => $ next_rd
@@ -151,11 +151,11 @@ module.exports={
       $else => $ w.code
       $endif
 
-    rd_addr = local_wire(addrWidth,'rd_addr')
-    assign(rd_addr) = $ cat($opPrefix('^',r.code.fromMsb(2)) , r.code.fromLsb(addrWidth-1))
+    rd_addr = wire(addrWidth,'rd_addr')
+    assign(rd_addr) = $ cat(hasOdd1(r.code.fromMsb(2)) , r.code.fromLsb(addrWidth-1))
 
-    wr_addr = local_wire(addrWidth,'wr_addr')
-    assign(wr_addr) = $ cat( $opPrefix('^',w.code.fromMsb(2)) , w.code.fromLsb(addrWidth-1))
+    wr_addr = wire(addrWidth,'wr_addr')
+    assign(wr_addr) = $ cat(hasOdd1(w.code.fromMsb(2)) , w.code.fromLsb(addrWidth-1))
 
     always
       $if(cat(pop,read)==2\b01)
@@ -174,15 +174,16 @@ module.exports={
     assign(w.rd_s0) = $ r.code
     assign(w.code) = $ succeeding_code_wr
 
-    full = local_reg(1,'full').clock(clkw).asyncReset(rstw)
-    assign(full) = $ succeeding_code_wr == cat($opPrefix('~',w.rd_s1.fromMsb(2)) ,w.rd_s1.fromLsb(addrWidth-1))
+    full = reg(1,'full').clock(clkw).reset(rstw)
+    inv_w = $ ~w.rd_s1.fromMsb(2)
+    assign(full) = $ succeeding_code_wr == cat(inv_w ,w.rd_s1.fromLsb(addrWidth-1))
 
     assign(next_rd) = $grayNextCode(r.code)
     assign(next_wr) = $grayNextCode(w.code)
 
-    aff_data = (local_reg(width,'aff').clock(clkw).noReset() for i in [0...depth])
+    aff_data = (reg(width,'aff').clock(clkw).noReset() for i in [0...depth])
 
-    rdata= local_reg(width,'rdata').clock(clkr).noReset()
+    rdata= reg(width,'rdata').clock(clkr).noReset()
 
     assign(rdata)
       $if(read)
@@ -201,5 +202,43 @@ module.exports={
       empty: $ empty
       full: $ full
     }
+
+  $fixArbiter: (list,defaultIndex=0)->
+    condList=[]
+    #ret = wire(getWidth(list.length))
+    for i,index in list
+      condList.push($cond(i) =>index)
+    condList.push($cond(null) => defaultIndex)
+    $order(condList)
+
+  $roundArbiter: (list,enable,defaultIndex=0,clock=null,reset=null)->
+    dataWidth=list[0].getWidth()
+    width = Math.floor(Math.log2(list.length))+1
+    if clock?
+      roundReg = reg(width,'round').clock(clock).reset(reset)
+    else
+      roundReg = reg(width,'round')
+    Net(ret,width)
+    assign(roundReg)
+      $if(enable)
+        $if(ret==list.length-1) => $ 0
+        $else => $ ret+1
+        $endif
+      $else
+        $ roundReg
+    indexArray=(wire(dataWidth,'index') for i in [0...list.length])
+    assign(indexArray[0]) = $arrayDecode(list,roundReg)
+    for i,index in indexArray when index>0
+      assign(indexArray[index])
+        $if((roundReg+index)>=list.length)
+          $arrayDecode(list,$ roundReg+index-list.length)
+        $else
+          $arrayDecode(list,$ roundReg+index)
+    condList=[]
+    for i,index in indexArray
+      condList.push($cond(i) =>index)
+    condList.push($cond(null) =>defaultIndex)
+    assign ret=$order(condList)
+    return $(ret)
 
 }

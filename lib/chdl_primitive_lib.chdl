@@ -1,13 +1,30 @@
 RecursiveIterator = require 'recursive-iterator'
 _ = require 'lodash'
+{toFlatten} = require('chdl_utils')
 
 module.exports={
   createSigArray: (type,number,width=1)->
-    return (type(width) for i in [0...number])
+    throw new Error('createSigArray is deprecated, use createArray(number,func)')
+    #return (type(width) for i in [0...number])
+
+  createArray: (number,func)->
+    return (func() for i in _.range(number))
 
   createChannelArray: (number)->
-    return (channel() for i in [0...number])
+    throw new Error('createSigArray is deprecated, use createArray(number,func)')
+    #return (channel() for i in [0...number])
 
+  numWidth: (number)->
+    Math.floor(Math.log2(number))+1
+
+  $sigMux:(select,sig1,sig2)->
+    selSig=wire(sig1.getWidth(),'sel')
+    assign(selSig)
+      $if(select) => $ sig1
+      $else => $ sig2
+      $endif
+    return $ selSig
+    
   $channelMux:(select,outChannel,inChannelList...)->
     for dst in outChannel.wireList()
       list=[]
@@ -16,7 +33,7 @@ module.exports={
         eq=$ (select==index)
         list.push($ expand(width,eq) & src.getWire(dst.path))
       if dst.dir=='input'
-        assign(dst.net) = $opJoin('|',list)
+        assign(dst.net) = $join(list,(sum,i)=>$(sum+i))
       else if dst.dir=='output'
         for src,index in inChannelList
           assign(src.getWire(dst.path)) = $ dst.net
@@ -35,6 +52,46 @@ module.exports={
           _.set(out,state.path,input(width))
       item = iterator.next()
     return out
+
+  $portHub:(list...)->
+    clone_list=list[...]
+    i=0
+    while i<clone_list.length
+      dst=clone_list.shift()
+      for [name,port] in toFlatten(dst)
+        if name
+          el=_.get(dst,name)
+          if port.getType()=='input'
+            for n in clone_list
+              find=_.get(n,name)
+              if find? and find.getType()=='output'
+                assign(find) = el
+        else
+          for n in clone_list when n.__type=='port'
+            if n.getType()=='output'
+              assign(port) = n
+      clone_list.push(dst)
+      i+=1
+
+  $channelPortHub:(list...)->
+    clone_list=list[...]
+    i=0
+    while i<clone_list.length
+      dst=clone_list.shift()
+      for [name,port] in toFlatten(dst)
+        if name
+          el=_.get(dst,name)
+          if port.getType()=='input'
+            for n in clone_list
+              find=_.get(n,name)
+              if find? and find.getType()=='output'
+                assign(el) = find
+        else
+          for n in clone_list when n.__type=='wire'
+            if n.getType()=='output'
+              assign(port) = n
+      clone_list.push(dst)
+      i+=1
 
   bundleClone:(i)->
     iterator=new RecursiveIterator(i)
@@ -57,7 +114,7 @@ module.exports={
       item = iterator.next()
     return out
 
-  $bundleUniOp:(op,o,i)->
+  $bundleMap:(o,i,func)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -65,18 +122,10 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='wire' or state.node.__type=='reg' or state.node.__type=='port'
           inWire=_.get(i,state.path)
-          assign(state.node)
-            if op=='&'
-              $ {op} (inWire)
-            else if op=='|'
-              $ {op} (inWire)
-            else if op=='~'
-              $ {op} (inWire)
-            else if op=='^'
-              $ {op} (inWire)
+          assign(state.node) => func(inWire)
       item = iterator.next()
 
-  $bundleReduceOp:(op,o,list)->
+  $bundleJoin:(o,list,func)->
     iterator=new RecursiveIterator(o)
     item=iterator.next()
     while !item.done
@@ -91,22 +140,32 @@ module.exports={
               if first
                 $ item
               else
-                if op=='+'
-                  $ sum + item
-                else if op=='-'
-                  $ sum - item
-                else if op=='*'
-                  $ sum * item
-                else if op=='^'
-                  $ sum ^ item
+                func(sum,item)
             )
       item = iterator.next()
 
   $order: (list,defaultValue=0)->
     plist=[]
+    conds=[]
+    findDefault=false
     for {cond,value} in list
-      plist.push [cond,value]
-    plist.push(defaultValue)
+      conds.push cond
+      if value?
+        if conds.length==1
+          if conds[0]==null or conds[0].str=='null'
+            plist.push(value())
+            findDefault=true
+          else
+            plist.push [conds[0],value()]
+        else
+          tmp=$join(conds,(a,b)=>$ (a)||(b))
+          plist.push [tmp,value()]
+        conds=[]
+    unless findDefault
+      console.log '##################################'
+      console.log 'Use defaultValue in $order will be deprecated, please use $cond(null) => $ default_value'
+      console.log '##################################'
+      plist.push(defaultValue)
     return $reduceRight(plist,(sum,item,first,last)=>
       if first
         $ item
@@ -118,65 +177,48 @@ module.exports={
         $endif
     )
 
-  $opJoin: (op,list)->
+  $join: (list,func)->
     return $reduce(list,(sum,item,first,last)=>
       if first
         $ item
+      else if last
+        tmp=func(sum,item)
+        $ (tmp)
       else
-        if op=='+'
-          $ sum + item
-        else if op=='-'
-          $ sum - item
-        else if op=='*'
-          $ sum * item
-        else if op=='^'
-          $ sum ^ item
-        else if op=='&&'
-          $ sum && item
-        else if op=='||'
-          $ sum || item
-        else if op=='&'
-          $ sum & item
-        else if op=='|'
-          $ sum | item
+        func(sum,item)
     )
-
-  $opPrefix: (op,sig)->
-    if op=='-'
-      $  {op}(sig)
-    else if op=='^'
-      $  {op}(sig)
-    else if op=='&'
-      $  {op}(sig)
-    else if op=='|'
-      $  {op}(sig)
-    else if op=='~'
-      $  {op}(sig)
-    else
-      throw new Error("Unknow op #{op}")
 
   $balance: (list,width=null) ->
     width=width ? @__assignWidth
     return $reduce(list,(sum,item,first,last)=>
       if(first)
-        $ (expand(width,item.cond)&(item.value))
+        $ (expand(width,item.cond)&(item.value()))
       else
-        $ sum|(expand(width,item.cond)&(item.value))
+        $ sum|(expand(width,item.cond)&(item.value()))
         )
 
   $doubleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    d1 = local_reg(width,'sync').clock(clock).noReset()
-    d2 = local_reg(width,'sync').clock(clock).noReset()
+    if clock?
+      d1 = reg(width,'sync').clock(clock).noReset()
+      d2 = reg(width,'sync').clock(clock).noReset()
+    else
+      d1 = reg(width,'sync').noReset()
+      d2 = reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     return $ d2
 
   $tripleSync: (sigIn,clock=null)->
     width=sigIn.getWidth()
-    d1 = local_reg(width,'sync').clock(clock).noReset()
-    d2 = local_reg(width,'sync').clock(clock).noReset()
-    d3 = local_reg(width,'sync').clock(clock).noReset()
+    if clock?
+      d1 = reg(width,'sync').clock(clock).noReset()
+      d2 = reg(width,'sync').clock(clock).noReset()
+      d3 = reg(width,'sync').clock(clock).noReset()
+    else
+      d1 = reg(width,'sync').noReset()
+      d2 = reg(width,'sync').noReset()
+      d3 = reg(width,'sync').noReset()
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     assign(d3) = $ d2
@@ -191,12 +233,12 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='port' or state.node.__type=='wire' or state.node.__type=='reg'
           toPoint=_.get(to,state.path)
-          assign(state.node) = $ toPoint
+          assign toPoint = state.node
       item = iterator.next()
 
   $grayNextCode: (code_word)->
     width = code_word.getWidth()+1
-    w= local_wire(width)
+    w= wire(width)
     assign(w) = $ code_word + 1
     gray_code=new Array(width-1)
     for i in [0...width-1]
@@ -214,44 +256,77 @@ module.exports={
     len=array.length
     list=[]
     for i in [0...len]
-      list.push({cond:$(i==select),value:array[i]})
+      list.push($cond(i==select) =>array[i])
     $balance(list,width)
 
-  $rise: (sig)->
-    d1 = local_reg(1,'r_'+sig.getName())
+  $rise: (sig,clock=null)->
+    if clock?
+      d1 = reg(1,'r_').clock(clock).noReset()
+    else
+      d1 = reg(1,'r_').noReset()
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
-  $fall: (sig)->
-    d1 = local_reg(1,'f_'+sig.getName())
+  $fall: (sig,clock=null)->
+    if clock?
+      d1 = reg(1,'f_').clock(clock).noReset()
+    else
+      d1 = reg(1,'f_').noReset()
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 
   $divider: (clk,n)->
     width=Math.ceil(Math.log2(n))
-    cnt = local_reg(width,'cnt')
+    cnt = reg(width,'cnt')
     assign(cnt)
       $if(cnt=={n-1}) => $ 0
       $else => $ cnt+1
       $endif
     return  $ cnt=={n-1}
 
-  $count: (n,enable)->
+  $delay: (n,sig,clock=null,reset=null)->
+    width=sig.getWidth()
+    if clock?
+      list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
+    else
+      list=(reg(width) for i in _.range(n))
+    for i in _.range(n)
+      if i==0
+        assign(list[0]) = sig
+      else
+        assign(list[i]) = list[i-1]
+    return $ list[n-1]
+
+  $count: (n,enable,clear,clock=null,reset=null)->
     width=Math.ceil(Math.log2(n))
-    cnt = local_reg(width,'cnt')
+    if clock?
+      cnt = reg(width,'cnt').clock(clock).reset(reset)
+    else
+      cnt = reg(width,'cnt')
     assign(cnt)
-      $if(enable)
+      $if(clear) => $ 0
+      $elseif(enable)
         $if(cnt=={n-1}) => $ 0
         $else => $ cnt+1
         $endif
-      $else => $ 0
+      $else => $ cnt
       $endif
     return  $ cnt=={n-1}
 
-  $hold1: (sig,clear)->
-    out = local_wire(1,'hold')
-    latch = local_reg(1,'hold')
-    assign(out) = $ sig | latch
+  $count1: (sig)->
+    list=sig.toList()
+    return $join(list,(a,b)=>$ a+b)
+
+  $hold1: (sig,clear,clock=null,reset=null)->
+    out = wire(1,'hold')
+    if clock?
+      latch = reg(1,'hold').clock(clock).reset(reset)
+      latch_clear = reg(1,'clear').clock(clock).reset(reset)
+    else
+      latch = reg(1,'hold')
+      latch_clear = reg(1,'clear')
+    assign(out) = $ (sig | latch)&(!latch_clear)
+    assign latch_clear = clear
     always
       $if(clear)
         assign(latch) = $ 0
@@ -260,10 +335,16 @@ module.exports={
       $endif
     return  $ out
 
-  $hold0: (sig,clear)->
-    out = local_wire(1,'hold')
-    latch = local_reg(1,'hold')
-    assign(out) = $ sig & latch
+  $hold0: (sig,clear,clock=null,reset=null)->
+    out = wire(1,'hold')
+    if clock?
+      latch = reg(1,'hold').init(1).clock(clock).reset(reset)
+      latch_clear = reg(1,'clear').clock(clock).reset(reset)
+    else
+      latch = reg(1,'hold').init(1)
+      latch_clear = reg(1,'clear')
+    assign(out) = $ (sig & latch) | latch_clear
+    assign latch_clear = clear
     always
       $if(clear)
         assign(latch) = $ 1
@@ -272,9 +353,12 @@ module.exports={
       $endif
     return  $ out
 
-  $holdData: (sig,enable)->
-    out = local_wire(sig.getWidth(),'hold')
-    latch = local_reg(sig.getWidth(),'hold')
+  $holdData: (sig,enable,clock=null,reset=null)->
+    out = wire(sig.getWidth(),'hold')
+    if clock?
+      latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset)
+    else
+      latch = reg(sig.getWidth(),'hold')
     assign(out)
       $if(enable) => $ sig
       $else => $ latch
@@ -286,4 +370,140 @@ module.exports={
       $endif
     return  $ out
 
+  $oneOf: (sig,list)->
+    return $reduce(list,(sum,item,first,last)=>
+      if first
+        $ (sig==item)
+      else if last
+        $ (sum||(sig==item))
+      else
+        $ sum||(sig==item)
+    )
+
+  $same: (list)->
+    sig=list[0]
+    return $reduce(list[1...],(sum,item,first,last)=>
+      if first
+        $ (sig==item)
+      else if last
+        $ (sum&&(sig==item))
+      else
+        $ sum&&(sig==item)
+    )
+
+  $inRange: (sig,low,high,inc_low=true,inc_high=true)->
+    if inc_low
+      if inc_high
+        return $ (low<=sig)&&(sig<=high)
+      else
+        return $ (low<=sig)&&(sig<high)
+    else
+      if inc_high
+        return $ (low<sig)&&(sig<=high)
+      else
+        return $ (low<sig)&&(sig<high)
+
+  $case: (sig)->
+    return (block)=>
+      cond_hold=[]
+      list=[]
+      for i in block()
+        cond_hold.push(i)
+        if i.value?
+          list.push cond_hold
+          cond_hold=[]
+      if cond_hold.length>0
+        throwe new Error('last cond function is null')
+
+      for conds in list.reverse()
+        if conds.length==1
+          if conds[0].cond? and conds[0].cond.str!='null'
+            $if(sig==conds[0].cond) => conds[0].value()
+          else
+            conds[0].value()
+        else
+          lastCond=_.last(conds)
+          condList=_.map(conds,(i)=>i.cond)
+          tmp = $reduce(condList,(sum,item,first,last)=>
+            if first
+              $ (sig==item)
+            else
+              $ sum||(sig==item)
+          )
+          $if(tmp) => lastCond.value()
+
+  $headPadding:(sig,num,v=0)->
+    return $ cat(bin(num,v),sig)
+
+  $tailPadding:(sig,num,v=0)->
+    return $ cat(sig,bin(num,v))
+
+  $headPaddingTo:(sig,total,v=0)->
+    w = sig.getWidth()
+    if w<total
+      num = total-w
+      return $ cat(bin(num,v),sig)
+    else
+      sig
+
+  $tailPaddingTo:(sig,total,v=0)->
+    w = sig.getWidth()
+    if w<total
+      num = total-w
+      return $ cat(sig,bin(num,v))
+    else
+      sig
+
+  $seqState:(stateReg,nextState,lastStateReg,bin)->
+    assign(stateReg) = nextState
+    assign(lastStateReg) = stateReg
+    for i,index in bin when i.type=='next' and i.enable?
+      assign(i.enable) = stateReg.isState(bin[index-1].id)
+    for i,index in bin when i.active? and index>0 and (index!=bin.length-1)
+      assign(i.active) = (stateReg.isState(i.id))&&(lastStateReg.isState(bin[index-1].id))
+    cache={}
+    for i,index in bin when i.next?
+      expr= $ (stateReg.getState(bin[index+1].id)==nextState)
+      if cache[expr]?
+        assign(i.next) = cache[expr]
+      else
+        assign(i.next) = expr
+        cache[expr]=i.next
+
+  $buildSeqBlock:(seqBlock)->
+    stateReg=seqBlock.stateReg
+    nextState=seqBlock.nextState
+    updateWires=seqBlock.update
+    always
+      nextState.pending(stateReg)
+      for i,index in seqBlock.bin
+        if index==0
+          lastState=stateReg.getState('idle')
+          lastBin=null
+        else
+          lastState=stateReg.getState(seqBlock.bin[index-1].id)
+          lastBin=seqBlock.bin[index-1]
+        currentState=stateReg.getState(i.id)
+        if i.type=='next'
+          $if(stateReg==lastState)
+            if i.expr==null
+              assign nextState =currentState
+            else
+              $if(i.expr)
+                assign nextState = currentState
+        else if i.type=='posedge' or i.type=='negedge' or i.type=='wait'
+          $if(stateReg==lastState)
+            if i.isLast
+              $if(i.expr)
+                assign nextState = currentState
+              $else
+                assign nextState = stateReg.getState('idle')
+            else
+              $if(i.expr)
+                assign nextState = currentState
+    always
+      for i,index in seqBlock.bin
+        if i.func?
+          $if(stateReg.isState(i.id))
+            i.func(i.active,i.next)
 }

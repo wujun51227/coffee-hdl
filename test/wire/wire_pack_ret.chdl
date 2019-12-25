@@ -23,12 +23,21 @@ class WirePackRet extends Module
         wire(5)
         wire(5)
         ]
+      w3: [
+        wire(5)
+        wire(5)
+        wire(5)
+        wire(5)
+        wire(5)
+        ]
     )
 
   build: ->
-    assign([@w1[0],@w1[1]]) = [$(@w2[3]),$(@w2[4])]
+    assign([@w1[0],@w1[1]]) =>
+      [$(@w2[3]),$(@w2[4])]
 
-    assign(@w1) = ($(i) for i in @w2)
+    assign(@w3) =>
+      ($(i) for i in @w2)
 
 module.exports=WirePackRet
 

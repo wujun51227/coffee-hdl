@@ -1,6 +1,10 @@
 #{Channel}=require('./chdl_channel')
 _ =require 'lodash'
 
+simMode=false
+
+module.exports.setSim= -> simMode=true
+
 toSignal= (i)->
   a=i.replace(/^\$\./,'')
   b=a.replace(/\.$/,'')
@@ -8,6 +12,17 @@ toSignal= (i)->
   return c
 
 module.exports.toSignal=toSignal
+
+toHier= (a,b)->
+  if a? and b? and a.trim()!='' and b.trim()!=''
+    return a+'.'+b
+  if a? and a.trim()!=''
+    return a
+  if b? and b.trim()!=''
+    return b
+  return ''
+
+module.exports.toHier=toHier
 
 toNumber=(s)->
   if isNaN(s)==false
@@ -29,34 +44,45 @@ toNumber=(s)->
 
 module.exports.toNumber=toNumber
 
-toFlatten = (data,root='') ->
+toFlatten = (data,target=null,root='') ->
   result = []
 
   recurse = (cur, prop) ->
+    checkTarget=->
+      if target? and cur.__type? and cur.__type!=target
+        throw new Error("Flatten target is #{target} but find type #{cur.__type}")
     if Object(cur) != cur
       result.push [prop, cur]
     else if cur.__type=='reg'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.__type=='port'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.__type=='wire'
+      checkTarget()
       result.push [prop, cur()]
       return
     else if cur.constructor?.name=='Port'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Channel'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Wire'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Reg'
+      checkTarget()
       result.push [prop, cur]
       return
     else if cur.constructor?.name=='Vec'
+      checkTarget()
       result.push [prop, cur]
       return
     else if _.isPlainObject(cur) and cur.leaf==true
@@ -86,38 +112,6 @@ toFlatten = (data,root='') ->
   result
 
 module.exports.toFlatten = toFlatten
-
-#cloneIO= (io,out)->
-#  if io.constructor?.name=='Port'
-#    return Channel.create()
-#  else if _.isPlainObject(io)
-#    for k,v of io
-#      if _.isPlainObject(v)
-#        bin={}
-#        out[k]=bin
-#        cloneIO(v,bin)
-#      else if _.isArray(v)
-#        bin=[]
-#        out[k]=bin
-#        cloneIO(v,bin)
-#      else
-#        out[k]=Channel.create()
-#  else if _.isArray(io)
-#    for v in io
-#      if _.isPlainObject(v)
-#        bin={}
-#        out.push bin
-#        cloneIO(v,bin)
-#      else if _.isArray(v)
-#        bin=[]
-#        out.push bin
-#        cloneIO(v,bin)
-#      else
-#        out.push Channel.create()
-#  #console.log '>>>>>',out
-#  return out
-
-#exports.cloneIO=cloneIO
 
 module.exports.portDeclare= (type,inst)->
   if type=='input'
@@ -166,7 +160,7 @@ printBuffer= do ->
   return {
     reset: -> list=[]
     clearBin: -> bin.length=0
-    add: (s)-> list.push s
+    add: (s)-> list.push s if s?
     get: -> list
     blank: (s='')-> list.push s
     setName: (s)->
@@ -222,13 +216,14 @@ module.exports.packEl = (type,bin)->
       return bin.slice(msb+lsb-1,msb)
   ret.__type=type
   ret.getName= -> bin.getName()
+  ret.sign= -> bin.sign()
   for i in Object.keys(bin) when typeof bin[i] == 'function'
     ret[i]=bin[i]
   return ret
 
 __v=(width,number)->
   if width==null
-    width=getWidth(number)
+    width=''
   if _.isString(number)
     if number.match(/^0x/)
       m=number.match(/^0x(.*)/)
@@ -240,9 +235,9 @@ __v=(width,number)->
       m=number.match(/^0b(.*)/)
       return "#{width}'b#{m[1]}"
     else
-      return "#{number}"
+      return "#{width}'d#{number}"
   else if _.isNumber(Number(number))
-    return "#{number}"
+    return "#{width}'d#{number}"
   else
     throw new Error("const value error")
 
@@ -256,29 +251,25 @@ getWidth = (number)->
 
 module.exports.hex = (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0x'+(n>>>0).toString(16))
+    __v(null,'0x'+(n>>>0).toString(16))
   else
     __v(n,'0x'+(m>>>0).toString(16))
 
 module.exports.dec= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,n>>>0)
+    __v(null,n>>>0)
   else
     __v(n,m>>>0)
 
 module.exports.oct= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0o'+(n>>>0).toString(8))
+    __v(null,'0o'+(n>>>0).toString(8))
   else
     __v(n, '0o'+(m>>>0).toString(8))
 
 module.exports.bin= (n,m=null)->
   if m==null
-    w=getWidth(n)
-    __v(w,'0b'+(n>>>0).toString(2))
+    __v(null,'0b'+(n>>>0).toString(2))
   else
     __v(n, '0b'+(m>>>0).toString(2))
 
@@ -301,6 +292,8 @@ getValue=(i)=>
     return i().refName()
   throw new Error('arg type error'+i)
 
+module.exports.getValue=getValue
+
 module.exports.cat= (args...)->
   if args.length==1 and _.isPlainObject(args[0])
     list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>getValue(i[1])).reverse()
@@ -315,13 +308,103 @@ module.exports.cat= (args...)->
 module.exports.expand= (num,sig)->
   return "{#{getValue(num)}{#{getValue(sig)}}}"
 
+module.exports.all1     = (sig)-> return  "(&#{getValue(sig)})"
+module.exports.all0     = (sig)-> return "!(|#{getValue(sig)})"
+module.exports.has1     = (sig)-> return  "(|#{getValue(sig)})"
+module.exports.has0     = (sig)-> return "!(&#{getValue(sig)})"
+module.exports.hasOdd1  = (sig)-> return  "(^#{getValue(sig)})"
+module.exports.hasEven1 = (sig)-> return "!(^#{getValue(sig)})"
+
 module.exports._expr= (s,lineno=null) ->
-  append=''
-  if lineno? and lineno>=0
-    append='/*'+lineno+'*/'
-  if s.str?
-    s.str+append
-  else if _.isArray(s)
-    s
+  if simMode
+    if s.str?
+      s.str
+    else
+      s
   else
-    s+append
+    append=''
+    if lineno? and lineno>=0
+      append=' /* '+lineno+' */ '
+    if s.str?
+      toSignal(s.str+append)
+    else if _.isArray(s)
+      s
+    else
+      toSignal(s+append)
+
+rhsTraceExpand= (target,slice,expandItem,bin=[])=>
+  if _.isString(expandItem) or _.isNumber(expandItem)
+    bin.push {type:'transfer',target:target,slice:slice,e:expandItem}
+  else if _.isArray(expandItem)
+    for item,index in expandItem
+      nextBin=[]
+      if item.cond?
+        bin.push {type:'cond',e:item.cond,action:nextBin}
+      else
+        bin.push {type:'cond',e:null,     action:nextBin}
+        bin.push {type:'condend'}
+      if _.isArray(item.value)
+        rhsTraceExpand(target,slice,item.value,nextBin)
+      else
+        nextBin.push {type:'transfer',slice:slice,e:item.value}
+  return bin
+
+ifToCond=(block,index,bin) =>
+  while index<block.length
+    i=block[index]
+    if i[0]=='if'
+      nextBin=[]
+      bin.push({type:'cond',e:i[1],action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='assign_vreg'
+      el=i[1]
+      bin.push rhsTraceExpand(el.hier,{lsb:el.lsb,msb:el.msb},i[2])...
+    else if i[0]=='elseif'
+      nextBin=[]
+      bin.push({type:'cond',e:i[1],action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='else'
+      nextBin=[]
+      bin.push({type:'cond',e:null,action:nextBin})
+      index=ifToCond(block,index+1,nextBin)
+    else if i[0]=='end'
+      break
+    else if i[0]=='endif'
+      bin.push({type:'condend'})
+    index+=1
+  return index
+
+module.exports.rhsTraceExpand= rhsTraceExpand
+
+module.exports.toEventList=(initSegmentList,list=[])=>
+  for initSegment in initSegmentList
+    item = initSegment
+    if item.type=='delay'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'delay',e:item.delay,block:block}
+    else if item.type=='posedge'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'posedge',e:item.signal,block:block}
+    else if item.type=='negedge'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'negedge',e:item.signal,block:block}
+    else if item.type=='wait'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'wait',e:item.expr,block:block}
+    else if item.type=='event'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'event',e:item.event,block:block}
+    else if item.type=='trigger'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'trigger',e:item.signal,block:block}
+    else if item.type=='idle'
+      block=[]
+      ifToCond(item.list,0,block)
+      list.push {type:'init',e:item.signal,block:block}
+

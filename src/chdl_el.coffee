@@ -1,14 +1,26 @@
+{toSignal} = require('chdl_utils')
 class CircuitEl
 
   constructor: ->
     @cell=null
     @elName=''
+    @hier=''
 
   link: (cell,name)->
     @cell=cell
-    @elName=name  # this name is flatten name
+    @elName=toSignal(name)  # this name is flatten name
+    @hier=name
+
+  toString: ->
+    @hier+'(...)'
 
   getName: -> @elName
+
+  sign: ->
+    if @cell.__sim
+      "signed(#{@hier})"
+    else
+      "$signed(#{@hier})"
 
   getPath: ->
     list=[@elName]
