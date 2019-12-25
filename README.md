@@ -9,5 +9,4 @@ Install:
     cd coffee-hdl
     npm install #or yarn install
     source sourceme.sh
-    cd test
-    ./run.bash
+    ./setup.sh
