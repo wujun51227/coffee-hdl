@@ -1,51 +1,66 @@
 class: center, middle, inverse
 
-# coffee-hdl 介绍
+# coffee-hdl Brief Introduction
 
 	伍骏 2019-12-21
 ---
 
 name: agenda
 
-# Agenda
+## Agenda
 
-1. [背景和技术栈](#stack)
-2. [设计目标](#target)
-3. [文件和模块](#module)
-4. [语法](#syntax)
-5. [函数](#function)
-6. [状态机](#state)
-7. [序列(sequence)](#sequence)
-8. [通道(channel)](#channel)
-9. [集成](#assembly)
-10. [扩展和库](#lib)
-11. [杂项和关键字](#keyword)
+1. [Tech Stack](#stack)
+2. [Target](#target)
+3. [File and Module](#module)
+4. [Paradigm](#paradigm)
+5. [Syntax](#syntax)
+6. [Function](#function)
+7. [State Machine](#state)
+8. [Sequence](#sequence)
+9. [Channel](#channel)
+10. [Assembly](#assembly)
+11. [Expand and Library](#lib)
+12. [Practice](#project)
+13. [Deficiency](#deficiency)
+14. [Keywords and Helpers](#keyword)
 
 ---
 name: stack
 
-## 背景和技术栈 
+## Tech Stack
 * coffee-hdl是以coffeescript为宿主语言的用于生成verilog代码的dsl
+* coffeescript是一种可以转换成javascript文件的编程语言,特点是语法简单,表达能力强,和javascript库可以无缝互操作。运行环境需要安装v8以上的node.js环境和2.4版本以上的coffeescript编译器。
 
-* coffeescript是一种可以转换成javascript文件的编程语言，特点是语法简单，表达能力强，有编程基础的可以在两个小时左右学会该语言，和javascript库可以无缝互操作。运行环境需要安装v8以上的node.js环境和2.4版本以上的coffeescript编译器。
-
-* 基本流程
-
-<div class="mermaid">
+```shell
+chdl_compile.coffee -a assign_simple.chdl
+```
+<div class="mermaid" style="transform:scale(0.7);">
   graph LR
-  A(chdl文件) -->|编译|B( javascript文件) -->|node.js| D(verilog文件)
+  A(chdl文件) -->|compile|B( javascript文件) -->|node.js| D(verilog文件)
+  E(chdl runtime) --> D
 </div>
 
+<pre style="transform:scale(0.7);">
+|          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬
+|          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││
+|          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘
+[13:38:18] Top file assign_simple.chdl
+[13:38:18] Generate code to directory "./"
+[13:38:18] Build cell AssignSimple ( AssignSimple )
+[13:38:18] generate code ./AssignSimple.sv
+</pre>
+
 ---
+
 name: target
 
-## 设计目标
-* verilog的相容性
+## Target
+* 与verilog的相容性
 	* 具备verilog rtl级别的所有表达能力
 	* 采用verilog相同的基本数据类型
 	* 宿主语言和生成代码有清晰边界
 	
-* 提升
+* 相对verilog加强的部分
   * 强调基于函数的复用而不是模块
   * 基于数据结构对硬件资源编程
   * 语义化表达电路结构
@@ -54,13 +69,15 @@ name: target
   * 高层次参数化设计,全动态生成verilog描述,避免第二次元编程
 
 ---
+
 name: module
 
-##  文件和模块
+##  File and Module
 
-* coffeescript-hdl模块描述文件以.chdl作为文件后缀名,一个模块一个文件
+* coffee-hdl模块描述文件以.chdl作为文件后缀名,一个模块一个文件
 
 * 例化模块需要先导入模块，使用importDesign(file_name)
+* 使用库函数需要导入函数模块, 在构造函数使用Mixin importLib(file_name)
 
 模块内容一般是三部分组成
 1. 在构造函数内申明port,wire,channel,reg,实例化子模块等资源,并且绑定channel到cell的端口
@@ -71,7 +88,7 @@ name: module
 
 ---
 
-#### 示例代码
+示例代码
 
 ```coffeescript
 cell1 = importDesign('./cell1.chdl')  #引入子模块
@@ -91,15 +108,15 @@ class ImportSimple extends Module     #申明当前模块
     )
     
     Reg(
-      data_latch: reg(16)           #申明寄存器
+      data_latch: reg(16)           #寄存器
     )
     
     Wire(
-      data_wire: wire(16)           #申明线
+      data_wire: wire(16)           #线
     )
     
     Channel(
-    	up_signal: channel()        #通道申明
+    	up_signal: channel()        #通道
     )
     
     @u0_cell1.bind(
@@ -118,10 +135,10 @@ module.exports=ImportSimple
 ---
 layout: false
 
-#### 生成代码
-
+生成代码
+```shell
 	chdl_compile.coffee test.chdl
-
+```
 .left-column[
 
 ```verilog
@@ -191,37 +208,47 @@ endmodule
 ]
 
 ---
+name: paradigm
+class: center middle
+
+## Paradigm
+
+尽可能复用函数而不是模块
+
+使用组合,Mixin,避免继承
+
+推荐链式风格函数调用,避免使用字符串作参数
+
+配置和代码分离,避免magic number
+
+逻辑和集成分离,避免glue logic
+
+
+
+---
 name: syntax
-## 语法
+## Syntax
 
 * 数值字面量
 
   
 
 * 资源申明
-
   * Port
-
   * Reg
-
   * Wire
-
   * Channel
-
     
 
 * 组合电路表达
-
   * assign 语句
   * always 语句
   * mux 电路
 
 ---
 
-###  数值字面量
+###  Number Literal
 * 数值字面量指保存在wire或者reg的bit值
-
-   
 
 * 不支持X态和Z态,只有0和1两种状态,数值字面量一般带有宽度信息
 
@@ -244,7 +271,7 @@ name: syntax
 ```
 
 ---
-### 资源申明
+### Resource
 
 硬件资源需要声明，如果申明在构造函数内部是模块作用范围有效，如果申明在成员函数内部在函数范围有效，以下是可以申明的硬件资源
 * port （必须申明在构造函数）
@@ -255,7 +282,7 @@ name: syntax
 所有的硬件资源都可以组织成数组或者对象
 
 ---
-### 资源申明 - Port
+### Resource - Port
 
 Port - 指定input 或者 output 或者绑定到channel
 
@@ -284,7 +311,10 @@ Port - 指定input 或者 output 或者绑定到channel
 可以把端口数据结构单独存放在coffee模块当中,作为协议给其他模块共享
 
 ---
-### 资源申明 - Reg
+
+class: middle
+
+### Resource - Reg
 
 Reg - 可以指定宽度,相关时钟和复位信号属性,以及初始化值
 ```coffeescript
@@ -298,12 +328,79 @@ Reg - 可以指定宽度,相关时钟和复位信号属性,以及初始化值
           # 初始化为0xff,高reset,使用clear信号作同步reset到初始化值
           ff3: reg(7).init(0xff).clock('hclk').highReset().clear('clear')
           # 参数化表达为异步高reset，使用时钟下降沿
-          ff4: reg(9).clock('hclk').reset('rstn','async',true).negedge()   
+          ff4: reg(8).clock('hclk').reset('rstn','async',true).negedge()   
       )
 ```
 
 ---
-### 资源申明 - Wire
+class: middle
+
+生成代码
+.left-column[
+```verilog
+reg [31:0] ff0;
+wire [31:0] _ff0;
+always @(posedge _clock or negedge _reset) begin
+  if(!rstn) begin
+    ff0 <= #`UDLY 0;
+  end
+  else begin
+    ff0 <= #`UDLY _ff0;
+  end
+end
+
+reg [4:0] ff1;
+reg [4:0] _ff1;
+always @(posedge hclk) begin
+  if(!rstn) begin
+    ff1 <= #`UDLY 0;
+  end
+  else begin
+    ff1 <= #`UDLY _ff1;
+  end
+end
+
+reg [5:0] ff2;
+reg [5:0] _ff2;
+always @(posedge hclk) begin
+  ff2 <= #`UDLY _ff2;
+end
+
+```
+]
+
+.right-column[
+```verilog
+reg [6:0] ff3;
+reg [6:0] _ff3;
+always @(posedge hclk or posedge rstn) begin
+  if(rstn) begin
+    ff3 <= #`UDLY 255;
+  end
+  else if(clear==1 )  begin
+    ff3 <= #`UDLY 255;
+  end
+  else begin
+    ff3 <= #`UDLY _ff3;
+  end
+end
+
+reg [7:0] ff4;
+wire [7:0] _ff4;
+always @(negedge hclk or posedge rstn) begin
+  if(rstn) begin
+    ff4 <= #`UDLY 0;
+  end
+  else begin
+    ff4 <= #`UDLY _ff4;
+  end
+end
+
+```
+]
+
+---
+### Resource - Wire
 Wire  - 指定宽度
 ```coffeescript
     Wire(
@@ -364,7 +461,7 @@ assign dout = {w3[4],w3[2],w3[0]};
 ---
 
 
-***wire的另外一种申明***
+**wire的另外一种申明**
 
 wire声明还有前缀表达形式Net wire_name/Net(wire_name,width), Net形式的申明可以在后面直接加等号或者语句块赋值
 
@@ -379,7 +476,7 @@ wire声明还有前缀表达形式Net wire_name/Net(wire_name,width), Net形式�
 		
 
 ---
-### 资源申明 - Channel
+### Resource - Channel
 Channel - 代表接在cell/pin上的一组线，不需要指定参数
 ```coffeescript
     Channel(
@@ -392,7 +489,7 @@ Channel - 代表接在cell/pin上的一组线，不需要指定参数
 ```
 
 ---
-### 电路表达
+### Expression
 * 采用“$”符号作为verilog组合电路表达式的前导符
 
 * 如果电路表达式是单行跟在assign signal  = 后面可以省略$符号
@@ -403,7 +500,7 @@ Channel - 代表接在cell/pin上的一组线，不需要指定参数
 
 * 除此以外的符号都按照字面量生成在verilog表达式当中
 
-* 三目运算符?: 使用$if $else 结构代替
+* 没有三目运算符?:, 使用$if $else 结构代替(学习go 语言)
 
 * 由于{}符号作为求值运算符存在,verilog原生的{}运算符的使用cat()函数代替
 
@@ -414,7 +511,10 @@ Channel - 代表接在cell/pin上的一组线，不需要指定参数
 * 切片选择使用括号操作符号,两种形式foo(msb:lsb),或者foo(lsb,width)
 
 ---
+class: middle
+
 示例代码
+
 ```coffeescript
 build: ->
   data=100
@@ -432,7 +532,7 @@ assign out4 = {5{data[9:7]}}
 ```
 
 ---
-### 电路表达-assign语句
+### Expression-assign
 coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为
 
 
@@ -462,7 +562,7 @@ dout1 = a + b;
 dout2 = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 ```
 ---
-### 电路表达-always语句
+### Expression-always
 always后面跟随一个语句块，语句块由$if $else和assign组成
 
 ```coffeescript
@@ -516,7 +616,7 @@ end
 ```
 
 ---
-### 电路表达-mux电路
+### Expression- mux
 
 在verilog中，mux电路会通过两种写法生成，一种是?:表达式，一种if-else语句块，在coffee-hdl语言中，这两种生成方式都被统一到$if-$else语句，编译器自动根据上下文生成相应的 ? :操作符，或者if else语句。
 
@@ -528,7 +628,7 @@ end
 * 带优先级的函数$order/$case
 * 没有优先级平行输出函数$balance
 
-请注意，这两个函数都是通过库的方式导入的普通函数，并不是语法的一部分，程序员也可以自己编程产生自己需要的形式，不需要通过元编程来解决
+**这两个函数都是通过库的方式导入的普通函数，并不是语法的一部分，程序员也可以自己编程产生自己需要的形式，不需要通过元编程来解决**
 
 ---
 class: middle
@@ -606,14 +706,14 @@ assign out = (16{cond1}&(data1))|
 ---
 name: function
 
-## 函数
+## Function
 coffee-hdl支持函数抽象表达以增强代码复用,用于产生电路的函数返回必须为$表达式
 	
 示例代码
 
 ```coffeescript
 add: (v1,v2) -> $ @in3+v1+v2
-mul: (v1,v2) -> $ v1*v2
+mul: (v1,v2) -> $ (v1*v2)
 build: ->
   assign(@out) = @add(@mul(10\h123,@in1),@in2)
 ```
@@ -621,10 +721,8 @@ build: ->
 生成代码
 
 ```verilog
-assign out = in3+10'h123*in1+in2;
+assign out = in3+(10'h123*in1)+in2;
 ```
-
-
 
 ---
 class: middle
@@ -664,7 +762,7 @@ assign dout /* 14 */ = ((!din)&__dly__0);
 ---
 name: state
 
-## 状态机
+## State Machine
 针对状态机,reg类型有以下方法来管理状态
 * stateDef(array|map): 设置可以用数组或者map设置状态名称和值，示例代码
 
@@ -687,8 +785,6 @@ localparam ff2__idle=100;
 localparam ff2__send=200;
 localparam ff2__peding=300;	
 ```
-
-
 
 ---
 
@@ -719,8 +815,6 @@ _ff1 = ff1_write
 ```
 	其中ff_write是localparam
 
-
-
 ---
 
 * stateSwitch: 使用reg内置stateSwitch方法配合$cond表达式描述状态转移
@@ -742,9 +836,6 @@ always
       ]
   )
 ```
-]
-.right-column[
-生成代码
 ```verilog
 always_comb begin
   _ff1 = ff1;
@@ -771,13 +862,10 @@ always_comb begin
   end
 end
 ```
+
 ]
-
----
-class: center
-Diagram
-
-<div class="mermaid">
+.right-column[
+<div class="mermaid" style="transform:scale(0.7);">
 stateDiagram
     [*] --> Idle
     Idle  --> Write : start
@@ -786,11 +874,12 @@ stateDiagram
     Pending --> Write : start
     Pending --> Idle
 </div>
+]
 
 ---
 name: sequence
 
-## 序列(sequence)
+## Sequence
 
 为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，序列分为可综合序列和行为序列，在initial中出现的是行为序列，目的在于描述testbench行为,在sequenace_always中出现的是可综合序列，操作对象是reg,port,wire.
 
@@ -859,9 +948,9 @@ class: middle
 ---
 name: channel
 
-## 通道(channel)
+## Channel
 
-通道是对连接的抽象,channel的作用是取代verilog例化cell时候的port-pin连接的方式.和port-pin连接主要的区别channel是运行时确定宽度信息并检查,channel可以通过传统的port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
+通道是对连接的抽象,channel的作用是取代verilog例化cell时候的port-pin连接的方式,和port-pin连接主要的区别在于channel是运行时确定宽度信息并检查,channel可以通过传统的port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
 ```coffeescript
 # 从cell pin绑定channel
 @foo.bind(
@@ -888,20 +977,18 @@ class: middle
 使用的时候，直接存取channel的Port成员下的路径
 
 ```coffeescript
-assign(@dout) = $ @cell2_port.din+@cell1_ch.Port.din(3:0)+@cell2_probe.din
+assign(@dout) = $ @cell1_ch.Port.din(3:0)+@cell2_probe.din
 ```
 
 生成代码
 ```verilog
-assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
+assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```
-
-
 
 ---
 name: assembly
 
-##  集成
+##  Assembly
 除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,还可以使用hub方式集成.
 
 申明方式如下:
@@ -1007,11 +1094,11 @@ class top extends Module
 ---
 name: lib
 
-## 扩展和库
+## Expand and Library
 
 可以通过在构造函数中  Mixin importLib('foo.chdl') 的方式导入第三方用于生成电路的函数库，Mixin的函数都是可以当作成员函数来使用，作为约定凡是返回$表达式的的函数名都需要使用$前缀,方便函数使用者区分宿主语言函数和电路生成函数。
 
-系统缺省会Mixin自带的chdl_primitive_lib函数库，该函数库提供了以下常用函数(部分)
+编译器缺省会Mixin自带的chdl_primitive_lib函数库，该函数库提供了以下常用函数(部分)
 
 .left-column[
 * $order
@@ -1041,11 +1128,127 @@ name: lib
 ]
 
 ---
+
+name: project
+
+## Practice
+
+* nne50 part
+
+* sram wrapper generator
+
+---
+### 1. nne50 part
+
+Acc Controller **源码5413行,生成verilog 30175行**
+<div class="mermaid">
+   graph TD
+    subgraph PE
+    A(MAC array)
+    B(Element Wise)
+    C(Pooling)
+    end
+    subgraph ACC Controller
+    		D(Controller)
+    		F(Local Sram Bank x12)
+    		D --> F
+	end
+    E(Lut Controller)
+    A --> D
+    B --> D
+    C --> D
+    F --> E
+</div>
+
+---
+class: middle
+Buffer to Axi port channel mux **源码2717行,生成verilog 25265行**
+<div class="mermaid">
+   graph TD
+    A(buffer write x12)  --> F
+    subgraph Channel Mux
+    F(Controller and Arbiter -- param.chdl)
+    end
+    F --> B(AXI 1)
+    F --> C(AXI 2)
+    F --> D(AXI 3)
+    E(buffer read x15) --> F
+</div>
+
+
+
+---
+
+#### Example
+高可复用函数: 在一个数组中寻找最小/最大数字对应的下标
+```coffeescript
+$pick_index:(array,sort_type='Min')->
+    width = array[0].getWidth()
+    len = array.length
+    local_wire_width = Math.floor(Math.log2(len-1))+1
+    local_w = []
+    for i in [0...len]
+      local_w.push(wire(local_wire_width))
+
+    for i,index in array
+      if index==0
+        assign(local_w[index]) = $ 0
+      else
+        last = $ ($arrayDecode(array[0...index],local_w[index-1],width))
+        if sort_type=='Min'
+          assign(local_w[index]) = $min_select(i,last,index,local_w[index-1])
+        else if sort_type == 'Max'
+          assign(local_w[index]) = $max_select(i,last,index,local_w[index-1])
+        else
+          throw new Error('not a type')
+    $ local_w[len-1]
+```
+```coffeescript
+    Wire(
+      w: @createArray(4,=>wire(10))
+    )
+  build: ->
+    Net(out,2) = $pick_index(@w)
+```
+生成代码
+```verilog
+//assign logic
+assign __t_5 /* 36 */ = 'd0 /* 36 */ ;
+assign __t_6 /* 40 */ = (w__1<(({10{0==__t_5}}&(w__0))) /* 38 */  /* 3 */ )?(1 /* 5 */ ):__t_5 /* 10 */  /* 8 */ ;
+assign __t_7 /* 40 */ = (w__2<(({10{0==__t_6}}&(w__0))|({10{1==__t_6}}&(w__1))) /* 38 */  /* 3 */ )?(2 /* 5 */ ):__t_6 /* 10 */  /* 8 */ ;
+assign __t_8 /* 40 */ = (w__3<(({10{0==__t_7}}&(w__0))|({10{1==__t_7}}&(w__1))|({10{2==__t_7}}&(w__2))) /* 38 */  /* 3 */ )?(3 /* 5 */ ):__t_7 /* 10 */  /* 8 */ ;
+assign __out_4 /* 2 */ = __t_8 /* 45 */ ;
+```
+
+
+
+---
+### 2. sram wrapper generator
+
+   根据UI选择wrapper尺寸类型以及vendor memory布局产生json配置文件,自动生成sram wrapper verilog 代码
+
+   <div class="mermaid">
+   graph TD
+    A(UI) -- 用户配置 --> B(json) 
+    C(编译sram wrapper生成器)  --> D(运行js代码) --> E(verilog代码)
+    B --> D
+   </div>
+---
+## Deficiency
+
+* 宿主语言不是静态类型语言,无法作强制类型检查,重构困难
+* 没有宽度自动推断
+* 没有chdl语言原生仿真器
+* 缩进的风格对比较长的代码不够友好
+* javascript语言的this的怪僻行为可能会带来一些困扰
+
+---
+
 name: keyword
 
-## 杂项和关键字
+## Keywords and Helpers
 
-### 便利函数
+### Helpers
 @verilog(string): 字符串输出到生成代码,示例代码
 ```coffeescript
 @verilog('$display("data is %d",ff1);')
@@ -1055,7 +1258,7 @@ name: keyword
 
 ---
 
-### 关键字
+### Keywords
 
 * **assign** signal [= expr || block]
 * **always** block
@@ -1104,5 +1307,20 @@ name: keyword
 * @**moduleParameter**(parameter_list)
 * @**instParameter**(parameter_list)
 * @**verilog**(verilog_string:string)
+
+---
+
+class: center middle
+
+# Github Link
+
+
+
+https://github.com/wujun51227/coffee-hdl.git
+
+<img src="./assets/qrcode.png" alt="qrcode" />
+
+
+
 
 

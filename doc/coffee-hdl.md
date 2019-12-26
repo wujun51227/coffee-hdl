@@ -1,12 +1,14 @@
-# coffee-hdl 用户手册 v0.2
+# coffee-hdl 用户手册 v0.3
 ##  介绍
 
-本文档是coffee-hdl(coffeescript hardware description language)的使用手册.coffee-hdl是嵌入在coffeescript编程语言中的硬件构造语言,是一种对coffeescript语言做了词法编译的改造扩充后的DSL,所以当您编写coffee-hdl时,实际上是在编写构造硬件电路的coffeescript程序.作者并不假定您是否了解如何在coffeescript中编程,我们将通过给出的例子指出必要的coffee-hdl语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
+本文档是coffee-hdl(coffeescript hardware description language)的使用手册.coffee-hdl是嵌入在coffeescript编程语言中的硬件构造语言,是一种对coffeescript语言做了词法编译的改造扩充后的DSL,所以当您编写coffee-hdl时,实际上是在编写构造硬件电路的coffeescript程序.
+
+作者并不假定您是否了解如何在coffeescript中编程,我们将通过给出的例子指出必要的coffee-hdl语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
 
 对于宿主语言coffeescript 我们建议您花费几个小时浏览[coffeescript.org](https://coffeescript.org)来学习coffeescript的基本语法,coffeescript是一门表达能力很强但是又非常简单的动态语言,最终编译器会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的coffeescript书籍 ["coffeescript in action"](https://www.manning.com/books/coffeescript-in-action).
 
 ##  安装
-coffee-hdl需要nodejs v8以上环境支持以及2.0以上版本的coffeescript编译器支持,如果操作系统没有自带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目录的bin目录就可以了.
+coffee-hdl需要nodejs v10以上环境支持以及2.4以上版本的coffeescript编译器支持,如果操作系统没有自带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目录的bin目录就可以了.
 
 coffee-hdl安装步骤
 
@@ -14,8 +16,7 @@ coffee-hdl安装步骤
 		cd coffee-hdl
 		npm install #or yarn install
 		source sourceme.sh
-		cd test
-		./run.bash
+		./setup.sh
 
 ##  设计目标
 coffee-hdl关注二进制逻辑设计,能表达所有的verilog时序电路和组合电路,包括多时钟,同步异步复位,带延迟的非阻塞赋值,时钟门控结构,请把coffee-hdl当作语义化的rtl描述语言,而不是高级抽象描述语言.coffee-hdl的设计目标按优先级排列如下:
@@ -24,7 +25,7 @@ coffee-hdl关注二进制逻辑设计,能表达所有的verilog时序电路和�
 * 方便模块集成和互联
 * 语义化指导综合等流程工具
 * 对verilog互动友好,生成代码可读性良好,易于debug
-* 强调参数化设计,动态生成verilog描述,彻底去除在verilog中使用define条件编译
+* 强调参数化设计,动态生成verilog描述,彻底去除使用define条件编译
 * 仿真器中立,对功能验证提供高层次的支持
 
 coffee-hdl的未来要实现的功能
@@ -34,7 +35,7 @@ coffee-hdl的未来要实现的功能
 
 ## 文件类型和模块
 coffeescript-hdl模块描述文件以.chdl作为文件后缀名,一个模块一个文件,导入模块
-使用importDesign(file_name),  其中file_name可以省略.chdl后缀名,如果导入普通coffeescript模块,使用标准的require方式导入,值得注意的是,导入路径的基本路径是顶层模块所在的目录.
+使用importDesign(file_name),  其中file_name可以省略.chdl后缀名,如果导入普通coffeescript模块,使用标准的require方式导入.
 
 模块内容一般是三部分组成
 1. 实例化子模块
@@ -58,15 +59,15 @@ class ImportSimple extends Module     #申明当前模块
     )
 
     Reg(
-      data_latch: reg(16)            #申明寄存器
+      data_latch: reg(16)            #寄存器
     )
 
     Wire(
-      data_wire: wire(16)           #申明线
+      data_wire: wire(16)           #线
     )
     
     Channel(
-    	up_signal: channel()       #通道申明
+    	up_signal: channel()       #通道
     )
 
     @u0_cell1.bind(
@@ -74,10 +75,10 @@ class ImportSimple extends Module     #申明当前模块
     )
 
   build: ->                         #模块内部数字逻辑
-    assign(@data_wire) = $ @up_signal.din+1
+    assign @data_wire = @up_signal.din+1
 
     always
-      assign(@data_latch) = $ @data_wire*2
+      assign @data_latch = @data_wire*2
 
 module.exports=ImportSimple
 ```
@@ -141,21 +142,22 @@ endmodule
 ##  数值字面量
 coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面不支持X态和Z态,只有0和1两种状态,数值字面量一般带有宽度信息.
 
-在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,或者使用width\\[hoxb]value字面量表达,如果使用coffeescript基本整数类型,则自动计算位宽信息,位宽计算方式遵守verilog规则.示例代码如下(test/data_type/const_data.chdl)
+在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,或者使用[width]\\[h|o|d|b]value字面量表达,如果使用coffeescript基本整数类型,则自动转换成verilog数字字面量.示例代码如下(test/data_type/const_data.chdl)
 
 		hex(12,0x123) // 12'h123
-		hex(0x123)    // 9'h123
-		hex(123)      // 7'h7b
+		hex(0x123)    // 'h123
+		hex(123)      // 'h7b
 		bin(9,12)     // 9'b1100
 		oct(12, 123)  // 7'o173
-		0x123         // 9'h123
-		0b1100        // 4'b1100
+		0x123         // 'h123
+		0b1100        // 'b1100
 		12\h123      // 12'h123
 		32\hffff55aa  //32'hffff55aa
 
-字符串,对象等数据类型无法在电路描述层面使用,但是可以在宿主程序计算的时候影响电路生成的形式
+
 
 ## 组合电路表达
+
 coffee-hdl采用“$”符号作为verilog组合电路表达式的前导符,如果电路表达式是单行跟在assign() = 后面可以省略$符号，电路表达式会产生相应的的verilog组合电路表达式,其中有几个限制需要注意
 
 * 可以用 @name 的方式直接引用模块内部的wire,reg等资源
@@ -175,14 +177,22 @@ build: ->
 ```verilog
 assign out = 101+5'h1f;
 ```
-## assign语句
-coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为assign(signal) = expr 或者 assign(signal) 缩进语句块, signal为申明的reg/wire,缩进语句块的返回值必须是$表达式产生的verilog语句
-	
-在coffee-hdl中,可以写出如下代码表达组合电路信号传递
+## assign
+coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为
+```coffeescript
+assign signal  = expr 
+```
+或者 
+```coffeescript
+assign signal
+   语句块
+```
+语句块的返回值必须是$表达式产生的verilog语句
 
 示例代码 (test/control/branch_test.chdl)
+
 ```coffeescript
-assign(@dout)
+assign @dout
   $if(@sel1)    =>     $ @din+1
   $elseif(@sel2)  =>   $ @din+2
   $elseif(@sel3)  =>   $ @din+3
@@ -195,49 +205,68 @@ assign(@dout)
 dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 ```
 
-请注意dout信号始终保持wire语义,而不必像verilog在使用if else的情况下需要把wire声明成reg,模块中申明的reg类型都是真实的寄存器
+dout信号始终保持wire语义,而不必像verilog在使用if else的情况下需要把wire声明成reg,模块中申明的reg类型都是真实的寄存器
 
-无优先级并行电路可以使用$balance/$cond语句,前提是程序员需要保证cond1,cond2互斥
-
-示例代码(test/control/branch_test.chdl)
-
-```coffeescript
-assign(@out)
-   $balance([                                      
-    $cond(@cond1) => $ @data1                                           
-    $cond(@cond2) => $ @data2                                           
-  ] , 16)
-```
-生成代码
-```verilog
-assign out = (16{cond1}&(data1))|
-            (16{cond2}&(data2));
-```
-
-如果需要批量化产生if elseif else语句,可以使用$order语句
-
-示例代码(test/control/branch_test.chdl)
-```coffeescript
-assign(@w2.w6)
-  $order([
-    $cond(@in1(1)) => $ @w2.w3(9:7)
-    $cond(@in1(2)) => $ @w2.w3(3:1)
-	  $cond(@in1(3))
-    $cond(@in1(4)) => $ 100
-    $cond() => $ @w2.w3(6:4)
-    ]
-  )
-```
-
-生成代码
-```verilog
-assign w2__w6 =(in1[1])?(w2__w3[9:7]):(in1[2])?(w2__w3[3:1]):(((in1[3])||(in1[4])))?(100):w2__w3[6:4];
-```
 通过和coffeescript语言结合,可以基于规格化输入格式生成verilog代码(demo/rsicv32i_decoder.chdl).
 
-## wire 类型
-wire类型是用于表达组合电路输出结果的元素,对应生成verilog的wire,但是增加了很多特性,特别式可以申明为数据结构便于编程,最简单声明方式如下
-		
+
+
+## always
+
+always后面跟随一个语句块，语句块由$if $else和assign组成
+
+```coffeescript
+	always
+	  语句块
+```
+
+always内部assign也是对wire赋值，如果赋值对象是寄存器名，则实际是对寄存器D端的wire赋值，编译器会通过给被赋值wire加上pending值确保不会生成意外的latch
+
+always_if(cond) 是对
+```coffeescript
+	always
+		$if(cond)
+			语句块
+```
+的简化写法
+
+---
+class: middle
+示例代码
+```coffeescript
+dout = reg(8)
+always
+	$if(sel1)
+		assign dout = 1
+	$elseif(sel2)
+		assign dout = 2
+```
+生成代码
+```verilog
+reg [7:0] dout;
+wire [7:0] _dout;
+always @(negedge _clock or negedge _reset) begin
+  if(!_reset) begin
+    dout <= #`UDLY 0;
+  end
+  else begin
+    dout <= #`UDLY _dout;
+  end
+end
+
+always_comb begin 
+  _dout = dout;
+  if(sel1) begin 
+  	_dout = 'd1;
+  end
+  else if(sel2) begin
+  	_dout = 'd2;
+  end
+end
+```
+
+## wire 
+wire类型是用于表达组合电路输出结果的元素,对应生成verilog的wire,最简单声明方式如下
 ```coffeescript
 Wire wire_name: wire(width)
 ```
@@ -294,8 +323,8 @@ constructor: ->
     )
     
 build:->
-  assign(@result.field('carry')) = 1
-  assign(@result.field('sum')) = 32\h12345678
+  assign @result.field('carry') = 1
+  assign @result.field('sum') = 32\h12345678
 ```
 生成代码
 ```verilog
@@ -313,7 +342,7 @@ Wire (
 )
 
 build: ->
-    assign(@out) = $ @in.reverse()
+    assign @out = @in.reverse()
 ```
 生成代码
 ```verilog
@@ -323,208 +352,30 @@ assign out = {in[0],in[1],in[2],in[3],in[4],in[5],in[6],in[7]};
 ```
 示例代码(test/wire/wire_simple.chdl)
 ```coffeescript
-assign(@out) = $ @in.select((i,bit)=> i%2==0)
+assign @out = @in.select((i,bit)=> i%2==0)
 ```
 生成代码
 ```verilog
 assign dout = {w3[4],w3[2],w3[0]};
 ```
 
-对wire类型的逻辑操作符完全兼容verilog语法
-	
-## 函数抽象
-coffee-hdl支持函数抽象表达以增强代码复用,函数声明方式是普通
-coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
-	
-示例代码(test/function/func_test.chdl)
-```coffeescript
-add: (v1,v2) -> $ @in3+v1+v2
-mul: (v1,v2) -> $ v1*v2
-build: ->
-  assign(@out) = @add(@mul(10\h123,@in1),@in2)
-```
 
-生成代码
 
-```verilog
-assign out = in3+10'h123*in1+in2;
-```
+**wire的另外一种申明**
 
-函数抽象可以无限嵌套调用.
-	
-## 寄存器,时钟,复位信号
-coffee-hdl中的reg类型元素和verilog中d-flipflop存储类型对应,寄存器相关的有时钟
-和复位信号可以来自于以下几处定义,后一种定义优先级更高.
-1. 如果没有设置@disableAutoClock(),模块会自动生成_clock,_reset两个输入信号作为defaultclock,defaultreset
-2. 继承自上级模块的defaultclock,defaultreset会覆盖当前的_clock,_reset
-3. 当前模块指定的第一个clock和reset属性的input作为defaultclock,defaultreset
-4. 申明reg时候指定的clock/reset信号,如果没有指定,选择defaultclock,defaultreset
-clock相关示例代码请参见(test/clock/)
+wire声明还有前缀表达形式Net wire_name/Net(wire_name,width), Net形式的申明可以在后面直接加等号或者语句块赋值
 
-简单的声明形式如下
-    
-```coffeescript
-Reg ff_simple: reg(16)
-```
+> Net foo = bar 
 
-指定clock,reset信号的寄存器申明如下
-	
-```coffeescript
-Reg ff_full: reg(16).clock('clock').init(0).reset('rstn')
-```
+相当于
+> foo = wire()
+>
+> assign foo = bar
 
-coffee-hdl中reg是一个大幅度增强语义的类型元素,在声明的时候可以指定相关时钟信号名字,复位信号名和复位值,还可以指定式异步复位还是同步复位,编译器会产生对应的verilog代码来表现这些特性,coffee-hdl编程的时候可以过滤这些特性获取reg列表.
+的缩略形式
 
-reg可以和wire一样组织成数组类型,map类型或者复合类型数据结构.reg在生成verilog
-代码的时候会产生一个伴生的d端信号,用"_"作前缀.比如上述就寄存器会自动产生如下代码
-	
-```verilog
-reg [15:0] ff_full;
-reg [15:0] _ff_full;
-always @(posedge clock or nedgedge rstn) begin
-	if(!rstn) begin
-		ff_full <= 0;
-	end
-	else begin
-		ff_full <= _ff_full;
-	end
-end 
-```
-
-此后所有对ff_full寄存器的赋值都体现在对_ff_full信号赋值的组合逻辑中.
-
-	进一步加强的语义包括如下一些方法：
-	
-	* enable(signal,enable_value) reg使能信号,可以根据全局策略自动生成clock gating电路
-	* clock(clock_name) 指定clock信号名
-	* reset(reset_name,'async'|'sync',0|1)
-	* syncReset()  同步复位
-	* highReset() 复位信号高有效,缺省是低有效
- ~~maxcut(value) 赋值如果大于最大值截断到最大值~~
-
- ~~maxround(value)  赋值如果大于等于最大值,绕回到复位值~~
-
- ~~hold(signal,cycles) 当signal为高时,维持当前值cycles个周期~~
-
- ~~onecycle(signal) 当signal为高时,维持当前值1一个周期,然后回到复位值~~
-
- ~~decode(address,addrwire) 根据地址线解码选择~~
-
- ~~read(readenwire,readdataout) 配合decode读出数据~~
-
- ~~write(writeenwire,writedatain) 配合decode写入数据~~
-	
-	加强的语义会产生相应的verilog代码,或者在生成verilog代码的时候作相应的检查
-
-## 状态机
-针对状态机,reg类型有以下方法来管理状态
-* stateDef(array|map)
-
-  设置状态名称,示例代码(test/reg/reg_state.chdl)
-
-```coffeescript
-@ff1.stateDef(['idle','write','pending','read'])
-```
-
-  生成代码
-
-```verilog
-localparam ff1__idle = 0;
-localparam ff1__write = 1;
-localparam ff1__pending = 2;
-localparam ff1__read = 3;
-```
-
-  也可以用map数据类型指定状态值,示例代码(test/reg/reg_state.chdl)
-		
-```coffeescript
-@ff2.statedef({
-	idle: 100
-	send: 200
-	pending: 300
-	})
-```
-
-生成代码
-```verilog
-localparam ff2__idle=100;
-localparam ff2__send=200;
-localparam ff2__peding=300;	
-```
-
-* isState(state_name)
-
-  判定寄存器值是某个状态,比如
-		
-```coffeescript
-@ff1.isState('idle')
-```
-  生成如下代码
-		
-```verilog
-ff1==ff1__idle
-```
-
-* notState(state_name)
-
-  判定寄存器值不是某个状态,等价于isState取反
-
-* setState(state_name)
-
-  设置状态,比如
-		
-```coffeescript
-@ff1.setState('write')
-```
-  生成如下代码
-			
-```verilog
-_ff1 = ff1_write
-```
-	其中_ff是寄存器d端,ff_write是localparam
-
-* stateSwitch
-
-  状态转移逻辑如果足够简单的话可以使用reg内置stateSwitch方法设定
-
-示例代码(test/reg/reg_state.chdl)
-```coffeescript
-always
-  @ff1.stateSwitch(
-    'write': [
-      $cond(@stall==1) => 'pending'
-      $cond(@stall==1) => 'idle'
-    ]
-    'pending': [
-      $cond(@readEnable==1) => 'read'
-      $cond() => 'idle'
-      ]
-  )
-```
-生成代码
-```verilog
-always_comb begin
-  _ff1 = ff1;
-  if(ff1==ff1__write) begin
-    if(stall==1) begin
-      _ff1 = ff1__pending;
-    end
-    else if(stall==1) begin
-      _ff1 = ff1__idle;
-    end
-  end
-  if(ff1==ff1__pending) begin
-    if(readEnable==1) begin
-      _ff1 = ff1__read;
-    end
-    else begin
-      _ff1 = ff1__idle;
-    end
-  end
-end
-```
-## 端口
-在 coffee-hdl中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,端口也可以组织成数组,map,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为协议给hdl模块共享
+## port
+在 coffee-hdl中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,端口也可以组织成数组,对象,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为协议给hdl模块共享
 
 示例代码(test/port/port_complex.chdl)
 
@@ -579,12 +430,199 @@ module PortComplex(
 endmodule
 ```
 端口进一步加强的语义包括如下一些方法：
-* fromReg(reg_name:string): 当前output端口为reg_name的q端 (test/reg/reg_simple.chld)
+* asReg(): 当前output端口为reg的q端 (test/reg/reg_simple.chld)
 			
 
 除了标准的input/output以外,还可以用bind(channel_name)的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见下一章.
+
+
 	
-## 通道(channel)
+## reg,时钟,复位信号
+coffee-hdl中的reg类型元素和verilog中d-flipflop存储类型对应,寄存器相关的有时钟
+和复位信号可以来自于以下几处定义,靠前的定义优先级更高.
+
+1. 申明reg时候指定的clock/reset信号,如果没有指定,选择defaultclock,defaultreset
+2. 当前模块指定的第一个clock和reset属性的input作为defaultclock,defaultreset
+3. 继承自上级模块的defaultclock,defaultreset
+4. 如果没有设置@disableAutoClock(),模块会自动生成_clock,_reset两个输入信号作为defaultclock,defaultreset
+
+clock相关示例代码请参见(test/clock/)
+
+简单的声明形式如下
+    
+```coffeescript
+Reg ff_simple: reg(16)
+```
+
+指定clock,reset信号的寄存器申明如下
+	
+```coffeescript
+Reg ff_full: reg(16).clock('clock').init(0).reset('rstn')
+```
+
+coffee-hdl中reg是一个大幅度增强语义的类型元素,在声明的时候可以指定相关时钟信号名字,复位信号名和复位值,还可以指定式异步复位还是同步复位,编译器会产生对应的verilog代码来表现这些特性,coffee-hdl编程的时候可以过滤这些特性获取reg列表.
+
+reg可以组织成数组,对象类型或者复合类型数据结构.在生成verilog
+代码的时候会产生一个伴生的d端信号,用"_"作前缀.比如上述就寄存器会自动产生如下代码
+	
+```verilog
+reg [15:0] ff_full;
+reg [15:0] _ff_full;
+always @(posedge clock or nedgedge rstn) begin
+	if(!rstn) begin
+		ff_full <= 0;
+	end
+	else begin
+		ff_full <= _ff_full;
+	end
+end 
+```
+
+此后所有对ff_full寄存器的赋值都体现在对_ff_full信号赋值的组合逻辑中.
+
+进一步加强的语义包括如下一些方法：
+	
+* clock(clock_name) 指定clock信号名
+* reset(reset_name,'async'|'sync',0|1)
+* syncReset()  同步复位
+* highReset() 复位信号高有效,缺省是低有效
+	
+
+加强的语义会产生相应的verilog代码,或者在生成verilog代码的时候作相应的检查
+
+
+
+## 函数抽象
+
+coffee-hdl支持函数抽象表达以增强代码复用,函数声明方式是普通
+coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
+	
+示例代码(test/function/func_test.chdl)
+
+```coffeescript
+add: (v1,v2) -> $ @in3+v1+v2
+mul: (v1,v2) -> $ v1*v2
+build: ->
+  assign @out = @add(@mul(10\h123,@in1),@in2)
+```
+
+生成代码
+
+```verilog
+assign out = in3+10'h123*in1+in2;
+```
+
+函数抽象可以嵌套调用.
+
+## 状态机
+针对状态机,reg类型有以下方法来管理状态
+* stateDef(array|map)
+
+  设置状态名称,示例代码(test/reg/reg_state.chdl)
+
+```coffeescript
+@ff1.stateDef(['idle','write','pending','read'])
+```
+
+  生成代码
+
+```verilog
+localparam ff1__idle = 0;
+localparam ff1__write = 1;
+localparam ff1__pending = 2;
+localparam ff1__read = 3;
+```
+
+  也可以用对象数据类型指定状态值,示例代码(test/reg/reg_state.chdl)
+		
+```coffeescript
+@ff2.statedef({
+	idle: 100
+	send: 200
+	pending: 300
+	})
+```
+
+生成代码
+```verilog
+localparam ff2__idle=100;
+localparam ff2__send=200;
+localparam ff2__peding=300;	
+```
+
+* isState(state_name)
+
+  判定寄存器值是某个状态,比如
+		
+```coffeescript
+@ff1.isState('idle')
+```
+  生成如下代码
+		
+```verilog
+ff1==ff1__idle
+```
+
+* notState(state_name)
+
+  判定寄存器值不是某个状态,等价于isState取反
+
+* setState(state_name)
+
+  设置状态,比如
+		
+```coffeescript
+@ff1.setState('write')
+```
+  生成如下代码	
+```verilog
+_ff1 = ff1_write
+```
+其中_ff是寄存器d端,ff_write是localparam
+
+* stateSwitch
+
+  状态转移逻辑可以使用reg内置stateSwitch方法设定
+
+示例代码(test/reg/reg_state.chdl)
+```coffeescript
+always
+  @ff1.stateSwitch(
+    'write': [
+      $cond(@stall==1) => 'pending'
+      $cond(@stall==1) => 'idle'
+    ]
+    'pending': [
+      $cond(@readEnable==1) => 'read'
+      $cond() => 'idle'
+      ]
+  )
+```
+生成代码
+```verilog
+always_comb begin
+  _ff1 = ff1;
+  if(ff1==ff1__write) begin
+    if(stall==1) begin
+      _ff1 = ff1__pending;
+    end
+    else if(stall==1) begin
+      _ff1 = ff1__idle;
+    end
+  end
+  if(ff1==ff1__pending) begin
+    if(readEnable==1) begin
+      _ff1 = ff1__read;
+    end
+    else begin
+      _ff1 = ff1__idle;
+    end
+  end
+end
+```
+
+
+## 通道
 
 通道是对连接的抽象,在coffee-hdl中,channel的作用是取代verilog例化cell时候的port-pin连接的方式.和port-pin连接主要的区别channel是运行时确定宽度信息并检查,channel可以通过传统的port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
 ```coffeescript
@@ -610,12 +648,12 @@ Port(
 把channel作为wire使用时候，直接存取channel的Port成员下的路径
 
 ```coffeescript
-assign(@dout) = $ @cell2_port.din+@cell1_ch.Port.din(3:0)+@cell2_probe.din
+assign @dout = $ @cell1_ch.Port.din(3:0)+@cell2_probe.din
 ```
 
 生成代码
 ```verilog
-assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
+assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```
 
 ## 序列
@@ -643,28 +681,28 @@ assign dout = cell2_port__din+cell1_ch__din[3:0]+cell2_probe__din;
 可综合事件对应的回调函数带有两个参数，第一个参数trans是进入状态的的信号,第二个参数next是退出状态时候的信号
 
 示例代码(test/express/sequence_in_always.chdl)
+
+示例代码
 		
 ```coffeescript
-$sequence('writesSeq') =>
-	assign(@aa) = $ 0  
-.posedge(@sel) =>
-	assign(@aa) = $ 1
-.next(5)=>
-	assign(@aa) = $ 2
-.negedge(@sel) (trans,next)=>
-	$if(trans)
-		assign(@aa) = $ 3
-	$elseif(next)
-		assign(@aa) = $ 4
-	 $else
-	 	assign(@aa) = $ 5
-.wait($(@aa==1)) =>
-	assign(@aa) = $ 6
-.end()
+ $sequence('writeSeq') =>
+        assign @cs = 0
+      .posedge(@sel) =>
+        assign @cs = 1
+        assign @addr_out = @addr
+      .next(5) =>
+      .negedge(@sel) (trans,next)=>
+        $if(trans)
+          assign @cs = 0
+        $elseif(next)
+          assign @addr_out = 16\hffff
+      .wait($(@finish==1)) =>
+        assign @addr = @addr+4
+      .end()
 ```
-在initial当中的sequence自由组合调用，编译结果是verilog行为语句，目的在于描述testbench行为。
+在initial当中的sequence，编译结果是verilog行为语句，目的在于描述testbench行为。
 
-在sequence_always当中如果单独使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是直接进入第一个状态，也可以使用sequence_series(seq1,seq2...)形式把多个序列串接在一起，编译器会自动生成序列之间的握手电路，每一个序列最终都必须回到idle状态。
+在always当中如果使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是直接进入第一个状态.
 
 ## 分支
 coffee-hdl 提供了能生成等价if else形式的verilog代码的能力,coffee-hdl的数字逻辑分支形式如下
@@ -685,12 +723,6 @@ assign(@w2.w4)
   $elseif(@in1==hex(5,2))
     $ @w2.w3+2
 
-assign(@w2.w4)
-  $balance([
-    $cond(@in1(1)) => $ @w2.w4
-    $cond(@in1(2)) => $ @w2.w5
-  ],@w2.w4.getWidth())
-
 always
   $if(@in1==hex(5,1))
     assign(@r1(3,1)) = $ @din(4,2)+0x100
@@ -700,7 +732,6 @@ always
 生成代码
 ```verilog
 assign w2__w4 = (in1==5'h1)?w2__w3+1'b1:(in1==5'h2)?w2__w3+2'd2:0;
-assign w2__w5 = ({32{in1[1]}}&(w2__w4))|({32{in1[2]}}&(w2__w5));
 always_comb begin
    _r1=r1;
    if(in1==5'h1) begin
@@ -711,17 +742,77 @@ always_comb begin
    end
  end
 ```
-## 便利函数
-@verilog(string)
-> 字符串输出到生成代码,例如
+
+
+
+
+无优先级并行电路可以使用$balance语句,前提是程序员需要保证cond1,cond2互斥
+
+示例代码(test/control/branch_test.chdl)
 
 ```coffeescript
-@verilog('$display("data is %d",ff1);')
+assign(@out)
+   $balance([                                      
+    $cond(@cond1) => $ @data1                                           
+    $cond(@cond2) => $ @data2                                           
+  ] , 16)
+```
+生成代码
+```verilog
+assign out = (16{cond1}&(data1))|
+            (16{cond2}&(data2));
 ```
 
-会在生成的verilog代码中插入 $display("data is %d",ff1);
-示例代码(test/function/func_test.chdl)
-	 
+如果需要批量化产生if elseif else语句,可以使用$order/$case语句
+
+$order 示例代码(test/control/branch_test.chdl)
+```coffeescript
+assign @w2.w6
+  $order([
+    $cond(@in1(1)) => $ @w2.w3(9:7)
+    $cond(@in1(2)) => $ @w2.w3(3:1)
+	  $cond(@in1(3))
+    $cond(@in1(4)) => $ 100
+    $cond() => $ @w2.w3(6:4)
+    ]
+  )
+```
+
+生成代码
+```verilog
+assign w2__w6 =(in1[1])?(w2__w3[9:7]):(in1[2])?(w2__w3[3:1]):(((in1[3])||(in1[4])))?(100):w2__w3[6:4];
+```
+$case 示例代码
+
+```coffeescript
+  always
+      $case(@casein) =>
+        [
+          $lazy_cond(10) =>
+            assign(@caseout) = 100
+          $lazy_cond(20)
+          $lazy_cond(30)
+          $lazy_cond(40) =>
+            assign(@caseout) = 200
+          $lazy_cond() =>
+            assign(@caseout) = 300
+        ]
+```
+
+生成代码
+```verilog
+always_comb begin /* 121 */ 
+  caseout=0;
+  caseout /* 131 */ = 'd300;
+  if((casein=='d20)||(casein=='d30)||(casein=='d40)) begin
+  	caseout /* 129 */ = 'd200;
+  end
+  if(casein=='d10) begin
+      caseout /* 125 */ = 'd100;
+  end
+end
+```
+
 ##  集成
 除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,coffee-hdl还可以使用hub方式集成.
 
@@ -749,14 +840,90 @@ class HubSimple extends Module
     $channelPortHub(@aaa,@bbb)
 ```
 
+通过channel的连接方式,模块的层次结构很容易重构,如下面的例子所示
+
+Diagram 1
+
+```mermaid
+  graph LR
+    aaa-- channel 1---bbb
+    aaa-- channel 2---ccc
+    subgraph domain1
+    aaa
+    end
+    subgraph domain2
+    bbb
+    ccc
+    end
+```
+
+```coffeescript
+class top extends Module
+  domain1: new cell1()
+  domain2: new cell2()
+
+  constructor: ->
+    super()
+
+    Probe(
+      aaa1: 'domain1.ch1'
+      aaa2: 'domain1.ch2'
+      bbb: 'domain2.ch'
+      ccc: 'domain2.ch'
+    )
+
+  build: ->
+    $channelPortHub(@aaa1,@bbb)
+    $channelPortHub(@aaa2,@ccc)
+```
+
+---
+Diagram 2
+```mermaid
+  graph LR
+    aaa-- channel 1---bbb
+    aaa-- channel 2---ccc
+    subgraph domain1
+    aaa
+    end
+    subgraph domain2
+    ccc
+    end
+    subgraph domain3
+    bbb
+    end
+```
+
+```coffeescript
+class top extends Module
+  domain1: new cell1()
+  domain2: new cell2()
+  domain3: new cell3()
+
+  constructor: ->
+    super()
+
+    Probe(
+      aaa1: 'domain1.ch1'
+      aaa2: 'domain1.ch2'
+      ccc: 'domain2.ch'
+      bbb: 'domain3.ch'
+    )
+
+  build: ->
+    $channelPortHub(@aaa1,@bbb)
+    $channelPortHub(@aaa2,@ccc)
+```
+
+
+
 ## 关键字
+
 操作符
 
 * assign signal [= expr || block]
 * always block
 * always_if(cond) block
-* expand(times,signal)
-* cat(signal1,signal2...)
 
 类型
 
@@ -767,20 +934,16 @@ class HubSimple extends Module
 * reg(width:number)
 * channel()
 * wire(width:number)
-* hex(width:number,value:number)
-* oct(width:number,value:number)
-* bin(width:number,value:number)
-* dec(width:number,value:number)
 
 电路生成
 
 * $if(expr)
 * $elseif(expr)
 * $else
-* $balance(list:array,number?)
-* $order(list:array)
 * $cond(expr) =>
 * $ expr
+* expand(times,signal)
+* cat(signal1,signal2...)
 
 模块资源申明
 
