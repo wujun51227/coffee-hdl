@@ -1,4 +1,3 @@
-#{Channel}=require('./chdl_channel')
 _ =require 'lodash'
 
 simMode=false

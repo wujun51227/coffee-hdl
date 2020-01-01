@@ -222,7 +222,7 @@ class Module
   _dumpPort: ->
     out={}
     for [name,item] in toFlatten(@__ports)
-      _.set(out,name,{dir:item.getType(),width:item.getWidth()})
+      _.set(out,name,{dir:item.getType(),width:item.getWidth(),sigName:toSignal(item.getName())})
     return out
 
   _dumpReg: ->
