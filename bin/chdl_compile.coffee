@@ -28,6 +28,7 @@ program
   .option('-a, --autoClock')
   .option('-t, --tree')
   .option('-i, --info')
+  .option('-n, --new <module name>')
   .option('--flist <file list name>')
   .option('--sim')
   .option('--nolineno')
@@ -35,6 +36,34 @@ program
   .parse(process.argv)
 
 debug = program.debug ? false
+
+if program.new?
+  moduleName = program.new
+  code = """
+class #{moduleName} extends Module
+  constructor: ->
+    super()
+
+    #CellMap(name: new cell())
+
+    Port(
+    )
+
+    Wire(
+    )
+
+    Reg(
+    )
+
+    Channel(
+    )
+
+  build: ->
+
+module.exports=#{moduleName}
+"""
+  fs.writeFileSync("./#{moduleName}.chdl",code,'utf8')
+  process.exit()
 
 cfg={
   autoClock: program.autoClock ? false
