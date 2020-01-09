@@ -216,19 +216,20 @@ class Wire extends CircuitEl
 
   verilogDeclare: ->
     list=[]
+    fakeReg=@share.alwaysList!=null
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
     if @width==1
-      if @staticWire
-        list.push "wire "+@elName+";"
-      else
+      if fakeReg?
         list.push "reg "+@elName+";"
-    else if @width>1
-      if @staticWire
-        list.push "wire ["+(@width-1)+":0] "+@elName+";"
       else
+        list.push "wire "+@elName+";"
+    else if @width>1
+      if fakeReg?
         list.push "reg ["+(@width-1)+":0] "+@elName+";"
+      else
+        list.push "wire ["+(@width-1)+":0] "+@elName+";"
     return list.join("\n")
 
   setWidth:(w)-> @width=w
