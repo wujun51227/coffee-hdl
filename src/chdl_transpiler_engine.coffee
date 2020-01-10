@@ -179,44 +179,44 @@ findAssignBlock= (tokens,callEnd)->
     if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1] is '$'
       [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
       tokens.splice(exprCallEnd,0,
-        ['CALL_END',')',{}]
+        ['CALL_END',')',{range:[]}]
       )
       tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{}]
-        ['=>','=>',{}]
+        ['CALL_START','(',{range:[]}]
+        ['=>','=>',{range:[]}]
       )
       return 2
     else if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1].match(/^\$/)
       [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
       tokens.splice(exprCallEnd,0,
-        ['CALL_END',')',{}]
+        ['CALL_END',')',{range:[]}]
       )
       tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{}]
-        ['=>','=>',{}]
+        ['CALL_START','(',{range:[]}]
+        ['=>','=>',{range:[]}]
       )
       return 2
     else
       termEnd=findBreak(tokens,callEnd)
       tokens.splice(termEnd,0,
-        ['CALL_END',')',{}]
-        ['CALL_END',')',{}]
+        ['CALL_END',')',{range:[]}]
+        ['CALL_END',')',{range:[]}]
       )
       tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{}]
-        ['=>','=>',{}]
-        ['IDENTIFIER','$',{}]
-        ['CALL_START','(',{}]
+        ['CALL_START','(',{range:[]}]
+        ['=>','=>',{range:[]}]
+        ['IDENTIFIER','$',{range:[]}]
+        ['CALL_START','(',{range:[]}]
       )
       return 5
   else if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
-      ['CALL_END',')',{}]
+      ['CALL_END',')',{range:[]}]
     )
     tokens.splice(callEnd+1,0,
-      ['CALL_START','(',{}]
-      ['=>','=>',{}]
+      ['CALL_START','(',{range:[]}]
+      ['=>','=>',{range:[]}]
     )
     return 3
   else
@@ -226,19 +226,19 @@ findAlwaysBlock= (tokens,callEnd,lineno=-1)->
   if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
-      ['CALL_END',')',{}]
+      ['CALL_END',')',{range:[]}]
     )
     tokens.splice(callEnd+1,0,
-      ['CALL_START','(',{}]
-      ['NUMBER',"'"+String(lineno)+"'",{}]
-      [',',',',{}]
-      ['=>','=>',{}]
+      ['CALL_START','(',{range:[]}]
+      ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+      [',',',',{range:[]}]
+      ['=>','=>',{range:[]}]
     )
     return 5
   else
     tokens.splice(callEnd+2,0,
-      ['NUMBER',"'"+String(lineno)+"'",{}]
-      [',',',',{}]
+      ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+      [',',',',{range:[]}]
     )
     return 2
 
@@ -246,21 +246,21 @@ findCondBlock= (tokens,callEnd)->
   if tokens[callEnd+1][0] is 'CALL_START' and tokens[callEnd+2][0] isnt '=>'
     [dummy,nextCallEnd]=findCallSlice(tokens,callEnd+1)
     tokens.splice(nextCallEnd,0,
-      ['OUTDENT','2',{}]
+      ['OUTDENT','2',{range:[]}]
     )
     tokens.splice(callEnd+2,0,
-      ['=>','=>',{}]
-      ['INDENT','2',{}]
+      ['=>','=>',{range:[]}]
+      ['INDENT','2',{range:[]}]
     )
     return 3
   else if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
-      ['CALL_END',')',{}]
+      ['CALL_END',')',{range:[]}]
     )
     tokens.splice(callEnd+1,0,
-      ['CALL_START','(',{}]
-      ['=>','=>',{}]
+      ['CALL_START','(',{range:[]}]
+      ['=>','=>',{range:[]}]
     )
     return 3
   else
@@ -296,12 +296,12 @@ scanToken= (tokens,index)->
       i++
   else if isHex or isOct or isBin or isDec
     token=tokens[index]
-    ret.push ['IDENTIFIER','__v',{}]
-    ret.push ['CALL_START','(',{}]
-    ret.push ['NULL','null',{}]
-    ret.push [',',',',{}]
-    ret.push ['STRING',"'"+String(token[1])+"'",{}]
-    ret.push ['CALL_END',')',{}]
+    ret.push ['IDENTIFIER','__v',{range:[]}]
+    ret.push ['CALL_START','(',{range:[]}]
+    ret.push ['NULL','null',{range:[]}]
+    ret.push [',',',',{range:[]}]
+    ret.push ['STRING',"'"+String(token[1])+"'",{range:[]}]
+    ret.push ['CALL_END',')',{range:[]}]
     return [1,ret]
   else if nativeItem
     start_index=index
@@ -316,13 +316,13 @@ scanToken= (tokens,index)->
         list
       ]
   else if tokens[index][0]=='NUMBER' and tokens[index+1][0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
-    token = ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+    token = ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{range:[]}]
     return [3,[token]]
   else if tokens[index][0]=='\\' and tokens[index+1]?[1].match(/^[hdob]/)
-    token = ['STRING',"'"+String("\\'"+tokens[index+1][1])+"'",{}]
+    token = ['STRING',"'"+String("\\'"+tokens[index+1][1])+"'",{range:[]}]
     return [2,[token]]
   else if tokens[index][0]=='STRING'
-    token = ['STRING',String(tokens[index][1]),{}]
+    token = ['STRING',String(tokens[index][1]),{range:[]}]
     return [1,[token]]
   else if tokens[index][0]=='IDENTIFIER' and tokens[index][1].match(/^[_a-zA-Z]/)
     start_index=index
@@ -336,7 +336,7 @@ scanToken= (tokens,index)->
         list
       ]
   else
-    token = ['STRING',"'"+String(tokens[index][1])+"'",{}]
+    token = ['STRING',"'"+String(tokens[index][1])+"'",{range:[]}]
     return [1,[token]]
 
 exprStart= () ->
@@ -346,10 +346,10 @@ exprStart= () ->
   return tokens
 
 exprNext= (n...) ->
-  dot       = [ '.',     '.',  { } ]
-  method    = [ 'PROPERTY',    'next',  { } ]
-  callStart = [ 'CALL_START',  '(',     { } ]
-  callEnd   = [ 'CALL_END',     ')',    { } ]
+  dot       = [ '.',     '.',  {range:[]} ]
+  method    = [ 'PROPERTY',    'next',  {range:[]} ]
+  callStart = [ 'CALL_START',  '(',     {range:[]} ]
+  callEnd   = [ 'CALL_END',     ')',    {range:[]} ]
   filter = _.filter(n,(i)=>i!=null and i[1]!="'"+"\n"+"'")
   str=''
   for i in filter
@@ -371,8 +371,8 @@ expandOp=(tokens)->
   for i,index in tokens
     if i[0]=='IDENTIFIER' and i[1].match(/^\$\w+/)
       m=i[1].match(/^\$(.*)/)
-      out.push( ['@', '@', {}])
-      out.push( ['PROPERTY', '_'+m[1], {}])
+      out.push( ['@', '@', {range:[]}])
+      out.push( ['PROPERTY', '_'+m[1], {range:[]}])
     else
       out.push(i)
   return out
@@ -390,7 +390,7 @@ extractLogic = (tokens)->
       lineno=token[2].first_line-4
     #console.log '>>>>>',token[0],token[1]
     if token[0] is 'IDENTIFIER' and token[1]=='$'
-      list =[['IDENTIFIER', '_expr', {}]]
+      list =[['IDENTIFIER', '_expr', {range:[]}]]
       [callStart,callEnd]=findCallSlice(tokens,i)
       if callStart>0 and callEnd>0
         extractSlice=tokens.slice(callStart+1,callEnd)
@@ -398,8 +398,8 @@ extractLogic = (tokens)->
         exprExpand(extractSlice)
         list.push tokens[callStart]
         list.push extractSlice...
-        list.push [',',',',{}]
-        list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+        list.push [',',',',{range:[]}]
+        list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
         list.push tokens[callEnd]
         tokens.splice i, callEnd-i+1, list...
         i+=list.length
@@ -407,72 +407,72 @@ extractLogic = (tokens)->
         throw new Error("Syntax error at #{lineno}")
     else if token[0] is 'IDENTIFIER' and token[1]=='assign'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_assign', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_assign', {range:[]}]
       ]
       if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
         [dummy,callEnd]=findCallSlice(tokens,i)
         [dummy,stopIndex]=findAssignBound(tokens,i+2)
         tokens.splice callEnd, 1
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{}]
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}]
 
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
-        [',',',',{}],
-        ['NUMBER',"'"+String(lineno)+"'",{}]
+        [',',',',{range:[]}],
+        ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       )
       patchLength=findAssignBlock(tokens,callEnd+2)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='input'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'input', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'input', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Module'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'Module', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'Module', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Port'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_port', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_port', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Channel'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_channel', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_channel', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Probe'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_probe', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_probe', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Wire'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_wire', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_wire', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='local_wire'
       throw new Error('local_wire is deprecated,use wire')
     #  list =[
-    #    ['@', '@', {}]
-    #    ['PROPERTY', '_localWire', {}]
+    #    ['@', '@', {range:[]}]
+    #    ['PROPERTY', '_localWire', {range:[]}]
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
@@ -481,44 +481,44 @@ extractLogic = (tokens)->
       if tokens[i+3][0]==','
         width= tokens[i+4][1]
         list =[
-          ['IDENTIFIER',netName,{}]
-          ['=','=',{}]
-          ['@', '@', {}]
-          ['PROPERTY', '_localWire', {}]
-          [ 'CALL_START',  '(',     { } ]
-          [ 'NUMBER',  width,     { } ]
-          [',',',',{}]
-          ['STRING',"'"+netName+"'",{}]
-          [ 'CALL_END',     ')',    { } ]
-          [ 'TERMINATOR',   '\n',    { } ]
-          ['@', '@', {}]
-          ['PROPERTY', '_assign', {}]
+          ['IDENTIFIER',netName,{range:[]}]
+          ['=','=',{range:[]}]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', '_localWire', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'NUMBER',  width,     {range:[]} ]
+          [',',',',{range:[]}]
+          ['STRING',"'"+netName+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+          [ 'TERMINATOR',   '\n',    {range:[]} ]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', '_assign', {range:[]}]
         ]
       else
         list =[
-          ['IDENTIFIER',netName,{}]
-          ['=','=',{}]
-          ['@', '@', {}]
-          ['PROPERTY', '_localWire', {}]
-          [ 'CALL_START',  '(',     { } ]
-          [ 'NUMBER',  '1',     { } ]
-          [',',',',{}]
-          ['STRING',"'"+netName+"'",{}]
-          [ 'CALL_END',     ')',    { } ]
-          [ 'TERMINATOR',   '\n',    { } ]
-          ['@', '@', {}]
-          ['PROPERTY', '_assign', {}]
+          ['IDENTIFIER',netName,{range:[]}]
+          ['=','=',{range:[]}]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', '_localWire', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'NUMBER',  '1',     {range:[]} ]
+          [',',',',{range:[]}]
+          ['STRING',"'"+netName+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+          [ 'TERMINATOR',   '\n',    {range:[]} ]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', '_assign', {range:[]}]
         ]
       if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
         [dummy,callEnd]=findCallSlice(tokens,i)
         [dummy,stopIndex]=findAssignBound(tokens,i+2)
         tokens.splice callEnd, 1
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{}]
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}]
 
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
-        [',',',',{}],
-        ['NUMBER',"'"+String(lineno)+"'",{}]
+        [',',',',{range:[]}],
+        ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       )
       patchLength=findAssignBlock(tokens,callEnd+2)
       tokens.splice i, 1, list...
@@ -526,171 +526,171 @@ extractLogic = (tokens)->
     else if token[0] is 'IDENTIFIER' and token[1]=='local_reg'
       throw new Error('local_reg is deprecated,use reg')
     #  list =[
-    #    ['@', '@', {}]
-    #    ['PROPERTY', '_localReg', {}]
+    #    ['@', '@', {range:[]}]
+    #    ['PROPERTY', '_localReg', {range:[]}]
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Reg'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_reg', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_reg', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Mem'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_mem', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_mem', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='CellMap'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_cellmap', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_cellmap', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     #else if token[0] is 'IDENTIFIER' and token[1]=='Hub'
     #  list =[
-    #    ['@', '@', {}]
-    #    ['PROPERTY', '_hub', {}]
+    #    ['@', '@', {range:[]}]
+    #    ['PROPERTY', '_hub', {range:[]}]
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='output'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'output', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'output', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='vec'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'vec', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'vec', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='bind'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'bind', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'bind', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='reg'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_localReg', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_localReg', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='vreg'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'vreg', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'vreg', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='channel'
       list =[
-        ['IDENTIFIER', 'chdl_base', {}]
-        [ '.',     '.',  { } ]
-        ['PROPERTY', 'channel', {}]
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'channel', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='wire'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_localWire', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_localWire', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
       list =[
-        ['IDENTIFIER', 'importLib', {}]
+        ['IDENTIFIER', 'importLib', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='always'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_always', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_always', {range:[]}]
       ]
       patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='always_if'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_always_if', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_always_if', {range:[]}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push [',',',',{range:[]}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       list.push tokens[callEnd]
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='forever'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_forever', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_forever', {range:[]}]
       ]
       patchLength=findAlwaysBlock(tokens,i,lineno)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='initial'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_initial', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_initial', {range:[]}]
       ]
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='Mixin'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_mixin', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_mixin', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     #else if token[0] is 'IDENTIFIER' and token[1]=='MixinAs'
     #  list =[
-    #    ['@', '@', {}]
-    #    ['PROPERTY', '_mixinas', {}]
+    #    ['@', '@', {range:[]}]
+    #    ['PROPERTY', '_mixinas', {range:[]}]
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_sequenceDef', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_sequenceDef', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if_blocks'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_if_blocks', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_if_blocks', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$if'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_if', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_if', {range:[]}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       if tokens[callEnd+1][0]=='CALL_START'
@@ -703,26 +703,26 @@ extractLogic = (tokens)->
           find=true
       if not find
         append_list=[
-          ['.', '.', {}]
-          ['PROPERTY', '_endif', {}]
-          [ 'CALL_START',  '(',     { } ]
-          [ 'CALL_END',     ')',    { } ]
+          ['.', '.', {range:[]}]
+          ['PROPERTY', '_endif', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'CALL_END',     ')',    {range:[]} ]
         ]
         tokens.splice outdentIndex+1, 0, append_list...
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push [',',',',{range:[]}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       list.push tokens[callEnd]
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$elseif'
       list =[
-        ['.', '.', {}] ,
-        ['PROPERTY', '_elseif', {}]
+        ['.', '.', {range:[]}] ,
+        ['PROPERTY', '_elseif', {range:[]}]
       ]
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
@@ -738,29 +738,29 @@ extractLogic = (tokens)->
           find=true
       if not find
         append_list=[
-          ['.', '.', {}]
-          ['PROPERTY', '_endif', {}]
-          [ 'CALL_START',  '(',     { } ]
-          [ 'CALL_END',     ')',    { } ]
+          ['.', '.', {range:[]}]
+          ['PROPERTY', '_endif', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'CALL_END',     ')',    {range:[]} ]
         ]
         tokens.splice outdentIndex+1, 0, append_list...
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push [',',',',{range:[]}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       list.push tokens[callEnd]
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$else'
       list =[
-        ['.', '.', {}]
-        ['PROPERTY', '_else', {}]
-        ['CALL_START', '(', {}]
-        ['NUMBER',"'"+String(lineno)+"'",{}]
-        ['CALL_END',  ')', {} ]
+        ['.', '.', {range:[]}]
+        ['PROPERTY', '_else', {range:[]}]
+        ['CALL_START', '(', {range:[]}]
+        ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+        ['CALL_END',  ')', {range:[]} ]
       ]
       if tokens[i+1][0]=='CALL_START'
         [dummy,outdentIndex]=findCallSlice(tokens,i+1)
@@ -768,10 +768,10 @@ extractLogic = (tokens)->
         [dummy,outdentIndex]=findIndentSlice(tokens,i+1)
       unless tokens[outdentIndex+1][0]=='TERMINATOR' and  tokenIsEndIf(tokens,outdentIndex+2)
         append_list=[
-          ['.', '.', {}]
-          ['PROPERTY', '_endif', {}]
-          [ 'CALL_START',  '(',     { } ]
-          [ 'CALL_END',     ')',    { } ]
+          ['.', '.', {range:[]}]
+          ['PROPERTY', '_endif', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'CALL_END',     ')',    {range:[]} ]
         ]
         tokens.splice outdentIndex+1, 0, append_list...
       if tokens[i-1][0]=='TERMINATOR'
@@ -782,10 +782,10 @@ extractLogic = (tokens)->
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$endif'
       list =[
-        ['.', '.', {}]
-        ['PROPERTY', '_endif', {}]
-        [ 'CALL_START',  '(',     { } ]
-        [ 'CALL_END',     ')',    { } ]
+        ['.', '.', {range:[]}]
+        ['PROPERTY', '_endif', {range:[]}]
+        [ 'CALL_START',  '(',     {range:[]} ]
+        [ 'CALL_END',     ')',    {range:[]} ]
       ]
       if tokens[i-1][0]=='TERMINATOR'
         tokens.splice i-1, 1
@@ -794,59 +794,59 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$cond'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_cond', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_cond', {range:[]}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       if tokens[callEnd+1][0]!='CALL_START'
         append_list=[
-          ['CALL_START',"(",{}]
-          ['NULL',"null",{}]
-          ['CALL_END',")",{}]
+          ['CALL_START',"(",{range:[]}]
+          ['NULL',"null",{range:[]}]
+          ['CALL_END',")",{range:[]}]
         ]
         tokens.splice callEnd+1, 0, append_list...
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       if extractSlice.length==0
-        list.push ['NULL',"null",{}]
+        list.push ['NULL',"null",{range:[]}]
       else
         list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push [',',',',{range:[]}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$lazy_cond'
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_lazy_cond', {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_lazy_cond', {range:[]}]
       ]
       [callStart,callEnd]=findCallSlice(tokens,i)
       if tokens[callEnd+1][0]!='CALL_START'
         append_list=[
-          ['CALL_START',"(",{}]
-          ['NULL',"null",{}]
-          ['CALL_END',")",{}]
+          ['CALL_START',"(",{range:[]}]
+          ['NULL',"null",{range:[]}]
+          ['CALL_END',")",{range:[]}]
         ]
         tokens.splice callEnd+1, 0, append_list...
       extractSlice=tokens.slice(callStart+1,callEnd)
       tokenExpand(extractSlice,true)
       list.push tokens[callStart]
       if extractSlice.length==0
-        list.push ['NULL',"null",{}]
+        list.push ['NULL',"null",{range:[]}]
       else
         list.push extractSlice...
-      list.push [',',',',{}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{}]
+      list.push [',',',',{range:[]}]
+      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       list.push tokens[callEnd]
       tokens.splice i, callEnd-i+1, list...
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1].match(/^\$/)
       m=token[1].match(/^\$(.*)/)
       list =[
-        ['@', '@', {}]
-        ['PROPERTY', '_'+m[1], {}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_'+m[1], {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -887,11 +887,11 @@ exprExpand = (tokens)->
       i+=list.length
     else if state=='logicNext'
       if token[0] is 'INDENT'
-        list=exprNext(['STRING',"'begin'",{}])
+        list=exprNext(['STRING',"'begin'",{range:[]}])
         tokens.splice i, 1, list...
         i+=list.length
       else if token[0] is 'OUTDENT'
-        list=exprNext(['STRING',"'end'",{}])
+        list=exprNext(['STRING',"'end'",{range:[]}])
         tokens.splice i, 1, list...
         i+=list.length
       else if token[0] is 'TERMINATOR'
@@ -924,11 +924,11 @@ tokenExpand = (tokens,skip_indent=false)->
       i+=list.length
     else if state=='logicNext'
       if token[0] is 'INDENT'
-        list=exprNext(['STRING',"'begin'",{}])
+        list=exprNext(['STRING',"'begin'",{range:[]}])
         tokens.splice i, 1, list...
         i+=list.length
       else if token[0] is 'OUTDENT'
-        list=exprNext(['STRING',"'end'",{}])
+        list=exprNext(['STRING',"'end'",{range:[]}])
         tokens.splice i, 1, list...
         i+=list.length
       else if token[0] is 'TERMINATOR'
@@ -1032,7 +1032,7 @@ expandNum=(tokens)->
     if skip>0
       skip-=1
     else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
-      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{range:[]}]
       skip=2
     else
       out.push(i)
