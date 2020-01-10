@@ -295,16 +295,16 @@ scanToken= (tokens,index)->
     token=tokens[index]
     newTokens=[
       [
-        "IDENTIFIER", "hex", { }
+        "IDENTIFIER", "hex", {range:[]}
       ],
       [
-        "CALL_START", "(", { }
+        "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", { }
+        "STRING", "'"+String(token[1])+"'", {range:[]}
       ],
       [
-        "CALL_END", ")", { }
+        "CALL_END", ")", {range:[]}
       ]
     ]
     ret.push newTokens...
@@ -313,16 +313,16 @@ scanToken= (tokens,index)->
     token=tokens[index]
     newTokens=[
       [
-        "IDENTIFIER", "oct", { }
+        "IDENTIFIER", "oct", {range:[]}
       ],
       [
-        "CALL_START", "(", { }
+        "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", { }
+        "STRING", "'"+String(token[1])+"'", {range:[]}
       ],
       [
-        "CALL_END", ")", { }
+        "CALL_END", ")", {range:[]}
       ]
     ]
     ret.push newTokens...
@@ -331,16 +331,16 @@ scanToken= (tokens,index)->
     token=tokens[index]
     newTokens=[
       [
-        "IDENTIFIER", "bin", { }
+        "IDENTIFIER", "bin", {range:[]}
       ],
       [
-        "CALL_START", "(", { }
+        "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", { }
+        "STRING", "'"+String(token[1])+"'", {range:[]}
       ],
       [
-        "CALL_END", ")", { }
+        "CALL_END", ")", {range:[]}
       ]
     ]
     ret.push newTokens...
@@ -349,16 +349,16 @@ scanToken= (tokens,index)->
     token=tokens[index]
     newTokens=[
       [
-        "IDENTIFIER", "dec", { }
+        "IDENTIFIER", "dec", {range:[]}
       ],
       [
-        "CALL_START", "(", { }
+        "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", { }
+        "STRING", "'"+String(token[1])+"'", {range:[]}
       ],
       [
-        "CALL_END", ")", { }
+        "CALL_END", ")", {range:[]}
       ]
     ]
     ret.push newTokens...
@@ -1103,32 +1103,32 @@ expandNum=(tokens)->
         [
           "IDENTIFIER",
           "#{numFormat}",
-          { }
+          {range:[]}
         ],
         [
           "CALL_START",
           "(",
-          { }
+          {range:[]}
         ],
         [
           "NUMBER",
           "#{tokens[index][1]}",
-          { }
+          {range:[]}
         ],
         [
           ",",
           ",",
-          { }
+          {range:[]}
         ],
         [
           "STRING",
           "'"+prefix+tokens[index+2][1][1...]+"'",
-          { }
+          {range:[]}
         ],
         [
           "CALL_END",
           ")",
-          { }
+          {range:[]}
         ]
       ]
       out.push newTokens...
@@ -1151,22 +1151,22 @@ expandNum=(tokens)->
         [
           "IDENTIFIER",
           "#{numFormat}",
-          { }
+          {range:[]}
         ],
         [
           "CALL_START",
           "(",
-          { }
+          {range:[]}
         ],
         [
           "STRING",
           "'"+prefix+tokens[index+1][1][1...]+"'",
-          { }
+          {range:[]}
         ],
         [
           "CALL_END",
           ")",
-          { }
+          {range:[]}
         ]
       ]
       out.push newTokens...
