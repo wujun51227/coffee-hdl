@@ -248,30 +248,6 @@ getWidth = (number)->
   else
     Math.floor(Math.log2(Number(number))+1)
 
-module.exports.hex = (n,m=null)->
-  if m==null
-    __v(null,'0x'+(n>>>0).toString(16))
-  else
-    __v(n,'0x'+(m>>>0).toString(16))
-
-module.exports.dec= (n,m=null)->
-  if m==null
-    __v(null,n>>>0)
-  else
-    __v(n,m>>>0)
-
-module.exports.oct= (n,m=null)->
-  if m==null
-    __v(null,'0o'+(n>>>0).toString(8))
-  else
-    __v(n, '0o'+(m>>>0).toString(8))
-
-module.exports.bin= (n,m=null)->
-  if m==null
-    __v(null,'0b'+(n>>>0).toString(2))
-  else
-    __v(n, '0b'+(m>>>0).toString(2))
-
 getValue=(i)=>
   if _.isString(i)
     return i
@@ -286,6 +262,8 @@ getValue=(i)=>
   if i.constructor?.name=='Reg'
     return i.refName()
   if i.constructor?.name=='Vreg'
+    return i.refName()
+  if i.constructor?.name=='Vnumber'
     return i.refName()
   if _.isFunction(i)
     return i().refName()

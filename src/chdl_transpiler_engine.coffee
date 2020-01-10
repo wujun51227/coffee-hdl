@@ -2,7 +2,7 @@ coffee = require 'coffeescript'
 _ = require 'lodash'
 fs = require 'fs'
 log = require 'fancy-log'
-{printBuffer,cat,hex,dec,oct,bin,__v,expand}=require 'chdl_utils'
+{printBuffer,cat,expand}=require 'chdl_utils'
 chdl_base = require 'chdl_base'
 
 reloadList=[]
@@ -270,10 +270,7 @@ findCondBlock= (tokens,callEnd)->
 
 scanToken= (tokens,index)->
   ret=[]
-  #console.log '>>>>>>tokens',index,tokens[index...]
   nativeItem = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
-  #constValue= tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='__v' and tokens[index+1]?[0]=='CALL_START'
-  #constValue= tokens[index][0]=='@' and tokens[index+1]?[0]=='CALL_START'
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
@@ -294,14 +291,77 @@ scanToken= (tokens,index)->
         if cnt==0
           return [removeCnt,list.slice(1,list.length-1)]
       i++
-  else if isHex or isOct or isBin or isDec
+  else if isHex
     token=tokens[index]
-    ret.push ['IDENTIFIER','__v',{}]
-    ret.push ['CALL_START','(',{}]
-    ret.push ['NULL','null',{}]
-    ret.push [',',',',{}]
-    ret.push ['STRING',"'"+String(token[1])+"'",{}]
-    ret.push ['CALL_END',')',{}]
+    newTokens=[
+      [
+        "IDENTIFIER", "hex", { }
+      ],
+      [
+        "CALL_START", "(", { }
+      ],
+      [
+        "STRING", "'"+String(token[1])+"'", { }
+      ],
+      [
+        "CALL_END", ")", { }
+      ]
+    ]
+    ret.push newTokens...
+    return [1,ret]
+  else if isOct
+    token=tokens[index]
+    newTokens=[
+      [
+        "IDENTIFIER", "oct", { }
+      ],
+      [
+        "CALL_START", "(", { }
+      ],
+      [
+        "STRING", "'"+String(token[1])+"'", { }
+      ],
+      [
+        "CALL_END", ")", { }
+      ]
+    ]
+    ret.push newTokens...
+    return [1,ret]
+  else if isBin
+    token=tokens[index]
+    newTokens=[
+      [
+        "IDENTIFIER", "bin", { }
+      ],
+      [
+        "CALL_START", "(", { }
+      ],
+      [
+        "STRING", "'"+String(token[1])+"'", { }
+      ],
+      [
+        "CALL_END", ")", { }
+      ]
+    ]
+    ret.push newTokens...
+    return [1,ret]
+  else if isDec
+    token=tokens[index]
+    newTokens=[
+      [
+        "IDENTIFIER", "dec", { }
+      ],
+      [
+        "CALL_START", "(", { }
+      ],
+      [
+        "STRING", "'"+String(token[1])+"'", { }
+      ],
+      [
+        "CALL_END", ")", { }
+      ]
+    ]
+    ret.push newTokens...
     return [1,ret]
   else if nativeItem
     start_index=index
@@ -315,12 +375,6 @@ scanToken= (tokens,index)->
         list.length
         list
       ]
-  else if tokens[index][0]=='NUMBER' and tokens[index+1][0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
-    token = ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
-    return [3,[token]]
-  else if tokens[index][0]=='\\' and tokens[index+1]?[1].match(/^[hdob]/)
-    token = ['STRING',"'"+String("\\'"+tokens[index+1][1])+"'",{}]
-    return [2,[token]]
   else if tokens[index][0]=='STRING'
     token = ['STRING',String(tokens[index][1]),{}]
     return [1,[token]]
@@ -959,8 +1013,8 @@ buildLib= (fullFileName,text,debug=false,param=null) ->
 
 transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
-  head +="{_expr,printBuffer,cat,hex,dec,oct,bin,__v,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_utils'\n"
-  head += "{infer,cell}= require 'chdl_base'\n"
+  head +="{_expr,printBuffer,cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_utils'\n"
+  head += "{infer,cell,hex,oct,bin,dec}= require 'chdl_base'\n"
   head += "{importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text
@@ -1032,8 +1086,91 @@ expandNum=(tokens)->
     if skip>0
       skip-=1
     else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
-      out.push ['STRING',"'"+tokens[index][1]+String("\\'"+tokens[index+2][1])+"'",{}]
+      numFormat='hex'
+      prefix=''
+      if tokens[index+2][1][0]=='h'
+        numFormat='hex'
+        prefix='0x'
+      else if tokens[index+2][1][0]=='o'
+        numFormat='oct'
+        prefix='0o'
+      else if tokens[index+2][1][0]=='b'
+        numFormat='bin'
+        prefix='0b'
+      else if tokens[index+2][1][0]=='d'
+        numFormat='dec'
+      newTokens=[
+        [
+          "IDENTIFIER",
+          "#{numFormat}",
+          { }
+        ],
+        [
+          "CALL_START",
+          "(",
+          { }
+        ],
+        [
+          "NUMBER",
+          "#{tokens[index][1]}",
+          { }
+        ],
+        [
+          ",",
+          ",",
+          { }
+        ],
+        [
+          "STRING",
+          "'"+prefix+tokens[index+2][1][1...]+"'",
+          { }
+        ],
+        [
+          "CALL_END",
+          ")",
+          { }
+        ]
+      ]
+      out.push newTokens...
       skip=2
+    else if tokens[index][0]=='\\' and tokens[index+1]?[1].match(/^[hdob]/)
+      numFormat='hex'
+      prefix=''
+      if tokens[index+1][1][0]=='h'
+        numFormat='hex'
+        prefix='0x'
+      else if tokens[index+1][1][0]=='o'
+        numFormat='oct'
+        prefix='0o'
+      else if tokens[index+1][1][0]=='b'
+        numFormat='bin'
+        prefix='0b'
+      else if tokens[index+1][1][0]=='d'
+        numFormat='dec'
+      newTokens=[
+        [
+          "IDENTIFIER",
+          "#{numFormat}",
+          { }
+        ],
+        [
+          "CALL_START",
+          "(",
+          { }
+        ],
+        [
+          "STRING",
+          "'"+prefix+tokens[index+1][1][1...]+"'",
+          { }
+        ],
+        [
+          "CALL_END",
+          ")",
+          { }
+        ]
+      ]
+      out.push newTokens...
+      skip=1
     else
       out.push(i)
   return out

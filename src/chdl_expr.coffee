@@ -1,6 +1,7 @@
 Reg  = require 'chdl_reg'
 Wire = require 'chdl_wire'
 Port = require 'chdl_port'
+Vnumber = require 'chdl_number'
 _    = require 'lodash'
 
 class Expr
@@ -28,11 +29,17 @@ class Expr
     else if s.__type? and s.__type=='port'
       n=s().refName()
       @str+= n
-    else if s instanceof Reg
+    else if s.__type? and s.__type=='num'
       n=s().refName()
       @str+= n
+    else if s instanceof Vnumber
+      n=s.refName()
+      @str+= n
+    else if s instanceof Reg
+      n=s.refName()
+      @str+= n
     else if s instanceof Wire
-      n=s().refName()
+      n=s.refName()
       @str+= n
     else if s.constructor?.name=='Channel'
       @str+= s.getName()

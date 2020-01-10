@@ -4,6 +4,7 @@ class ConstData extends Module
     Port(
       out1: output(16)
       out2: output(16)
+      out3: output(16)
     )
 
   build: ->
@@ -11,6 +12,8 @@ class ConstData extends Module
     assign @out2
       $if(@out1(1)) => $ 100
       $else         => $ hex(200)
+
+    assign @out3 = hex(16,32\h111)+0o37777777777
 
 module.exports=ConstData
 

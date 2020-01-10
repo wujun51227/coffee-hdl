@@ -10,8 +10,9 @@ Wire    = require('chdl_wire')
 Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
+Vnumber  = require('chdl_number')
 {stringifyTree} = require "stringify-tree"
-{getValue,setSim,packEl,printBuffer,toSignal,toFlatten,__v} = require('chdl_utils')
+{getValue,setSim,packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -453,18 +454,32 @@ instEnv= do ->
     getWire: (name,path=null)-> inst._getChannelWire(name,path)
     hasChannel: (name)-> inst.__channels[name]?
     cell: (name)-> inst._getCell(name)
-    infer: (number,offset=0)->
-      actWidth=inst.__assignWidth+offset
-      if _.isNumber(number)
-        __v(actWidth,number)
-      else if number.getWidth()>actWidth
-        number(0,actWidth)
-      else if number.getWidth()<actWidth
-        diffWidth=actWidth-number.getWidth()
-        return "{#{__v(diffWidth,'0x0')},#{number().refName()}}"
-      else
-        return number
+    infer: ()-> inst.__assignWidth
   }
+
+module.exports.hex = (n,m=null)->
+  if m==null
+    Vnumber.create(n,32,'hex')
+  else
+    Vnumber.create(m,n,'hex')
+
+module.exports.dec= (n,m=null)->
+  if m==null
+    Vnumber.create(n,32,'dec')
+  else
+    Vnumber.create(m,n,'dec')
+
+module.exports.oct= (n,m=null)->
+  if m==null
+    Vnumber.create(n,32,'oct')
+  else
+    Vnumber.create(m,n,'oct')
+
+module.exports.bin= (n,m=null)->
+  if m==null
+    Vnumber.create(n,32,'bin')
+  else
+    Vnumber.create(m,n,'bin')
 
 module.exports.Module    = Module
 module.exports.Expr      = Expr
