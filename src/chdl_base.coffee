@@ -459,25 +459,25 @@ instEnv= do ->
 
 module.exports.hex = (n,m=null)->
   if m==null
-    Vnumber.create(n,32,'hex')
+    Vnumber.create(n,0,'hex')
   else
     Vnumber.create(m,n,'hex')
 
 module.exports.dec= (n,m=null)->
   if m==null
-    Vnumber.create(n,32,'dec')
+    Vnumber.create(n,0,'dec')
   else
     Vnumber.create(m,n,'dec')
 
 module.exports.oct= (n,m=null)->
   if m==null
-    Vnumber.create(n,32,'oct')
+    Vnumber.create(n,0,'oct')
   else
     Vnumber.create(m,n,'oct')
 
 module.exports.bin= (n,m=null)->
   if m==null
-    Vnumber.create(n,32,'bin')
+    Vnumber.create(n,0,'bin')
   else
     Vnumber.create(m,n,'bin')
 

@@ -13,7 +13,7 @@ class ConstData extends Module
       $if(@out1(1)) => $ 100
       $else         => $ hex(200)
 
-    assign @out3 = hex(16,32\h111)+0o37777777777
+    assign @out3 = hex(16,32\h111)+0o37777777777+0x1234455aabbccdd+hex(64,BigInt('0x1222333444555666'))
 
 module.exports=ConstData
 
