@@ -37,9 +37,9 @@ class Channel extends CircuitEl
         cache[sigName]=true
         if not _.get(@cell.__wires,sigName)
           if port.width==1
-            list.push 'wire '+sigName+';'
+            list.push 'logic '+sigName+';'
           else if port.width>1
-            list.push 'wire ['+(port.width-1)+':0] '+sigName+';'
+            list.push 'logic ['+(port.width-1)+':0] '+sigName+';'
           else
             throw new Error('Channel width unkown')
     return list.join("\n")
