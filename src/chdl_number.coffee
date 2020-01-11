@@ -10,13 +10,13 @@ class Vnumber
     # 0x literal value is string type and auto valid width, type depend by prefix
     # hex literal value is number type and width/type defined by args 
     # [width]\h literal value is string type and width/type defined by prefix
-    # console.log '>>>>>',value,type,_.isNumber(value),_.isString(value)
+    # console.log '>>>>>',value,typeof(value),type,_.isNumber(value),_.isString(value)
     @signed=false
     @show_type=type
     bInt=null
-    if _.isNumber(value)
+    if _.isNumber(value) and typeof(value)=='number'
       if value>=2**32
-        throw new Error("Integer greater than 2**32 should use BigInt type")
+        throw new Error("Integer greater than 2**32 should use BigInt type:0x"+value.toString(16))
       bInt=value.toString(2)
     else if typeof(value)=='bigint'
       bInt=value.toString(2)
@@ -43,18 +43,16 @@ class Vnumber
 
   refName: =>
     if @show_type=='bin'
-      str=''
-      for i in @bits
-        str=Number(i)+str
+      str= @bits[..].reverse().join('')
       return "#{@width}'b#{str}"
     else if @show_type=='oct'
-      str= BigInt('0b'+@bits.reverse().join('')).toString(8)
+      str= BigInt('0b'+@bits[..].reverse().join('')).toString(8)
       return "#{@width}'o#{str}"
     else if @show_type=='hex'
-      str= Number('0b'+@bits.reverse().join('')).toString(16)
+      str= BigInt('0b'+@bits[..].reverse().join('')).toString(16)
       return "#{@width}'h#{str}"
     else if @show_type=='dec'
-      str= Number('0b'+@bits.reverse().join('')).toString(10)
+      str= BigInt('0b'+@bits[..].reverse().join('')).toString(10)
       return str
     else
       throw new Error("Unkown show type")

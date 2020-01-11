@@ -301,7 +301,7 @@ scanToken= (tokens,index)->
         "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", {range:[]}
+        "NUMBER", String(token[1]), {range:[]}
       ],
       [
         "CALL_END", ")", {range:[]}
@@ -319,7 +319,7 @@ scanToken= (tokens,index)->
         "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", {range:[]}
+        "NUMBER", String(token[1]), {range:[]}
       ],
       [
         "CALL_END", ")", {range:[]}
@@ -337,7 +337,7 @@ scanToken= (tokens,index)->
         "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", {range:[]}
+        "NUMBER", String(token[1]), {range:[]}
       ],
       [
         "CALL_END", ")", {range:[]}
@@ -355,7 +355,7 @@ scanToken= (tokens,index)->
         "CALL_START", "(", {range:[]}
       ],
       [
-        "STRING", "'"+String(token[1])+"'", {range:[]}
+        "NUMBER", String(token[1]), {range:[]}
       ],
       [
         "CALL_END", ")", {range:[]}
@@ -1024,6 +1024,7 @@ transToJs= (fullFileName,text,debug=false) ->
     log "========================="
     log "origin Tokens"
     log "========================="
+    log i for i in tokens
     printTokens(tokens)
   tokens=expandNum(tokens)
   extractLogic(tokens)

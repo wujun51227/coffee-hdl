@@ -2,18 +2,29 @@ class ConstData extends Module
   constructor: ->
     super()
     Port(
-      out1: output(16)
-      out2: output(16)
-      out3: output(16)
+      out: @createArray(16,()=>output(16))
     )
 
   build: ->
-    assign @out1 = 0+123+0x123+0o123+0b1100+hex(123)+hex(0x123)+oct(12,123)+dec(12,123)+bin(12,12)+12\h123+32\hffff55aa
-    assign @out2
-      $if(@out1(1)) => $ 100
-      $else         => $ hex(200)
+    assign @out[0] = 0
+    assign @out[1] = 0x123123123123n
+    assign @out[2] = 0o123
+    assign @out[3] = 0b1100
+    assign @out[4] = hex(123)
+    assign @out[5] = hex(0x123)
+    assign @out[6] = oct(12,123)
+    assign @out[7] = dec(12,123)
+    assign @out[8] = bin(12,12)
+    assign @out[9] = 12\h123
+    assign @out[10]= 38\hffff55aa
+    assign @out[11]
+      $if(@out[0]) => $ 100
+      $else        => $ hex(200)
 
-    assign @out3 = hex(16,32\h111)+0o37777777777+0x1234455aabbccdd+hex(64,BigInt('0x1222333444555666'))
+    assign @out[12] = hex(16,32\h111)
+    assign @out[13] = 0o37777777777
+    assign @out[14] = 0x1234455aabbccddn
+    assign @out[15] = hex(64,0x1222333444555666n)
 
 module.exports=ConstData
 
