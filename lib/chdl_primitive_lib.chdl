@@ -197,28 +197,19 @@ module.exports={
         $ sum|(expand(width,item.cond)&(item.value()))
         )
 
-  $doubleSync: (sigIn,clock=null)->
+  $doubleSync: (sigIn,clock='',reset='')->
     width=sigIn.getWidth()
-    if clock?
-      d1 = reg(width,'sync').clock(clock).noReset()
-      d2 = reg(width,'sync').clock(clock).noReset()
-    else
-      d1 = reg(width,'sync').noReset()
-      d2 = reg(width,'sync').noReset()
+    d1 = reg(width,'sync').clock(clock).reset(reset)
+    d2 = reg(width,'sync').clock(clock).reset(reset)
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     return $ d2
 
-  $tripleSync: (sigIn,clock=null)->
+  $tripleSync: (sigIn,clock='',reset='')->
     width=sigIn.getWidth()
-    if clock?
-      d1 = reg(width,'sync').clock(clock).noReset()
-      d2 = reg(width,'sync').clock(clock).noReset()
-      d3 = reg(width,'sync').clock(clock).noReset()
-    else
-      d1 = reg(width,'sync').noReset()
-      d2 = reg(width,'sync').noReset()
-      d3 = reg(width,'sync').noReset()
+    d1 = reg(width,'sync').clock(clock).reset(reset)
+    d2 = reg(width,'sync').clock(clock).reset(reset)
+    d3 = reg(width,'sync').clock(clock).reset(reset)
     assign(d1) = $ sigIn
     assign(d2) = $ d1
     assign(d3) = $ d2
@@ -237,13 +228,19 @@ module.exports={
       item = iterator.next()
 
   $grayNextCode: (code_word)->
-    width = code_word.getWidth()+1
-    w= wire(width)
-    assign(w) = $ code_word + 1
-    gray_code=new Array(width-1)
-    for i in [0...width-1]
-      gray_code[i]=$ w(i+1) ^ w(i)
-    return $ cat(w.fromMsb(1),gray_code.reverse()...)
+    width = code_word.getWidth()
+    condList=[]
+    for i in _.range(width)
+      condList.push($cond(code_word(i)) => $ 1<<i)
+    condList.push($cond(null) => $ 0)
+    Net(gray,width) = $order(condList)
+    $if(hasOdd1(code_word))
+      $if(gray(width-1)==1)
+        $ 0
+      $else
+        $ code_word ^ (gray<<1)
+    $else
+      $ code_word ^ hex(width,1)
 
   $arrayMuxSet: (array,select,din)->
     len=array.length
@@ -259,37 +256,28 @@ module.exports={
       list.push($cond(i==select) =>array[i])
     $balance(list,width)
 
-  $rise: (sig,clock=null)->
-    if clock?
-      d1 = reg(1,'r_').clock(clock).noReset()
-    else
-      d1 = reg(1,'r_').noReset()
+  $rise: (sig,clock='',reset='')->
+    d1 = reg(1,'r_').clock(clock).reset(reset)
     assign(d1) = $ sig
     return $ (sig & (!d1))
 
-  $fall: (sig,clock=null)->
-    if clock?
-      d1 = reg(1,'f_').clock(clock).noReset()
-    else
-      d1 = reg(1,'f_').noReset()
+  $fall: (sig,clock='',reset='')->
+    d1 = reg(1,'f_').clock(clock).reset(reset)
     assign(d1) = $ sig
     return $ ((!sig) & d1)
 
-  $divider: (clk,n)->
+  $divider: (n,clk='',reset='')->
     width=Math.ceil(Math.log2(n))
-    cnt = reg(width,'cnt')
+    cnt = reg(width,'cnt').clock(clk).reset(reset)
     assign(cnt)
       $if(cnt=={n-1}) => $ 0
       $else => $ cnt+1
       $endif
     return  $ cnt=={n-1}
 
-  $delay: (n,sig,clock=null,reset=null)->
+  $delay: (n,sig,clock='',reset='')->
     width=sig.getWidth()
-    if clock?
-      list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
-    else
-      list=(reg(width) for i in _.range(n))
+    list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
     for i in _.range(n)
       if i==0
         assign(list[0]) = sig
@@ -297,12 +285,9 @@ module.exports={
         assign(list[i]) = list[i-1]
     return $ list[n-1]
 
-  $count: (n,enable,clear,clock=null,reset=null)->
+  $count: (n,enable,clear,clock='',reset='')->
     width=Math.ceil(Math.log2(n))
-    if clock?
-      cnt = reg(width,'cnt').clock(clock).reset(reset)
-    else
-      cnt = reg(width,'cnt')
+    cnt = reg(width,'cnt').clock(clock).reset(reset)
     assign(cnt)
       $if(clear) => $ 0
       $elseif(enable)
@@ -317,14 +302,10 @@ module.exports={
     list=sig.toList()
     return $join(list,(a,b)=>$ a+b)
 
-  $hold1: (sig,clear,clock=null,reset=null)->
+  $hold1: (sig,clear,clock='',reset='')->
     out = wire(1,'hold')
-    if clock?
-      latch = reg(1,'hold').clock(clock).reset(reset)
-      latch_clear = reg(1,'clear').clock(clock).reset(reset)
-    else
-      latch = reg(1,'hold')
-      latch_clear = reg(1,'clear')
+    latch = reg(1,'hold').clock(clock).reset(reset)
+    latch_clear = reg(1,'clear').clock(clock).reset(reset)
     assign(out) = $ (sig | latch)&(!latch_clear)
     assign latch_clear = clear
     always
@@ -335,14 +316,10 @@ module.exports={
       $endif
     return  $ out
 
-  $hold0: (sig,clear,clock=null,reset=null)->
+  $hold0: (sig,clear,clock='',reset='')->
     out = wire(1,'hold')
-    if clock?
-      latch = reg(1,'hold').init(1).clock(clock).reset(reset)
-      latch_clear = reg(1,'clear').clock(clock).reset(reset)
-    else
-      latch = reg(1,'hold').init(1)
-      latch_clear = reg(1,'clear')
+    latch = reg(1,'hold').init(1).clock(clock).reset(reset)
+    latch_clear = reg(1,'clear').clock(clock).reset(reset)
     assign(out) = $ (sig & latch) | latch_clear
     assign latch_clear = clear
     always
@@ -353,12 +330,9 @@ module.exports={
       $endif
     return  $ out
 
-  $holdData: (sig,enable,clock=null,reset=null)->
+  $holdData: (sig,enable,clock='',reset='')->
     out = wire(sig.getWidth(),'hold')
-    if clock?
-      latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset)
-    else
-      latch = reg(sig.getWidth(),'hold')
+    latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset)
     assign(out)
       $if(enable) => $ sig
       $else => $ latch
@@ -505,5 +479,8 @@ module.exports={
       for i,index in seqBlock.bin
         if i.func?
           $if(stateReg.isState(i.id))
-            i.func(i.active,i.next)
+            if index==0
+              i.func(i.next)
+            else
+              i.func(i.active,i.next)
 }
