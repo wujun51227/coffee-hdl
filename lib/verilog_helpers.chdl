@@ -1,18 +1,35 @@
 module.exports={
-  dumpWave: (fileName,timeout)->
+  dumpWave: (fileName)->
     initial
-      $sequence() =>
+      $sequence()
+      .init ()=>
         if fileName.match(/\.fsdb$/)
           @verilog("$fsdbDumpfile(\"#{fileName}\");")
           @verilog("$fsdbDumpvars;")
         else
           @verilog("$dumpfile(\"#{fileName}\");")
           @verilog("$dumpvars;")
-        if timeout>0
-          @verilog("##{timeout}")
-          @verilog("$finish;")
       .end()
 
+  sim_finish: ()->
+    @verilog("$finish;")
+
+  create_clock: (clk,period=10)->
+    forever
+      $sequence()
+      .delay(period/2) =>
+        assign(clk) = !clk
+      .end()
+
+  create_resetn: (rstn,assert_start=0,assert_hold_time=100)->
+    initial
+      $sequence()
+      .delay(assert_start) =>
+        assign rstn = 0
+      .delay(assert_hold_time) =>
+        assign rstn = 1
+      .end()
+      
   assert_1: (sig,message)->
     $if(sig!=1)
       @verilog("$display(\"%t Error: #{sig.getName()} should be 1\",$time);")
