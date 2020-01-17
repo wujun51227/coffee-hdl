@@ -499,7 +499,6 @@ class Module
     ret._endif()
 
   _regProcess: ()=>
-    self=this
     return {
       _if: (cond,lineno)=>
         return (block)=>
@@ -879,7 +878,6 @@ class Module
     for i in keys
       delete @__signature[i]
           
-          
   _getPath:(cell=null,list=[])->
     cell=this if cell==null
     if cell.__parentNode==null
@@ -890,7 +888,6 @@ class Module
       @_getPath(cell.__parentNode,list)
 
   _assign: (signal,lineno=-1)=>
-    self=this
     if _.isPlainObject(signal) or _.isArray(signal)
       return (block)=>
         if _.isFunction(block)

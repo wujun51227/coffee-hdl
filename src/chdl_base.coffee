@@ -457,29 +457,10 @@ instEnv= do ->
     infer: ()-> inst.__assignWidth
   }
 
-module.exports.hex = (n,m=null)->
-  if m==null
-    Vnumber.create(n,0,'hex')
-  else
-    Vnumber.create(m,n,'hex')
-
-module.exports.dec= (n,m=null)->
-  if m==null
-    Vnumber.create(n,0,'dec')
-  else
-    Vnumber.create(m,n,'dec')
-
-module.exports.oct= (n,m=null)->
-  if m==null
-    Vnumber.create(n,0,'oct')
-  else
-    Vnumber.create(m,n,'oct')
-
-module.exports.bin= (n,m=null)->
-  if m==null
-    Vnumber.create(n,0,'bin')
-  else
-    Vnumber.create(m,n,'bin')
+module.exports.hex = Vnumber.hex
+module.exports.dec = Vnumber.dec
+module.exports.oct = Vnumber.oct
+module.exports.bin = Vnumber.bin
 
 module.exports.Module    = Module
 module.exports.Expr      = Expr

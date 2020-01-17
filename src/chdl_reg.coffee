@@ -1,7 +1,8 @@
 CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
 _ = require 'lodash'
-{cat,rhsTraceExpand,_expr,packEl,toNumber,hex}=require 'chdl_utils'
+{cat,rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
+Vnumber = require 'chdl_number'
 
 class Reg extends CircuitEl
   resetMode: 'async' #async or sync
@@ -22,7 +23,6 @@ class Reg extends CircuitEl
     @clearSignal=null
     @clearValue=null
     @fieldMap={}
-    @needInitial=false
     @depNames=[]
     @local=false
     @staticAssign=false
@@ -38,7 +38,6 @@ class Reg extends CircuitEl
 
   init: (v,initial=false)=>
     @resetValue=v
-    @needInitial=initial
     return packEl('reg',this)
 
   clock:(clock)=>
@@ -261,12 +260,6 @@ class Reg extends CircuitEl
       else
         list.push "reg ["+(@width-1)+":0] "+@dName()+";"
 
-    if @needInitial
-      list.push "initial begin"
-      list.push "  #{@elName} = #{@width}'hx;"
-      list.push "  #1"
-      list.push "  #{@elName} = #{hex(@width,@resetValue)};"
-      list.push "end"
     return list.join("\n")
 
   verilogUpdate: ->
@@ -285,14 +278,14 @@ class Reg extends CircuitEl
       else
         list.push "  if(!"+@getReset()+") begin"
 
-      list.push "    "+@elName+" <= #`UDLY "+@resetValue+";"
+      list.push "    "+@elName+" <= #`UDLY "+Vnumber.hex(@width,@resetValue).refName()+";"
       list.push "  end"
       if @clearSignal?
         enableSig=_.get(@cell,@clearSignal)
         if enableSig?
           #console.log enableSig
           list.push "  else if(#{enableSig.getName()}==#{@clearValue} )  begin"
-          list.push "    "+@elName+" <= #`UDLY "+@resetValue+";"
+          list.push "    "+@elName+" <= #`UDLY "+Vnumber.hex(@width,@resetValue).refName()+";"
           list.push "  end"
         else
           throw new Error("cant not find enable signal #{@clearSignal}")

@@ -6,6 +6,30 @@ class Vnumber
   @create: (value,width=32,type='hex')->
     new Vnumber(value,width,type)
 
+  @hex: (n,m=null)->
+    if m==null
+      Vnumber.create(n,0,'hex')
+    else
+      Vnumber.create(m,n,'hex')
+
+  @dec: (n,m=null)->
+    if m==null
+      Vnumber.create(n,0,'dec')
+    else
+      Vnumber.create(m,n,'dec')
+
+  @oct: (n,m=null)->
+    if m==null
+      Vnumber.create(n,0,'oct')
+    else
+      Vnumber.create(m,n,'oct')
+
+  @bin: (n,m=null)->
+    if m==null
+      Vnumber.create(n,0,'bin')
+    else
+      Vnumber.create(m,n,'bin')
+
   constructor: (value,width=32,type='hex')->
     # 0x literal value is string type and auto valid width, type depend by prefix
     # hex literal value is number type and width/type defined by args 

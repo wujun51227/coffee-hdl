@@ -1,7 +1,8 @@
 CircuitEl = require 'chdl_el'
 Reg = require 'chdl_reg'
 _ = require 'lodash'
-{packEl,toNumber,hex}=require 'chdl_utils'
+{packEl,toNumber}=require 'chdl_utils'
+Vnumber = require 'chdl_number'
 
 class Vreg extends Reg
   value: 0
@@ -91,7 +92,7 @@ class Vreg extends Reg
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
     list.push "initial begin"
-    list.push "  #{@elName} = #{hex(@width,@resetValue)};"
+    list.push "  #{@elName} = #{Vnumber.hex(@width,@resetValue).refName()};"
     list.push "end"
     return list.join("\n")
 
