@@ -294,26 +294,37 @@ code_gen= (inst)=>
   for seqList in inst.__initialList when seqList.length>0
     printBuffer.add "initial begin"
     for seq in seqList
-      initSegmentList = seq.bin
-      seqName= seq.name ? ''
-      printBuffer.add "  $display(\"start sequence #{seqName}\");"
-      for initSegment in initSegmentList
-        item = initSegment
-        if item.type=='delay'
-          if _.isNumber(item.delay)
-            printBuffer.add "  ##{item.delay}"
-        if item.type=='posedge'
-          printBuffer.add "  @(posedge #{item.signal.getName()});"
-        if item.type=='negedge'
-          printBuffer.add "  @(negedge #{item.signal.getName()});"
-        if item.type=='wait'
-          printBuffer.add "  wait(#{item.expr})"
-        if item.type=='event'
-          printBuffer.add "  -> #{item.event};"
-        if item.type=='trigger'
-          printBuffer.add "  @(#{item.signal});"
-        for statement in item.list
-          printBuffer.add statementGen(statement)
+      if seq.isTag
+        if seq.tagType=='while_begin'
+          printBuffer.add "  while(#{seq.cond}) begin"
+        else if seq.tagType=='while_end'
+          printBuffer.add "  end"
+        if seq.tagType=='when_begin'
+          printBuffer.add "  if(#{seq.cond}) begin"
+        else if seq.tagType=='when_end'
+          printBuffer.add "  end"
+      else
+        initSegmentList = seq.bin
+        seqName= seq.name ? ''
+        if seqName!=''
+          printBuffer.add "  $display(\"start sequence #{seqName}\");"
+        for initSegment in initSegmentList
+          item = initSegment
+          if item.type=='delay'
+            if _.isNumber(item.delay)
+              printBuffer.add "  ##{item.delay}"
+          if item.type=='posedge'
+            printBuffer.add "  @(posedge #{item.signal});"
+          if item.type=='negedge'
+            printBuffer.add "  @(negedge #{item.signal});"
+          if item.type=='wait'
+            printBuffer.add "  wait(#{item.expr})"
+          if item.type=='event'
+            printBuffer.add "  -> #{item.event};"
+          if item.type=='trigger'
+            printBuffer.add "  @(#{item.signal});"
+          for statement in item.list
+            printBuffer.add statementGen(statement)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -328,9 +339,9 @@ code_gen= (inst)=>
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
         if item.type=='posedge'
-          printBuffer.add "  @(posedge #{item.signal.getName()});"
+          printBuffer.add "  @(posedge #{item.signal});"
         if item.type=='negedge'
-          printBuffer.add "  @(negedge #{item.signal.getName()});"
+          printBuffer.add "  @(negedge #{item.signal});"
         if item.type=='wait'
           printBuffer.add "  wait(#{item.expr})"
         if item.type=='event'

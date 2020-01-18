@@ -220,28 +220,6 @@ module.exports.packEl = (type,bin)->
     ret[i]=bin[i]
   return ret
 
-__v=(width,number)->
-  if width==null
-    width=''
-  if _.isString(number)
-    if number.match(/^0x/)
-      m=number.match(/^0x(.*)/)
-      return "#{width}'h#{m[1]}"
-    else if number.match(/^0o/)
-      m=number.match(/^0o(.*)/)
-      return "#{width}'o#{m[1]}"
-    else if number.match(/^0b/)
-      m=number.match(/^0b(.*)/)
-      return "#{width}'b#{m[1]}"
-    else
-      return "#{width}'d#{number}"
-  else if _.isNumber(Number(number))
-    return "#{width}'d#{number}"
-  else
-    throw new Error("const value error")
-
-module.exports.__v=__v
-
 getWidth = (number)->
   if Number(number)==0
     return 1

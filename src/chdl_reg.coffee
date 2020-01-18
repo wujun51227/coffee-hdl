@@ -41,17 +41,19 @@ class Reg extends CircuitEl
     return packEl('reg',this)
 
   clock:(clock)=>
-    if _.isString(clock)
-      @bindClockName=clock
-    else
-      @bindClockName=clock.getName()
+    throw new Error("clock can not be null") if clock==null
+    if clock!=''
+      if _.isString(clock)
+        @bindClockName=clock
+      else
+        @bindClockName=clock.getName()
     return packEl('reg',this)
 
   reset:(reset,mode='async',assertValue=false)=>
     if reset==null
       @resetMode=null
       @resetName=null
-    else
+    else if reset!=''
       if _.isString(reset)
         @resetName=reset
       else

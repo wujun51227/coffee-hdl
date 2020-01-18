@@ -180,7 +180,7 @@ class Module
     @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
-    @_mixin require('verilog_assert.chdl.js')
+    @_mixin require('verilog_helpers.chdl.js')
     @__sim=false
 
   _setSim: ->
@@ -424,6 +424,11 @@ class Module
 
   _always: (lineno,block)=>
     @__assignEnv = 'always'
+    if @__assignWaiting
+      assignWaitingSave=true
+      @__assignWaiting=false
+    else
+      assignWaitingSave=false
     @__regAssignList=[]
     @__updateWires=[]
     @__sequenceBlock=[]
@@ -441,6 +446,8 @@ class Module
     @__assignEnv = null
     @__updateWires=[]
     @__regAssignList=[]
+    if assignWaitingSave
+      @__assignWaiting=true
 
   _always_if: (cond,lineno)=>
     return (block)=>
@@ -705,31 +712,39 @@ class Module
     @__initialMode=false
     @__sequenceBlock=null
 
-  _sequenceDef: (name='sequence')=>
+  _sequenceDef: (name='sequence',clock='',reset='')=>
     if @__sequenceBlock==null
       throw new Error("Sequence only can run in initial or always")
 
-    bin=[]
-    return (func)=>
-      if @__initialMode
-        @__assignEnv='always'
+    return @_sequence(_id(name+'_'),[],clock,reset)
+
+  _sequence: (name,bin=[],clock,reset)->
+    env='always'
+    ret = {
+      init: (func)=>
+        if @__initialMode
+          @__assignEnv='always'
+          @__regAssignList=[]
+          func()
+          bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
+          @__assignEnv=null
+          @__regAssignList=[]
+        else
+          next=@_localWire(1,'next')
+          @__assignEnv='always'
+          @__regAssignList=[]
+          bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next,func:func})
+          @__assignEnv=null
+          @__regAssignList=[]
+        return @_sequence(_id(name+'_'),bin,clock,reset)
+      do: (func) =>
+        @__assignEnv=env
         @__regAssignList=[]
         func()
-        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:null})
+        bin.push({type:'delay',id:_id('delay'),delay:null,list:@__regAssignList})
         @__assignEnv=null
         @__regAssignList=[]
-      else
-        next=@_localWire(1,'next')
-        @__assignEnv='always'
-        @__regAssignList=[]
-        bin.push({type:'idle',id:'idle',list:@__regAssignList,next:next,func:func})
-        @__assignEnv=null
-        @__regAssignList=[]
-      @_sequence(_id(name+'_'),bin)
-
-  _sequence: (name,bin=[])->
-    env='always'
-    return {
+        return @_sequence(name,bin,clock,reset)
       delay: (delay) =>
         return (func)=>
           @__assignEnv=env
@@ -738,16 +753,25 @@ class Module
           bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__regAssignList})
           @__assignEnv=null
           @__regAssignList=[]
-          return @_sequence(name,bin)
+          return @_sequence(name,bin,clock,reset)
+      then: () =>
+        return (func)=>
+          @__assignEnv=env
+          @__regAssignList=[]
+          func(ret)
+          #bin.push({type:'then',id:_id('then'),list:@__regAssignList})
+          @__assignEnv=null
+          @__regAssignList=[]
+          return @_sequence(name,bin,clock,reset)
       repeat: (num)=>
         repeatItem=_.last(bin)
         for i in [0...num]
           bin.push(repeatItem)
-        return @_sequence(name,bin)
+        return @_sequence(name,bin,clock,reset)
       event: (trigName)=>
         @__trigMap[trigName]=1
         bin.push({type:'event',id:_id('event'),event:trigName,list:[]})
-        return @_sequence(name,bin)
+        return @_sequence(name,bin,clock,reset)
       trigger: (signal)=>
         return (func)=>
           @__assignEnv=env
@@ -756,7 +780,7 @@ class Module
           bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
           @__assignEnv=null
           @__regAssignList=[]
-          return @_sequence(name,bin)
+          return @_sequence(name,bin,clock,reset)
       posedge: (signal,stepName=null)=>
         return (func)=>
           if @__initialMode
@@ -768,7 +792,7 @@ class Module
             @__assignEnv=null
             @__regAssignList=[]
           else
-            expr=@_rise(signal)
+            expr=@_rise(signal,clock)
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
             @__assignEnv=env
@@ -777,7 +801,7 @@ class Module
             bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName(),func:func})
             @__assignEnv=null
             @__regAssignList=[]
-          return @_sequence(name,bin)
+          return @_sequence(name,bin,clock,reset)
       negedge: (signal,stepName=null)=>
         return (func)=>
           if @__initialMode
@@ -789,7 +813,7 @@ class Module
             @__assignEnv=null
             @__regAssignList=[]
           else
-            expr=@_fall(signal)
+            expr=@_fall(signal,clock)
             active=@_localWire(1,'trans')
             next=@_localWire(1,'next')
             @__assignEnv=env
@@ -798,7 +822,7 @@ class Module
             bin.push({type:'negedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName(),func:func})
             @__assignEnv=null
             @__regAssignList=[]
-          return @_sequence(name,bin)
+          return @_sequence(name,bin,clock,reset)
       wait: (expr,stepName=null)=>
         return (func)=>
           if @__initialMode
@@ -818,7 +842,7 @@ class Module
             bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:active,next:next,func:func})
             @__assignEnv=null
             @__regAssignList=[]
-          return @_sequence(name,bin)
+          return @_sequence(name,bin,clock,reset)
       next: (num=null,signal=null,stepName=null)=>
         return (func)=>
           if @__initialMode
@@ -838,7 +862,7 @@ class Module
             bin.push({type:'next',id:id,expr:expr,enable:enable,list:@__regAssignList,active:active,next:next,func:func})
             @__assignEnv=null
             @__regAssignList=[]
-            return @_sequence(name,bin)
+            return @_sequence(name,bin,clock,reset)
       end: ()=>
         if @__initialMode
           saveData={name:name,bin:bin,stateReg:null,update:@__updateWires,nextState:null}
@@ -846,8 +870,8 @@ class Module
           @__updateWires=[]
         else
           bitWidth=Math.floor(Math.log2(bin.length))+1
-          stateReg=@_localReg(bitWidth,name)
-          lastStateReg=@_localReg(bitWidth,name+'_last')
+          stateReg=@_localReg(bitWidth,name).clock(clock).reset(reset)
+          lastStateReg=@_localReg(bitWidth,name+'_last').clock(clock).reset(reset)
           nextState=@_localWire(bitWidth,name+'_next')
           stateNameList=[]
           for i in bin
@@ -869,6 +893,7 @@ class Module
 
         return retData
     }
+    return ret
 
   verilog: (s)->
     @__regAssignList.push ['verilog',s]
@@ -917,6 +942,31 @@ class Module
             throw new Error("Assign to signal is undefined at line: #{lineno}")
         else
           signal.assign((->block),lineno)
+
+  _while: (cond)=>
+    if @__sequenceBlock==null
+      throw new Error("while only can run in initial")
+
+    return (func)=>
+      if @__initialMode
+        @__sequenceBlock.push {isTag:true,tagType:'while_begin',cond:cond.str}
+        func()
+        @__sequenceBlock.push {isTag:true,tagType:'while_end'}
+      else
+        throw new Error("while only can run in initial")
+
+  _when: (cond)=>
+    if @__sequenceBlock==null
+      throw new Error("when only can run in initial")
+
+    return (func)=>
+      if @__initialMode
+        @__sequenceBlock.push {isTag:true,tagType:'when_begin',cond:cond.str}
+        func()
+        @__sequenceBlock.push {isTag:true,tagType:'when_end'}
+      else
+        throw new Error("while only can run in initial")
+
 
   _parameterDeclare: ->
     out=''
