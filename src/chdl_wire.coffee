@@ -192,6 +192,8 @@ class Wire extends CircuitEl
     for i in list
       i.assign(=>_expr(@refName()))
 
+  isAssigned: => @staticWire==false or @staticAssign
+
   assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width

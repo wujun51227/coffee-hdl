@@ -16,44 +16,44 @@ class InitSimple extends Module
     )
 
   build: ->
-    @aa.delay(10)
-
     forever
-      $sequence() =>
+      $sequence()
       .delay(10) =>
         assign(@cc) = $ !@cc
       .end()
 
     write=(addr,data)=>
-      $sequence('do_write') =>
+      $sequence('do_write')
         .posedge(@sel1) =>
-          assign(@aa) = $ @out1
+          assign(@aa) = @out1
         .negedge(@sel) =>
-          assign(@aa) = $ @out2
-        .wait($(@sel==1)) =>
-          assign(@aa) = $ @out2
+          assign(@aa) = @out2
+        .wait($ @sel==1) =>
+          assign(@aa) = @out2
         .end()
 
     a= =>
-      $sequence('delay') =>
+      $sequence('delay')
         .delay(null) =>
           @verilog("aaaa")
-          assign(@aa) = $ 1
+          assign(@aa) = 1
         .delay(10) =>
-          assign(@aa) = $ 1
+          assign(@aa) = 1
         .delay(10) =>
-          assign(@aa) = $ 1
+          assign(@aa) = 1
         .event('hello')
         .end()
 
     initial
-      $sequence() =>
+      $sequence()
+      .init ()=>
         assign(@aa) = $ 100
       .end()
 
     initial
       a()
-      write(0x0,0x4)
+      $while(@aa>10)
+        write(0x0,0x4)
 
       
 

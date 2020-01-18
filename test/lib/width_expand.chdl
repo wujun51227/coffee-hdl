@@ -1,0 +1,99 @@
+_ = require 'lodash'
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('chdl_component_lib.chdl')
+
+    Reg(
+      tx_clk: vreg()
+      rstn: vreg().init(1)
+      din:vreg(16)
+      push:vreg()
+    )
+
+    Wire(
+      rx_data: wire(16)
+      rx_done: wire()
+      ack: wire()
+      ready: wire()
+      dout: wire(16*4)
+    )
+
+    @setDefaultClock('tx_clk')
+    @setDefaultReset('rstn')
+
+
+  build: ->
+    @create_clock(@tx_clk,10)
+    @create_resetn(@rstn)
+    @dumpWave("test.fsdb")
+
+    initial
+      $sequence() =>
+      .delay(500) =>
+      .posedge(@tx_clk) =>
+        assign @din=0x7
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x0
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x3
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x2
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x5
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x6
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x4
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x1
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x7
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x3
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .posedge(@tx_clk) =>
+        assign @din=0x0
+        assign @push=1
+      .posedge(@tx_clk) =>
+        assign @push=0
+      .delay(100) =>
+        @sim_finish()
+      .end()
+
+    assign({ready:@ready,data:@dout})  = $width_expand(@push,@din,0,4)
+
+
+
+module.exports=tb

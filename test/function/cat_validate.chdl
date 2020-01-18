@@ -1,0 +1,28 @@
+class cat_validate extends Module
+  constructor: ->
+    super()
+
+    #CellMap(name: new cell())
+
+    Port(
+      din: input(5)
+      dout: input(5)
+    )
+
+    Wire(
+      w1: wire(5)
+    )
+
+    Reg(
+      r1: reg(5)
+    )
+
+    Channel(
+    )
+
+  build: ->
+    n0 = 3\b0
+    n1 = hex(3,0)
+    Net(cat_ret,30) = cat(@din,@dout,@w1,@r1,3\h0,hex(3,0),n0,n1)
+    
+module.exports=cat_validate

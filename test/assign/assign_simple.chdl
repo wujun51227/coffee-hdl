@@ -14,15 +14,15 @@ class AssignSimple extends Module
     )
 
     Wire(
-      xxx: wire(5)
+      w1: wire(5)
     )
 
   build: ->
     assign(@dout) =  @din + 1
 
-    assign(@dout2) = @xxx.select((i)=>i%2==0)
+    assign(@dout2(2:0)) = @w1.select((i)=>i%2==0)
 
-    assign(@dout1) =  @din + @xxx
+    assign(@dout1) = @din + @w1
 
 module.exports=AssignSimple
 

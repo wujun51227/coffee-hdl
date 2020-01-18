@@ -55,7 +55,7 @@ class FuncTest extends Module
         [
           $cond(@w1==2) => $ @w2
           $cond(@w3>1)  => $ @w4.w5
-          $cond(null)  => $ 0
+          $cond()  => $ 0
         ]
       )
 

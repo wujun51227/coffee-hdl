@@ -29,7 +29,7 @@ class AssignCond extends Module
       if(@dout.getWidth()<=64)
         $ @add1 + @add2
       else
-        hiword= $ @add1(64,@add1.getWidth()-64)+@add2(64,@add2.getWidth()-64)+@ff.field('carry')
+        Net(hiword,80) = @add1(64,@add1.getWidth()-64)+@add2(64,@add2.getWidth()-64)+@ff.field('carry')
         $ cat(hiword,@ff.field('rest'))
 
     if(@dout.getWidth()>64)

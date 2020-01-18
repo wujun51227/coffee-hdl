@@ -864,6 +864,8 @@ class Module
             @__regAssignList=[]
             return @_sequence(name,bin,clock,reset)
       end: ()=>
+        if bin[0].type!='idle'
+          bin.unshift({type:'idle',id:'idle',list:[],next:null,func:null})
         if @__initialMode
           saveData={name:name,bin:bin,stateReg:null,update:@__updateWires,nextState:null}
           @__sequenceBlock.push saveData

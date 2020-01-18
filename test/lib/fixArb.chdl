@@ -1,0 +1,54 @@
+_ = require 'lodash'
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('chdl_component_lib.chdl')
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      d1:vreg()
+      d2:vreg()
+      d3:vreg()
+    )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dumpWave("test.fsdb")
+
+
+    initial
+      $sequence() =>
+      .delay(500) =>
+        assign @d1=1
+        assign @d2=1
+        assign @d3=1
+      .delay(10) =>
+        assign @d1=0
+        assign @d2=1
+        assign @d3=1
+      .delay(10) =>
+        assign @d1=0
+        assign @d2=0
+        assign @d3=1
+      .delay(10) =>
+        assign @d1=0
+        assign @d2=0
+        assign @d3=0
+      .delay(100) =>
+        @sim_finish()
+      .end()
+
+
+    Net(dout,2) = $fixArbiter([@d1,@d2,@d3],2)
+
+
+
+module.exports=tb

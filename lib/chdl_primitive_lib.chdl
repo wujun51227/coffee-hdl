@@ -30,7 +30,7 @@ module.exports={
       list=[]
       width=dst.net.getWidth()
       for src,index in inChannelList when dst.dir=='input'
-        eq=$ (select==index)
+        Net eq = (select==index)
         list.push($ expand(width,eq) & src.getWire(dst.path))
       if dst.dir=='input'
         assign(dst.net) = $join(list,(sum,i)=>$(sum+i))
@@ -81,15 +81,20 @@ module.exports={
       for [name,port] in toFlatten(dst)
         if name
           el=_.get(dst,name)
-          if port.getType()=='input'
-            for n in clone_list
-              find=_.get(n,name)
-              if find? and find.getType()=='output'
+          for n in clone_list
+            find=_.get(n,name)
+            if find? and find.getType()=='output' and port.getType()=='input'
+              if find.getWidth()!=port.getWidth()
+                throw new Error("port connect width mismatch")
+              if not el.isAssigned()
                 assign(el) = find
         else
           for n in clone_list when n.__type=='wire'
-            if n.getType()=='output'
-              assign(port) = n
+            if n.getType()=='output' and port.getType()=='input'
+              if n.getWidth()!=port.getWidth()
+                throw new Error("port connect width mismatch")
+              if not port.isAssigned()
+                assign(port) = n
       clone_list.push(dst)
       i+=1
 
@@ -191,10 +196,11 @@ module.exports={
   $balance: (list,width=null) ->
     width=width ? @__assignWidth
     return $reduce(list,(sum,item,first,last)=>
+      Net cond = item.cond
       if(first)
-        $ (expand(width,item.cond)&(item.value()))
+        $ (expand(width,cond)&(item.value()))
       else
-        $ sum|(expand(width,item.cond)&(item.value()))
+        $ sum|(expand(width,cond)&(item.value()))
         )
 
   $doubleSync: (sigIn,clock='',reset='')->

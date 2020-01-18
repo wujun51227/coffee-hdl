@@ -283,7 +283,10 @@ class Reg extends CircuitEl
       list.push "    "+@elName+" <= #`UDLY "+Vnumber.hex(@width,@resetValue).refName()+";"
       list.push "  end"
       if @clearSignal?
-        enableSig=_.get(@cell,@clearSignal)
+        if _.isString(@clearSignal)
+          enableSig=_.get(@cell,@clearSignal)
+        else
+          enableSig=@clearSignal
         if enableSig?
           #console.log enableSig
           list.push "  else if(#{enableSig.getName()}==#{@clearValue} )  begin"
@@ -292,7 +295,10 @@ class Reg extends CircuitEl
         else
           throw new Error("cant not find enable signal #{@clearSignal}")
       if @enableSignal?
-        enableSig=_.get(@cell,@enableSignal)
+        if _.isString(@enableSignal)
+          enableSig=_.get(@cell,@enableSignal)
+        else
+          enableSig=@enableSignal
         if enableSig?
           list.push "  else if(#{enableSig.getName()}==#{@enableValue} )  begin"
         else
@@ -303,7 +309,10 @@ class Reg extends CircuitEl
       list.push "  end"
     else
       if @enableSignal?
-        enableSig=_.get(@cell,@enableSignal)
+        if _.isString(@enableSignal)
+          enableSig=_.get(@cell,@enableSignal)
+        else
+          enableSig=@enableSignal
         if enableSig?
           list.push "  if(#{enableSig.getName()}==#{@enableValue} )  begin"
           list.push "    "+@elName+" <= #`UDLY _"+@elName+";"

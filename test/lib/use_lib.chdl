@@ -82,7 +82,7 @@ class UseLib extends Module
 
     assign(@dout) = $rise($doubleSync(@syncin))
 
-    assign(@dout1) = $divider(@clk1,4)
+    assign(@dout1) = $divider(4,@clk1)
 
     assign(@dout2) = $arrayDecode(@w,@select,10)
 

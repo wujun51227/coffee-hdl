@@ -15,7 +15,7 @@ class RegEnable extends Module
 
     Reg(
       ff1: reg(9).enable('bundle.updateEnable')
-      ff2: reg(5).noReset().enable('bundle.updateEnable',$ 1\h0)
+      ff2: reg(5).reset(null).enable('bundle.updateEnable',$ 1\h0)
     )
 
   build: ->

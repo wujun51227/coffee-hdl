@@ -18,10 +18,9 @@ class cell1 extends Module
     )
 
   build: ->
-    always =>
-      assign(@count) => $ @din + 1
+    assign(@count) = @din + 1
 
-class DefaultClock extends Module
+class MultiClock extends Module
   u0_cell1: new cell1()
 
   constructor: ->
@@ -29,5 +28,5 @@ class DefaultClock extends Module
 
   build: ->
 
-module.exports=DefaultClock
+module.exports=MultiClock
 

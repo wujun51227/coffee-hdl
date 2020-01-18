@@ -53,12 +53,10 @@ class ChannelPartConn extends Module
       c1_bundle: channel()
       c2_sub: channel()
       c3_bundle: channel()
-      c1_sub: channel()
     )
 
     @u0_cell1.bind(
       bundle: @c1_bundle
-      'bundle.sub': @c1_sub
     )
 
     @u0_cell2.bind(
@@ -69,10 +67,10 @@ class ChannelPartConn extends Module
       bundle: @c3_bundle
     )
 
-    Hub(
-      sub_conn: [@c1_sub,@c2_sub]
-      bundle_conn: [@c1_bundle,@c3_bundle]
-    )
+
+  build: ->
+    $channelPortHub( @c1_bundle.Port.sub,@c2_sub.Port,@c3_bundle.Port.sub)
+    $channelPortHub( @c1_bundle.Port,@c3_bundle.Port)
 
 module.exports=ChannelPartConn
 

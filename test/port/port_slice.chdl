@@ -13,8 +13,8 @@ class PortSlice extends Module
 
 
   build: ->
-    assign(@dout(3,2)) => $ @din(0,2)+@din(0)
-    assign(@dout(2:0)) => $ @din(4:2)+@din(0)
+    assign(@dout(3,2)) = @din(0,2)+@din(0)
+    assign(@dout(2:0)) = @din(4:2)+@din(0)
 
 
 module.exports=PortSlice

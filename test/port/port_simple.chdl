@@ -14,7 +14,7 @@ class PortSimple extends Module
 
 
   build: ->
-    assign(@dout) => $ @din
+    assign(@dout) = @din
 
 module.exports=PortSimple
 
