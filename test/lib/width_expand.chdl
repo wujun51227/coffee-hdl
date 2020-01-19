@@ -1,6 +1,6 @@
 _ = require 'lodash'
 
-class tb extends Module
+class widthExpandTb extends Module
   constructor: ->
     super()
 
@@ -31,7 +31,7 @@ class tb extends Module
     @dumpWave("test.fsdb")
 
     initial
-      $sequence() =>
+      $sequence()
       .delay(500) =>
       .posedge(@tx_clk) =>
         assign @din=0x7
@@ -96,4 +96,4 @@ class tb extends Module
 
 
 
-module.exports=tb
+module.exports=widthExpandTb

@@ -270,9 +270,11 @@ module.exports={
       $if(push) => $ next_wr
       $else => $ w_code
 
-    Net(rd_addr,addrWidth) = cat(hasOdd1(r_code.fromMsb(2)) , r_code.fromLsb(addrWidth-1))
+    Net r_or=hasOdd1(r_code.fromMsb(2))
+    Net w_or=hasOdd1(w_code.fromMsb(2))
+    Net(rd_addr,addrWidth) = cat( r_or , r_code.fromLsb(addrWidth-1))
 
-    Net(wr_addr,addrWidth) = cat(hasOdd1(w_code.fromMsb(2)) , w_code.fromLsb(addrWidth-1))
+    Net(wr_addr,addrWidth) = cat( w_or , w_code.fromLsb(addrWidth-1))
 
     always
       $if(cat(pop,read)==2\b01)

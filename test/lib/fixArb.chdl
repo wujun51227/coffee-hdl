@@ -1,6 +1,6 @@
 _ = require 'lodash'
 
-class tb extends Module
+class fixArbTb extends Module
   constructor: ->
     super()
 
@@ -25,7 +25,7 @@ class tb extends Module
 
 
     initial
-      $sequence() =>
+      $sequence()
       .delay(500) =>
         assign @d1=1
         assign @d2=1
@@ -49,6 +49,4 @@ class tb extends Module
 
     Net(dout,2) = $fixArbiter([@d1,@d2,@d3],2)
 
-
-
-module.exports=tb
+module.exports=fixArbTb

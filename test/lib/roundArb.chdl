@@ -1,6 +1,6 @@
 _ = require 'lodash'
 
-class tb extends Module
+class roundArbTb extends Module
   constructor: ->
     super()
 
@@ -25,7 +25,7 @@ class tb extends Module
 
 
     initial
-      $sequence() =>
+      $sequence()
       .delay(500) =>
         assign @d1=1
         assign @d2=1
@@ -55,4 +55,4 @@ class tb extends Module
 
 
 
-module.exports=tb
+module.exports=roundArbTb

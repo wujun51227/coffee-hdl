@@ -1,6 +1,6 @@
 _ = require 'lodash'
 
-class tb extends Module
+class asyncFifoTb extends Module
   constructor: ->
     super()
 
@@ -77,4 +77,4 @@ class tb extends Module
 
 
 
-module.exports=tb
+module.exports=asyncFifoTb
