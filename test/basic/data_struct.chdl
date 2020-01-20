@@ -1,0 +1,131 @@
+_ = require 'lodash'
+
+class DataStruct extends Module
+  constructor: ->
+    super()
+    Port(
+      addr: input(16)
+      out: @createArray(20,()=>output(64))
+      arr: [
+        [
+          input(16)
+          input(16)
+          [
+            input(16)
+            input(16)
+            output(16)
+          ]
+        ]
+      ]
+      obj:
+        l1:
+          k1:input(16)
+          k2:input(16)
+          l2:
+            k1:input(16)
+            k2:input(16)
+            k3:output(16)
+            k4:output(16)
+    )
+
+    Mem(
+      m1:
+        mem: vec(16,1024)
+    )
+
+  build: ->
+    assign @out[0] = 0
+    assign @out[1] = 0x123123123123n
+    assign @out[2] = 0o123
+    assign @out[3] = 0b1100
+    assign @out[4] = hex(123)
+    assign @out[5] = hex(0x123)
+    assign @out[6] = oct(12,123)
+    assign @out[7] = dec(12,123)
+    assign @out[8] = bin(12,12)
+    assign @out[9] = 12\h123
+    assign @out[10]= 38\hffff55aa
+    assign @out[11]
+      $if(0) => $ 100
+      $else        => $ hex(200)
+
+    assign @out[12] = hex(16,32\h111)
+    assign @out[13] = 0o37777777777
+    assign @out[14] = 0x1234455aabbccddn
+    assign @out[15] = hex(64,0x1122333444555666n)
+
+    assign(@out[16]) = @arr[0][0]
+    assign(@arr[0][2][2]) =  @arr[0][0]
+
+    assign(@out[17]) =  @obj['l1'].k1
+    assign(@obj.l1.l2['k3']) =  @obj['l1']['l2'].k1
+    assign(_.get(@obj,'l1.l2.k4')) = _.get(@obj,['l1','l2','k2'])
+
+    always
+      @m1.mem.set(0x1, $ 0x111)
+      @m1.mem.set(0x200, $ 0x222)
+      assign(@out[18]) => $ @m1.mem.get(0x1)+ @m1.mem.get(@addr)
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new DataStruct)
+
+    Channel(
+      dout: channel()
+      addr: channel()
+      arr: channel()
+      obj: channel()
+      )
+
+
+    @dut.bind(
+      out: @dout
+      arr: @arr
+      obj: @obj
+      addr: @addr
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(10) =>
+        assign @arr.Port[0][0] = 0x1234
+
+        assign @obj.Port['l1'].k1  = 0x55aa
+        assign @obj.Port['l1']['l2'].k1 = 0xaa55
+        assign _.get(@obj.Port,['l1','l2','k2']) = 0x8765
+        assign @addr.Port = 0x200
+      .delay(10) =>
+        @assert_eq(@dout.Port[0],0)
+        @assert_eq(@dout.Port[1],hex(0x123123123123n))
+        @assert_eq(@dout.Port[2],hex(0o123))
+        @assert_eq(@dout.Port[3],hex(0b1100))
+        @assert_eq(@dout.Port[4],123)
+        @assert_eq(@dout.Port[5],hex(12,0x123))
+        @assert_eq(@dout.Port[6],oct(12,123))
+        @assert_eq(@dout.Port[7],123)
+        @assert_eq(@dout.Port[8],bin(12,12))
+        @assert_eq(@dout.Port[9],hex(12,0x123))
+        @assert_eq(@dout.Port[10],hex(38,0xffff55aa))
+        @assert_eq(@dout.Port[11],hex(200))
+        @assert_eq(@dout.Port[12],hex(16,0x111))
+        @assert_eq(@dout.Port[13],hex(64,0o37777777777))
+        @assert_eq(@dout.Port[14],hex(64,0x1234455aabbccddn))
+        @assert_eq(@dout.Port[15],hex(64,0x1122333444555666n))
+
+        @assert_eq(@dout.Port[16], 0x1234)
+        @assert_eq(@dout.Port[17], 0x55aa)
+        @assert_eq(@dout.Port[18], 0x333)
+
+        @assert_eq(@arr.Port[0][2][2], 0x1234)
+        @assert_eq(@obj.Port.l1.l2.k3, 0xaa55)
+        @assert_eq(@obj.Port.l1.l2.k4, 0x8765)
+      .delay(10) =>
+        @assert_report()
+      .end()
+      
+module.exports=tb

@@ -26,6 +26,7 @@ class Module
         @['_'+m[1]] = obj[fname]
       else
         @[fname] = obj[fname]
+    obj.init.call(this) if obj.init?
 
   _mixinas: (name,obj) ->
     @[name]={}
@@ -180,7 +181,6 @@ class Module
     @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
-    @_mixin require('verilog_helpers.chdl.js')
     @__sim=false
 
   _setSim: ->

@@ -10,6 +10,7 @@ log = require 'fancy-log'
 mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
 program = require('commander')
+spawn = require('child_process').spawn
 
 
 banner= (topFile)->
@@ -30,6 +31,7 @@ program
   .option('-i, --info')
   .option('-n, --new <module name>')
   .option('--flist <file list name>')
+  .option('--ncsim')
   .option('--sim')
   .option('--nolineno')
   .option('--debug')
@@ -121,6 +123,8 @@ processFile= (fileName,outDir) ->
 
         if program.flist
           fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
+        if program.ncsim
+          spawn('ncverilog',flist,{stdio:[0,1,2]})
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)

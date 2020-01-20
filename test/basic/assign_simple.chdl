@@ -1,0 +1,118 @@
+_ = require 'lodash'
+
+Num = 13
+class AssignSimple extends Module
+  constructor: ->
+    super()
+
+    Port(
+      din: @createArray(Num,->input(5))
+      dout: @createArray(Num,->output(5))
+    )
+
+    #Reg(
+    #  r: @createArray(@num,->reg(5))
+    #)
+
+  add:(v1,v2)->
+    $ v1 + v2
+
+  build: ->
+    assign(@dout[0]) => $ @din[0]+1
+
+    assign(@dout[1]) = @din[1]+1
+
+    assign @dout[2]  = @din[2]+1
+
+    assign(@dout[3]) =>
+      $ @din[3]+1
+
+    assign(@dout[4])
+      $ @din[4]+1
+
+    assign(@dout[5](2:0)) = @din[5].select((i)=>i%2==0)
+
+    assign(@dout[6]) = @din[1] + @din[2]
+
+    assign(@dout[7]) = cat(@din[1](1:0),@din[2](2:0))
+
+    assign(@dout[8]) = @din[2]+@add(@din[0],@din[1])
+
+    doFunc = do =>
+      $if(@din[0]>1)
+        $ 0x1a
+      $else
+        $ 0x15
+
+    assign(@dout[9]) = doFunc
+
+    always
+      $if(@din[1])
+        assign(@dout[10])
+          $if(@din[2]>1)
+            $ 0x1a
+          $else
+            $ 0x15
+
+    always
+      $if(@din[1])
+        assign(@dout[11])
+          $if(@din[2]>1)
+            $ hex(5,0x1a)
+          $else
+            $ 5\h15
+
+    assign(@dout[12])
+      $if(@din[1]>0)
+        $if(@din[2]>1)
+          $ 5\h1a
+        $else
+          $ 0
+      $else
+        $ 0
+
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new AssignSimple)
+
+    Channel(
+      din: channel()
+      dout: channel()
+      )
+
+
+    @dut.bind(
+      din: @din
+      dout: @dout
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(10) =>
+        for i in _.range(Num)
+          assign @din.Port[i] = i
+      .delay(10) =>
+        @assert_eq(@dout.Port[0],1)
+        @assert_eq(@dout.Port[1],2)
+        @assert_eq(@dout.Port[2],3)
+        @assert_eq(@dout.Port[3],4)
+        @assert_eq(@dout.Port[4],5)
+        @assert_eq(@dout.Port[5],5\b00011)
+        @assert_eq(@dout.Port[6],3)
+        @assert_eq(@dout.Port[7],5\b01010)
+        @assert_eq(@dout.Port[8],3)
+        @assert_eq(@dout.Port[9],0x15)
+        @assert_eq(@dout.Port[10],0x1a)
+        @assert_eq(@dout.Port[11],0x1a)
+        @assert_eq(@dout.Port[12],0x1a)
+      .delay(10) =>
+        @assert_report()
+      .end()
+      
+module.exports=tb

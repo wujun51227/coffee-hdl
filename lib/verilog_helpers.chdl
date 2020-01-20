@@ -1,5 +1,17 @@
+sToHex=(s)->
+  buf=Buffer.from(s)
+  return "512'h"+buf.toString('hex')
+
+prefix='[chdl_assert] : '
+
 module.exports={
-  dumpWave: (fileName)->
+  init: ->
+    Reg(
+      assert_fail_flag: vreg().init(0)
+      assert_fail_message: vreg(512).init(0)
+    )
+
+  dump_wave: (fileName)->
     initial
       $sequence()
       .init ()=>
@@ -29,36 +41,81 @@ module.exports={
       .delay(assert_hold_time) =>
         assign rstn = 1
       .end()
-      
-  assert_1: (sig,message)->
+
+  assert_1: (sig,message='')->
     $if(sig!=1)
-      @verilog("$display(\"%t Error: #{sig.getName()} should be 1\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_0: (sig,message)->
+  assert_0: (sig,message='')->
     $if(sig!=0)
-      @verilog("$display(\"%t Error: #{sig.getName()} should be 1\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_eq: (sig,value,message)->
+  assert_eq: (sig,value,message='')->
     $if(sig!=value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should be #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_ne: (sig,value,message)->
+  assert_ne: (sig,value,message='')->
     $if(sig==value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should NOT be #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should NOT be #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_ge: (sig,value,message)->
+  assert_ge: (sig,value,message='')->
     $if(sig<value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should >= #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should >= #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_gt: (sig,value,message)->
+  assert_gt: (sig,value,message='')->
     $if(sig<=value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should > #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should > #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_le: (sig,value,message)->
+  assert_le: (sig,value,message='')->
     $if(sig>value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should <= #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should <= #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
 
-  assert_lt: (sig,value,message)->
+  assert_lt: (sig,value,message='')->
     $if(sig>=value)
-      @verilog("$display(\"%t Error: #{sig.getName()} should < #{value}\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should < #{value}\",$time);")
+      assign @assert_fail_flag = 1
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
+
+  assert_report: (message='')->
+    $if(@assert_fail_flag==0)
+      @verilog("$display(\"#{prefix}Simulation Pass\");")
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
+    $else
+      @verilog("$display(\"#{prefix}Simulation Fail\");")
+      if message
+        assign @assert_fail_message = sToHex(message)
+        @verilog("$display(\"%0s\",assert_fail_message);")
+      
 }
