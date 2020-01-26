@@ -1,0 +1,82 @@
+_ = require 'lodash'
+{in_port,out_port} = require './port_def'
+
+class PortSimple extends Module
+  constructor: ->
+    super()
+    
+
+    Port(
+      din: input(5)
+      dout: output(5)
+      dout_arr: Array.from({ length: 5 }, () => output(5))
+      din_arr: @createArray(5,()=>input(5))
+      bus:
+        data:
+          din: input(5)
+          dout: output(5)
+      compose: [
+        out_port
+        in_port
+      ]
+    )
+
+
+  build: ->
+    assign(@dout(3,2)) = @din(4:3)
+    assign(@dout(2:0)) = @din(0,3)
+    assign(@bus.data.dout) = ~ @bus.data.din
+    for i in _.range(5)
+      assign @dout_arr[i] = @din_arr[i]
+
+    tmp= $ @compose[1].enable
+    assign(@compose[0].dout) = $ @compose[1].din+ tmp
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new PortSimple())
+
+    Channel(
+      din: channel()
+      dout: channel()
+      din_arr: channel()
+      dout_arr: channel()
+      bus: channel()
+      compose: channel()
+      )
+
+
+    @dut.bind(
+      din: @din
+      dout: @dout
+      din_arr: @din_arr
+      dout_arr: @dout_arr
+      bus: @bus
+      compose: @compose
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(10) =>
+        assign @din.Port = 0x1a
+        assign @bus.Port.data.din=0x15
+        for i in _.range(5)
+          assign @din_arr.Port[i] = i
+        assign @compose.Port[1].enable=1
+        assign @compose.Port[1].din=0xa
+      .delay(10) =>
+        @assert_eq(@dout.Port,0x1a)
+        @assert_eq(@bus.Port.data.dout,0b1010)
+        for i in _.range(5)
+          @assert_eq(@dout_arr.Port[i], i)
+        @assert_eq(@compose.Port[0].dout,0xb)
+      .delay(10) =>
+        @assert_report()
+      .end()
+
+module.exports=tb

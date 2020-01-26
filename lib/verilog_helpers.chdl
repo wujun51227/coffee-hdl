@@ -43,7 +43,7 @@ module.exports={
       .end()
 
   assert_1: (sig,message='')->
-    $if(sig!=1)
+    $if(sig!==1)
       @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
       assign @assert_fail_flag = 1
       if message
@@ -51,7 +51,7 @@ module.exports={
         @verilog("$display(\"%0s\",assert_fail_message);")
 
   assert_0: (sig,message='')->
-    $if(sig!=0)
+    $if(sig!==0)
       @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
       assign @assert_fail_flag = 1
       if message
@@ -59,7 +59,7 @@ module.exports={
         @verilog("$display(\"%0s\",assert_fail_message);")
 
   assert_eq: (sig,value,message='')->
-    $if(sig!=value)
+    $if(sig!==value)
       @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be #{value}\",$time);")
       assign @assert_fail_flag = 1
       if message
@@ -67,7 +67,7 @@ module.exports={
         @verilog("$display(\"%0s\",assert_fail_message);")
 
   assert_ne: (sig,value,message='')->
-    $if(sig==value)
+    $if(sig===value)
       @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should NOT be #{value}\",$time);")
       assign @assert_fail_flag = 1
       if message
