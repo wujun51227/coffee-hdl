@@ -73,6 +73,24 @@ module.exports={
       clone_list.push(dst)
       i+=1
 
+  $portBind:(a,b)->
+    for [name,port] in toFlatten(a)
+      if name
+        el=_.get(a,name)
+        if port.getType()=='input'
+          find=_.get(b,name)
+          if find? and find.getType()=='input'
+            assign(find) = el
+        else if port.getType()=='output'
+          find=_.get(b,name)
+          if find? and find.getType()=='output'
+            assign(el) = find
+      else
+        if b.getType()=='output'
+          assign(port) = b
+        else if b.getType()=='input'
+          assign(b) = port
+
   $channelPortHub:(list...)->
     clone_list=list[...]
     i=0
@@ -266,6 +284,11 @@ module.exports={
     d1 = reg(1,'r_').clock(clock).reset(reset)
     assign(d1) = $ sig
     return $ (sig & (!d1))
+
+  $sample: (sig,clock='',reset='')->
+    s = reg(sig.getWidth(),'sample_').clock(clock).reset(reset)
+    assign s = sig
+    return $ s
 
   $fall: (sig,clock='',reset='')->
     d1 = reg(1,'f_').clock(clock).reset(reset)

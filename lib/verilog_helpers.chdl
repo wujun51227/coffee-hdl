@@ -52,7 +52,7 @@ module.exports={
 
   assert_0: (sig,message='')->
     $if(sig!==0)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
+      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 0\",$time);")
       assign @assert_fail_flag = 1
       if message
         assign @assert_fail_message = sToHex(message)

@@ -124,7 +124,7 @@ processFile= (fileName,outDir) ->
         if program.flist
           fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
         if program.ncsim
-          spawn('ncverilog',flist,{stdio:[0,1,2]})
+          spawn('ncverilog',['-64bit','-access +rwc',flist...],{stdio:[0,1,2]})
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)

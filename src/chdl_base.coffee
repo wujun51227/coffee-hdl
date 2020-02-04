@@ -313,6 +313,13 @@ code_gen= (inst)=>
           if item.type=='delay'
             if _.isNumber(item.delay)
               printBuffer.add "  ##{item.delay}"
+          if item.type=='polling'
+            printBuffer.add "  while(1) begin"
+            printBuffer.add "    @(posedge #{item.signal});"
+            printBuffer.add "    if(#{item.expr}) begin"
+            printBuffer.add "      break;"
+            printBuffer.add "    end;"
+            printBuffer.add "  end;"
           if item.type=='posedge'
             printBuffer.add "  @(posedge #{item.signal});"
           if item.type=='negedge'
@@ -338,6 +345,13 @@ code_gen= (inst)=>
         if item.type=='delay'
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
+        if item.type=='polling'
+          printBuffer.add "  while(1) begin"
+          printBuffer.add "    @(posedge #{item.signal});"
+          printBuffer.add "    if(#{item.expr}) begin"
+          printBuffer.add "      break;"
+          printBuffer.add "    end;"
+          printBuffer.add "  end;"
         if item.type=='posedge'
           printBuffer.add "  @(posedge #{item.signal});"
         if item.type=='negedge'

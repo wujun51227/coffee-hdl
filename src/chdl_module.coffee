@@ -127,6 +127,7 @@ class Module
 
   _overrideModuleName: (name)-> @__moduleName=name
   setUniq: -> @__uniq=true
+  notUniq: -> @__uniq=false
   getModuleName: -> @__moduleName
   setCombModule: -> @__isCombModule=true
   specifyModuleName: (name)->
@@ -160,7 +161,7 @@ class Module
     @__initialMode=false
     @__sequenceBlock=null
     @__cells      =[]
-    @__uniq       = false
+    @__uniq       = true
 
     @__bindChannels=[]
     @__defaultClock=null
@@ -780,6 +781,17 @@ class Module
           bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
           @__assignEnv=null
           @__regAssignList=[]
+          return @_sequence(name,bin,clock,reset)
+      polling: (signal,expr, stepName=null)=>
+        return (func)=>
+          if @__initialMode
+            @__assignEnv=env
+            @__regAssignList=[]
+            func()
+            id = stepName ? _id('poll')
+            bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
+            @__assignEnv=null
+            @__regAssignList=[]
           return @_sequence(name,bin,clock,reset)
       posedge: (signal,stepName=null)=>
         return (func)=>
