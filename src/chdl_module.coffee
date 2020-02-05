@@ -816,7 +816,10 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('poll')
-            bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
+            if _.isString(signal)
+              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal})
+            else
+              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin,clock,reset)
@@ -827,7 +830,10 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
+            if _.isString(signal)
+              bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            else
+              bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
@@ -848,7 +854,10 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('fall')
-            bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
+            if _.isString(signal)
+              bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
+            else
+              bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           else
