@@ -662,18 +662,31 @@ class Module
         @__bindChannels.push {portName:port, channel: channel}
         portInst = _.get(@__ports,port)
         for [name,sig] in toFlatten(portInst)
-          #console.log name,sig
-          net=Wire.create(sig.getWidth())
-          if name
-            net.link(channel.cell,toHier(channel.hier,name))
-            netEl=packEl('wire',net)
-            netEl.setType(sig.getType())
-            _.set(channel.Port,name,netEl)
+          if not sig.isBinded()
+            net=Wire.create(sig.getWidth())
+            if name
+              net.link(channel.cell,toHier(channel.hier,name))
+              netEl=packEl('wire',net)
+              netEl.setType(sig.getType())
+              _.set(channel.Port,name,netEl)
+            else
+              net.link(channel.cell,channel.hier)
+              netEl=packEl('wire',net)
+              netEl.setType(sig.getType())
+              channel.Port=netEl
           else
-            net.link(channel.cell,channel.hier)
-            netEl=packEl('wire',net)
-            netEl.setType(sig.getType())
-            channel.Port=netEl
+            for k,v of @__channels[sig.bindChannel].Port
+              net=Wire.create(v.getWidth())
+              if name
+                net.link(channel.cell,toHier(channel.hier,name+'.'+k))
+                netEl=packEl('wire',net)
+                netEl.setType(v.getType())
+                _.set(channel.Port,name+'.'+k,netEl)
+              else
+                net.link(channel.cell,toHier(channel.hier,k))
+                netEl=packEl('wire',net)
+                netEl.setType(v.getType())
+                _.set(channel.Port,k,netEl)
 
   _link: (name)-> @__instName=name
 
