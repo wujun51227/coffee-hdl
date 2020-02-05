@@ -8,6 +8,9 @@ class cell1 extends Module
     Port(
       din: input(16)
       dout: output(16)
+      bus:
+        addr: input(16)
+        data: output(16)
     )
 
   build: ->
@@ -20,16 +23,19 @@ class cell2 extends Module
       bundle:
         din: bind('c_din')
         dout: bind('c_dout')
+      ext: bind('ext_ch')
     )
 
     Channel(
       c_din: channel()
       c_dout: channel()
+      ext_ch: channel()
     )
 
     @u0_cell1.bind(
       din: @c_din
       dout: @c_dout
+      bus: @ext_ch
     )
 
   build: ->
@@ -42,18 +48,22 @@ class ChannelBindExtend extends Module
     super()
 
     Port(
-      top_port: bind('ch')
+      top_port: bind('ch1')
     )
 
     Channel(
-      ch: channel()
+      ch1: channel()
+      ch2: channel()
       )
 
     @u0_cell2.bind(
-      bundle: @ch
+      bundle: @ch1
+      ext: @ch2
     )
 
   build: ->
+    Net(a,16)=@ch2.Port.data
+    assign @ch2.Port.addr = 0
 
 module.exports=ChannelBindExtend
 

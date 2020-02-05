@@ -675,18 +675,32 @@ class Module
               netEl.setType(sig.getType())
               channel.Port=netEl
           else
-            for k,v of @__channels[sig.bindChannel].Port
+            if @__channels[sig.bindChannel].Port.__type=='wire'
+              v=@__channels[sig.bindChannel].Port
               net=Wire.create(v.getWidth())
               if name
-                net.link(channel.cell,toHier(channel.hier,name+'.'+k))
+                net.link(channel.cell,toHier(channel.hier,name))
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
-                _.set(channel.Port,name+'.'+k,netEl)
+                _.set(channel.Port,name,netEl)
               else
-                net.link(channel.cell,toHier(channel.hier,k))
+                net.link(channel.cell,toHier(channel.hier))
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
-                _.set(channel.Port,k,netEl)
+                channel.Port=netEl
+            else
+              for k,v of @__channels[sig.bindChannel].Port
+                net=Wire.create(v.getWidth())
+                if name
+                  net.link(channel.cell,toHier(channel.hier,name+'.'+k))
+                  netEl=packEl('wire',net)
+                  netEl.setType(v.getType())
+                  _.set(channel.Port,name+'.'+k,netEl)
+                else
+                  net.link(channel.cell,toHier(channel.hier,k))
+                  netEl=packEl('wire',net)
+                  netEl.setType(v.getType())
+                  _.set(channel.Port,k,netEl)
 
   _link: (name)-> @__instName=name
 
