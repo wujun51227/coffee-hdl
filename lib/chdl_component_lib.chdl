@@ -235,7 +235,7 @@ module.exports={
       level: $ level
     }
 
-  $asyncFifo: (depth,din,push,pop)->
+  $async_fifo: (depth,din,push,pop)->
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth-1))+1
     clkw=push.getClock()
@@ -243,9 +243,9 @@ module.exports={
     clkr=pop.getClock()
     rstr=pop.getReset()
     if clkw==null or rstw==null
-      throw new Error("Please attch clock/reset to #{push.getName()}")
+      throw new Error("Please attach clock/reset to #{push.getName()}")
     if clkr==null or rstr==null
-      throw new Error("Please attch clock/reset to #{pop.getName()}")
+      throw new Error("Please attach clock/reset to #{pop.getName()}")
 
     prefetched = reg(1,'prefetched').clock(clkr).reset(rstr)
     empty_flag = reg(1,'empty_flag').clock(clkr).reset(rstr).init(1)
@@ -312,7 +312,7 @@ module.exports={
       full: $ full
     }
 
-  $fixArbiter: (list,defaultIndex=0)->
+  $fix_arbiter: (list,defaultIndex=0)->
     condList=[]
     #ret = wire(getWidth(list.length))
     for i,index in list
@@ -320,7 +320,7 @@ module.exports={
     condList.push($cond(null) => defaultIndex)
     $order(condList)
 
-  $roundArbiter: (list,enable,defaultIndex=0,clock=null,reset=null)->
+  $round_arbiter: (list,enable,defaultIndex=0,clock=null,reset=null)->
     width = Math.floor(Math.log2(list.length-1))+1
     if clock?
       roundReg = reg(width,'round').clock(clock).reset(reset)
