@@ -1,0 +1,53 @@
+#########################################################3
+# Design
+#########################################################3
+
+class ExpandTest extends Module
+  constructor: ->
+    super()
+
+    Port(
+      io:
+        din: input(5)
+        width: input(3)
+        dout1: output(3*5)
+        dout2: output(2*5)
+    )
+
+  build: ->
+    assign(@io.dout1) = expand(@io.width.getWidth(), @io.din)
+
+    assign(@io.dout2) = expand(5, @io.din(1:0))
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new ExpandTest())
+
+    Channel(
+      io: channel()
+      )
+
+
+    @dut.bind(
+      io: @io
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(10) =>
+        assign @io.Port.din = 5\b10101
+        assign @io.Port.width= 3
+      .delay(10) =>
+        @assert_eq(@io.Port.dout1,25\b101011010110101)
+        @assert_eq(@io.Port.dout2,10\b0101010101)
+      .delay(10) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+      
+module.exports=tb

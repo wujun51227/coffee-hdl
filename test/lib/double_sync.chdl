@@ -1,0 +1,70 @@
+class DoubleSyncTest extends Module
+  constructor: ->
+    super()
+
+    Port(
+      io: {
+        din: input()
+        dout1: output()
+        dout2: output()
+      }
+    )
+
+  build: ->
+    assign(@io.dout1) = $doubleSync(@io.din)
+    assign(@io.dout2) = $tripleSync(@io.din)
+
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new DoubleSyncTest())
+
+    Reg(
+      clk: vreg()
+      rstn: vreg()
+    )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+    Channel(
+      io: channel()
+      )
+
+    @dut.bind(
+      io: @io
+      )
+
+  build: ->
+    @create_clock(@clk)
+    @create_resetn(@rstn)
+
+    initial
+      $sequence()
+      .init =>
+        assign @io.Port.din=0
+      .delay(505) =>
+        assign @io.Port.din=1
+      .posedge(@clk) =>
+        @assert_0(@io.Port.dout1)
+        @assert_0(@io.Port.dout2)
+      .posedge(@clk) =>
+        @assert_0(@io.Port.dout1)
+        @assert_0(@io.Port.dout2)
+      .posedge(@clk) =>
+        @assert_1(@io.Port.dout1)
+        @assert_0(@io.Port.dout2)
+      .posedge(@clk) =>
+        @assert_1(@io.Port.dout2)
+      .delay(10) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=tb
+
+
