@@ -1,0 +1,202 @@
+class RegSimple extends Module
+  constructor: ->
+    super()
+
+    Port(
+      hclk: input().asClock()
+      rstn: input().asReset()
+      clear: input()
+      aa:
+        bb:
+          cc: output(9).asReg({noReset:true})
+      en:
+        notupdateEnable: input()
+      reg_out: [
+        output(5)
+        output(8)
+        output(6)
+        output(7)
+        output(8)
+        output(9)
+        output(9)
+        output(9)
+        output(9)
+        output(9)
+        output(9)
+        output(9)
+        output()
+        output()
+      ]
+    )
+
+    Reg(
+      ff0: reg(5).init(23).clock('hclk').reset('rstn').syncReset()
+      ff1: reg(9)
+      ff2: reg(6).clock('hclk').reset(null)
+      ff3: reg(7).init(0x7f).clock('hclk').clear('clear')
+      ff4: reg(8).clock('hclk').reset('rstn','async',true)
+      ff5: reg(9).clock('hclk').negedge()
+      ff6: reg(1).init(0).highReset()
+      ff7: reg(1).init(1).highReset()
+      ff8: reg(9)
+      ff9: reg(9).enable('en.notupdateEnable',0)
+      ff10: [
+        reg(9).init(100).highReset()
+        reg(9).init(200).highReset()
+      ]
+      ff11:
+        a:reg(9).init(11).highReset()
+        b:reg(9).init(22).highReset()
+      ff12: reg(5)
+      ff13: reg(5)
+    )
+
+  doSync: (sigIn)->
+    width=sigIn.getWidth()
+    d1 = reg(width,'sync')
+    d2 = reg(width,'sync')
+    assign d1 = $ sigIn
+    assign d2 = $ d1
+    return $ d2
+
+  build: ->
+    @ff12.stateDef(['idle','write','pending','read'])
+    @ff13.stateDef(
+      idle: 0
+      write: 10
+      pending: 20
+      )
+
+    always
+      @ff12.setState('write')
+
+    always =>
+      @ff13.stateSwitch(
+        'idle': [
+          $cond(@clear==1) => 'write'
+        ]
+        'write': [
+          $cond(@clear==1) => 'pending'
+        ]
+        'pending': [
+          $cond(@clear==0) => 'idle'
+        ]
+      )
+
+    assign @reg_out[12] = @ff12.isState('write')
+    assign @reg_out[13] = @ff13.isState('pending')
+
+    assign @reg_out[0] = @ff0
+
+    assign @ff0 = @ff0
+
+    assign @ff1 = 0b111111110
+    assign(@reg_out[1]) = @ff1.fromMsb(8)
+
+    assign(@reg_out[2]) = @ff2
+    assign @ff2 = @ff2
+
+    assign @ff3 = 0
+    assign(@reg_out[3]) = @ff3
+
+    assign(@reg_out[4]) = @ff4
+
+    assign(@reg_out[5]) = @ff5
+    assign @ff5 = 0x1ff
+
+    @ff1.drive(@reg_out[6])
+
+    assign(@reg_out[7]) = @ff8
+
+    assign @reg_out[8] = @ff9
+    assign @ff9 = 123
+
+    assign @reg_out[9] = @doSync(@ff1)
+
+    assign @reg_out[10] = @ff10[1]
+    assign @reg_out[11] = @ff11.b
+
+    always
+      @aa.bb.cc.pending(0)
+      $if(1)
+        assign(@aa.bb.cc(0)) = 1
+        assign(@aa.bb.cc(8:1)) = 100
+
+    assign(@ff4) = @aa.bb.cc
+
+    assign(@ff8) =>
+      $if(@ff6)
+        $ @aa.bb.cc
+      $elseif(@ff7)
+        $if(0)
+          $ @aa.bb.cc+1
+        $else
+          $ 32\h123
+      $else
+        $ 32\h456
+
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new RegSimple())
+
+    Channel(
+      a_ch: channel()
+      b_ch: channel()
+      c_ch: channel()
+      en_ch: channel()
+      )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      )
+
+
+    @dut.bind(
+      clear: @a_ch
+      aa:    @b_ch
+      reg_out: @c_ch
+      en:    @en_ch
+    )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dump_wave("test.fsdb")
+
+    initial
+      $sequence()
+      .init =>
+        assign @a_ch.Port = 1
+        assign @en_ch.Port.notupdateEnable = 1 #no enable
+      .delay(1000) =>
+        @assert_eq(@c_ch.Port[0],23,'test init value')
+        @assert_eq(@c_ch.Port[1],0xff,'test fromMsb')
+        @assert_ne(@c_ch.Port[2],0,'test no reset')
+        @assert_eq(@c_ch.Port[3],0x7f,'test clear enable')
+        @assert_eq(@c_ch.Port[4],0,'test reset parameter')
+        @assert_eq(@c_ch.Port[5],0x1ff,'test negedge clock')
+        @assert_eq(@c_ch.Port[6],0b111111110,'test drive function')
+        @assert_eq(@c_ch.Port[7],0x123,'test assign from else if')
+        @assert_eq(@c_ch.Port[8],0,'test enable')
+        @assert_eq(@c_ch.Port[9],0b111111110,'test local register')
+        @assert_eq(@c_ch.Port[10],200,'test register array')
+        @assert_eq(@c_ch.Port[11],22,'test register map')
+        @assert_1(@c_ch.Port[12],'test state set/is')
+        @assert_1(@c_ch.Port[13],'test state switch')
+
+        @assert_eq(@b_ch.Port.bb.cc,201,'test output use as reg')
+      .delay(100) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=tb

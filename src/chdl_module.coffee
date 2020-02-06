@@ -204,8 +204,17 @@ class Module
   setDefaultReset: (reset)=>
     @__defaultReset=reset
 
-  _clock: => @__defaultClock
-  _reset: => @__defaultReset
+  _clock: =>
+    if @__defaultClock?
+      this[@__defaultClock]
+    else
+      throw new Error("Can not find default clock")
+
+  _reset: =>
+    if @__defaultReset?
+      this[@__defaultReset]
+    else
+      throw new Error("Can not find default reset")
 
   setBlackBox: ()=> @__isBlackBox=true
 
