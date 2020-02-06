@@ -5,6 +5,7 @@ class handshakeTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       tx_clk: vreg()
@@ -29,7 +30,7 @@ class handshakeTb extends Module
     @create_clock(@tx_clk,35)
     @create_clock(@rx_clk,25)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
     Net valid
     Net(data,16)

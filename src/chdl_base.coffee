@@ -4,7 +4,6 @@ log    =  require 'fancy-log'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
-Vreg     = require('chdl_vreg')
 Vec     = require('chdl_vec')
 Wire    = require('chdl_wire')
 Port    = require('chdl_port')
@@ -106,14 +105,6 @@ statementGen=(statement)->
       lhs=lhs.refName()
     if lhs.constructor?.name is 'Port'
       lhs=lhs.refName()
-    if lineno? and lineno>=0
-      "  #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
-    else
-      "  #{lhs} = #{rhsExpand(rhs)};"
-  else if statement[0]=='assign_vreg'
-    lhs=statement[1].refName()
-    rhs=statement[2]
-    lineno=statement[3]
     if lineno? and lineno>=0
       "  #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
     else
@@ -274,14 +265,6 @@ code_gen= (inst)=>
         lhs=lhs.refName()
       else if lhs.constructor?.name is 'Port'
         lhs=lhs.refName()
-      if lineno? and lineno>=0
-        printBuffer.add "assign #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
-      else
-        printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
-    else if statement[0]=='assign_vreg'
-      lhs=statement[1].refName()
-      rhs=statement[2]
-      lineno=statement[3]
       if lineno? and lineno>=0
         printBuffer.add "assign #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
       else
@@ -466,8 +449,6 @@ output=(width=1)->packEl('port',Port.out(width))
 
 bind= (name)-> Port.bind(name)
 
-vreg= (width=1)-> packEl('reg', new Vreg(width))
-
 vec= (width,depth)-> Vec.create(width,depth)
 
 channel= (path=null)-> Channel.create(path)
@@ -495,7 +476,6 @@ module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind
 module.exports.channel     = channel
-module.exports.vreg        = vreg
 module.exports.vec         = vec
 module.exports.channel_wire = instEnv.getWire
 module.exports.channel_exist = instEnv.hasChannel

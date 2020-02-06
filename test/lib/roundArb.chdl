@@ -5,6 +5,7 @@ class roundArbTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       clk: vreg()
@@ -21,7 +22,7 @@ class roundArbTb extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
 
     initial
@@ -51,7 +52,7 @@ class roundArbTb extends Module
       .end()
 
 
-    Net(dout,2) = $roundArbiter([@d1,@d2,@d3],1)
+    Net(dout,2) = $round_arbiter([@d1,@d2,@d3],1)
 
 
 

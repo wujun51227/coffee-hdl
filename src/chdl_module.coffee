@@ -236,7 +236,7 @@ class Module
   _dumpVar: ->
     out={}
     for [name,item] in toFlatten(@__regs)
-      if item.constructor.name=='Vreg'
+      if item.constructor.name=='Wire'
         _.set(out,name,{width:item.getWidth()})
     return out
 
@@ -711,6 +711,17 @@ class Module
     pWire.elName=toSignal(_id('__'+name))
     pWire.hier=pWire.elName
     ret = packEl('wire',pWire)
+    @__local_wires.push(ret)
+    return ret
+
+  _localVreg: (width=1,name='v')->
+    pWire=Wire.create(Number(width))
+    pWire.cell=this
+    pWire.setLocal()
+    pWire.setVirtual()
+    pWire.elName=toSignal(_id('__'+name))
+    pWire.hier=pWire.elName
+    ret = packEl('reg',pWire)
     @__local_wires.push(ret)
     return ret
 

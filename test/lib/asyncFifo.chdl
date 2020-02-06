@@ -5,6 +5,7 @@ class asyncFifoTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       clk: vreg()
@@ -27,7 +28,7 @@ class asyncFifoTb extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
 
     initial
@@ -73,7 +74,7 @@ class asyncFifoTb extends Module
         @sim_finish()
       .end()
 
-    assign({dout:@dout,empty:@empty,full:@full}) = $asyncFifo(8,@din,@push,@pop)
+    assign({dout:@dout,empty:@empty,full:@full}) = $async_fifo(8,@din,@push.attach(@clk,@rstn),@pop.attach(@clk,@rstn))
 
 
 

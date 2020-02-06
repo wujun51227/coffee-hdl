@@ -239,8 +239,6 @@ getValue=(i)=>
     return i.refName()
   if i.constructor?.name=='Reg'
     return i.refName()
-  if i.constructor?.name=='Vreg'
-    return i.refName()
   if i.constructor?.name=='Vnumber'
     return i.refName()
   if _.isFunction(i)
@@ -329,9 +327,6 @@ ifToCond=(block,index,bin) =>
       nextBin=[]
       bin.push({type:'cond',e:i[1],action:nextBin})
       index=ifToCond(block,index+1,nextBin)
-    else if i[0]=='assign_vreg'
-      el=i[1]
-      bin.push rhsTraceExpand(el.hier,{lsb:el.lsb,msb:el.msb},i[2])...
     else if i[0]=='elseif'
       nextBin=[]
       bin.push({type:'cond',e:i[1],action:nextBin})

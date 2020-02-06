@@ -44,10 +44,12 @@ class InitSimple extends Module
         .event('hello')
         .end()
 
+    xx = vreg(12).init(0)
     initial
       $sequence()
       .init ()=>
         assign(@aa) = $ 100
+        assign xx = 100
       .end()
 
     initial

@@ -5,6 +5,7 @@ class fixArbTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       clk: vreg()
@@ -21,7 +22,7 @@ class fixArbTb extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
 
     initial
@@ -47,6 +48,6 @@ class fixArbTb extends Module
       .end()
 
 
-    Net(dout,2) = $fixArbiter([@d1,@d2,@d3],2)
+    Net(dout,2) = $fix_arbiter([@d1,@d2,@d3],2)
 
 module.exports=fixArbTb

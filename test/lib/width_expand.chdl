@@ -5,6 +5,7 @@ class widthExpandTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       tx_clk: vreg()
@@ -28,7 +29,7 @@ class widthExpandTb extends Module
   build: ->
     @create_clock(@tx_clk,10)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
     initial
       $sequence()

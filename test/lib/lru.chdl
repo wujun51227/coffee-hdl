@@ -5,6 +5,7 @@ class lruTb extends Module
     super()
 
     Mixin importLib('chdl_component_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       clk: vreg()
@@ -24,7 +25,7 @@ class lruTb extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dumpWave("test.fsdb")
+    @dump_wave("test.fsdb")
 
 
     initial

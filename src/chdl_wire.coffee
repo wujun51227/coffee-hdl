@@ -1,6 +1,7 @@
 CircuitEl=require 'chdl_el'
 _ = require 'lodash'
 {rhsTraceExpand,_expr,packEl,toNumber,cat}=require 'chdl_utils'
+Vnumber = require 'chdl_number'
 
 class Wire extends CircuitEl
   width: 0
@@ -30,6 +31,7 @@ class Wire extends CircuitEl
     @resetName=null
     @staticWire=true
     @staticAssign=false
+    @virtual=false
     @share={
       assignList:[]
       alwaysList:null
@@ -69,9 +71,12 @@ class Wire extends CircuitEl
 
   setLocal: => @local=true
 
+  setVirtual: => @virtual=true
+  isVirtual: => @virtual
+
   setGlobal: => @local=false
 
-  init: (v)->
+  init: (v)=>
     @value=v
     return this
 
@@ -225,7 +230,13 @@ class Wire extends CircuitEl
       list.push "logic "+@elName+";"
     else if @width>1
       list.push "logic ["+(@width-1)+":0] "+@elName+";"
+
+    list.push "initial begin"
+    list.push "  #{@elName} = #{Vnumber.hex(@width,@value).refName()};"
+    list.push "end"
     return list.join("\n")
+
+  verilogUpdate: -> null
 
   setWidth:(w)-> @width=w
   getWidth:()=> @width
