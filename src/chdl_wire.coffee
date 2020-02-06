@@ -231,9 +231,10 @@ class Wire extends CircuitEl
     else if @width>1
       list.push "logic ["+(@width-1)+":0] "+@elName+";"
 
-    list.push "initial begin"
-    list.push "  #{@elName} = #{Vnumber.hex(@width,@value).refName()};"
-    list.push "end"
+    if @virtual
+      list.push "initial begin"
+      list.push "  #{@elName} = #{Vnumber.hex(@width,@value).refName()};"
+      list.push "end"
     return list.join("\n")
 
   verilogUpdate: -> null
