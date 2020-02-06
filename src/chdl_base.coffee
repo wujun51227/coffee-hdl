@@ -39,7 +39,7 @@ cell_build = (inst) =>
     i.inst._link(i.name)
     #log 'Link cell',i.name
     i.inst._setParentNode(inst)
-    if (not i.inst.__isCombModule) and i.inst.__autoClock
+    if (not i.inst.__isCombModule)
       if i.inst.__defaultClock==null
         if inst.__defaultClock
           i.inst._setDefaultClock(inst.__defaultClock)
@@ -371,7 +371,7 @@ code_gen= (inst)=>
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
     printBuffer.add i.inst.getModuleName()+paramDeclare+i.name+'('
-    if (not i.inst.__isCombModule) and i.inst.__autoClock
+    if (not i.inst.__isCombModule)
       if i.inst.__defaultClock
         clockPort=i.inst.__ports[i.inst.__defaultClock]
         if (!clockPort.isBinded())
@@ -415,7 +415,7 @@ getVerilogParameter=(inst)->
     return " #(\n  "+list.join(",\n  ")+"\n) "
 
 toSim=(inst)->
-  if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
+  if (not inst.__isCombModule) and config.autoClock
     if inst.__defaultClock==null
       inst._setDefaultClock('__clock')
       inst._addPort('__clock','input',1)
@@ -430,7 +430,7 @@ toSim=(inst)->
 
 
 toVerilog=(inst)->
-  if (not inst.__isCombModule) and config.autoClock and inst.__autoClock
+  if (not inst.__isCombModule) and config.autoClock
     if inst.__defaultClock==null
       inst._setDefaultClock('__clock')
       inst._addPort('__clock','input',1)

@@ -1,0 +1,178 @@
+#########################################################3
+# Design
+#########################################################3
+class cell1 extends Module
+  constructor: ->
+    super()
+
+    Port(
+      dout: output(10)
+    )
+
+    Reg(
+      count: reg(10)
+    )
+
+  build: ->
+    assign @dout = @count
+    assign(@count)
+      $if(@count!=777) => $ @count + 1
+      $else => $ @count
+
+class cell2 extends Module
+  constructor: ->
+    super()
+
+    @setCombModule()
+
+    Port(
+      dout: output(10)
+    )
+
+  build: ->
+    assign @dout = 0x123
+
+class cell3 extends Module
+  constructor: ->
+    super()
+
+    Port(
+      dout: output(10)
+      clock: input().asClock()
+      rstn: input().asReset()
+    )
+
+    Reg(
+      count: reg(10)
+    )
+
+  build: ->
+    assign @dout = @count
+    assign(@count)
+      $if(@count!=111) => $ @count + 1
+      $else => $ @count
+
+class cell4 extends Module
+  constructor: ->
+    super()
+
+    Port(
+      dout: output(10)
+      clock1: input().asClock()
+      reset1: input().asReset()
+      clock2: input().asClock()
+      reset2: input().asReset()
+    )
+
+    Reg(
+      count: reg(10).clock('clock2').reset('reset2')
+    )
+
+  build: ->
+    assign @dout = @count
+    assign(@count)
+      $if(@count!=333) => $ @count + 1
+      $else => $ @count
+
+class DefaultClock extends Module
+
+  constructor: ->
+    super()
+    Port(
+      ex_clock: input().asClock()
+      ex_reset: input().asReset()
+      dout: [
+        bind('out1')
+        bind('out2')
+        bind('out3')
+        bind('out4')
+      ]
+    )
+
+    CellMap(
+      u0_cell1: new cell1()
+      u0_cell2: new cell2()
+      u0_cell3: new cell3()
+      u0_cell4: new cell4()
+    )
+
+    Channel(
+      out1: channel()
+      out2: channel()
+      out3: channel()
+      out4: channel()
+      clk1_ch: channel()
+      rst1_ch: channel()
+      clk2_ch: channel()
+      rst2_ch: channel()
+    )
+
+    @u0_cell1.bind(
+      dout: @out1
+    )
+
+    @u0_cell2.bind(
+      dout: @out2
+    )
+
+    @u0_cell3.bind(
+      dout: @out3
+    )
+
+    @u0_cell4.bind(
+      dout: @out4
+      clock1: @clk1_ch
+      reset1: @rst1_ch
+      clock2: @clk2_ch
+      reset2: @rst2_ch
+    )
+
+  build: ->
+    assign @clk2_ch.Port = @ex_clock
+    assign @rst2_ch.Port = @ex_reset
+    assign @clk1_ch.Port = 1
+    assign @rst1_ch.Port = 1
+
+class tb extends Module
+
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+    CellMap(
+      dut: new DefaultClock()
+    )
+
+    Channel(
+      dout_ch: channel()
+    )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+    @dut.bind(
+      dout: @dout_ch
+    )
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+
+    @dump_wave("test.fsdb")
+    initial
+      $sequence()
+      .delay(10000) =>
+        @assert_eq(@dout_ch.Port[0],777,'test auto clock module')
+        @assert_eq(@dout_ch.Port[1],0x123,'test combo module')
+        @assert_eq(@dout_ch.Port[2],111,'test overwrite auto clock module')
+        @assert_eq(@dout_ch.Port[3],333,'test multi clock module')
+      .delay(100) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=tb

@@ -179,7 +179,6 @@ class Module
     @__isBlackBox=false
     @__specify=false
     @__specifyModuleName=null
-    @__autoClock=true
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
     @__sim=false
@@ -219,8 +218,6 @@ class Module
   setBlackBox: ()=> @__isBlackBox=true
 
   isBlackBox: ()=> @__isBlackBox
-
-  disableAutoClock: ()=> @__autoClock=false
 
   _getChannelWire: (channelName,path=null)->
     if @__channels[channelName]?

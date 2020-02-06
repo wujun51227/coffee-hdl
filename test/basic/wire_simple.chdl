@@ -1,0 +1,151 @@
+_ = require 'lodash'
+
+dataPack= ->
+  return {
+    addr: wire(5)
+    data: [
+      wire(5)
+      wire(5)
+      wire(5)
+      wire(5)
+    ]
+  }
+
+class WireSimple extends Module
+  constructor: ->
+    super()
+    Port(
+      din: input(5)
+      dout: (output(5) for i in _.range(20))
+    )
+
+    Wire(
+      w1: wire(5)
+      w2: wire(5)
+      w3: wire(5)
+      w4: wire(5)
+      w5: wire(5)
+      result: wire(5).setField(
+        carry: 4
+        sum: [3,0]
+        )
+      w6:[
+        wire(5)
+        wire(5)
+        a:
+          b: wire(5)
+      ]
+      w7: dataPack.call(this)
+      w8: [
+        wire(5)
+        wire(5)
+        wire(5)
+        ]
+    )
+
+  adder: (a,b)->
+    Net(c,5) =a+b
+    return $ c
+
+  build: ->
+    assign(@w1) = @din
+    assign @dout[0] = @w1
+
+    assign(@w2(2:0)) = @din(4:2)
+    assign(@w2(3)) = 0
+    assign(@w2(4)) = 1
+    assign @dout[1] = @w2
+
+    assign(@w3) = @din
+    assign(@dout[2](2:0)) = @w3.reverse()(4:2)
+    assign(@dout[2].fromMsb(2)) = @w3.fromMsb(2)
+
+    width=5
+    assign(@dout[3]([width-1]:2)) = @w3.select((i)=>i%2==0)
+    assign(@dout[3].fromLsb(2)) = @w3.fromLsb(2)
+
+    assign(@result.field('carry')) = 1
+    assign(@result.field('sum')) = 4\b1001
+    assign(@dout[4]) =  @result
+
+    always
+      @w4.pending(17)
+      $if(3<2)
+        assign(@w4) = $ @din + 1
+      #$else
+      #  assign(@w4) = $ @din - 1
+
+    assign(@dout[5]) =  @w4
+
+    assign(@w5) = @adder(@din,1)
+    assign(@dout[6]) =  @w5
+
+    Net(dummy,5)
+    @w1(0,5).drive(@dout[7],dummy)
+
+    assign @dout[8] = dummy
+
+
+    assign @w6[1] = @din
+    assign @w6[2].a.b = @din
+
+    assign @dout[9] = @w6[1]
+    assign @dout[10] = @w6[2].a.b
+
+    assign(@w7.data[1]) = @din
+    assign @dout[11] = @w7.data[1]+1
+
+    #data pack only return from a block
+    assign(@w8)
+      [$(@din+1),$(@din+2),$(@din+3)]
+
+    assign @dout[12] = @w8[0]
+    assign @dout[13] = @w8[1]
+    assign @dout[14] = @w8[2]
+
+class tb extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(dut:new WireSimple())
+
+    Channel(
+      din: channel()
+      dout: channel()
+    )
+
+
+    @dut.bind(
+      din: @din
+      dout: @dout
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(10) =>
+        assign @din.Port = 0b10011
+      .delay(10) =>
+        @assert_eq(@dout.Port[0],0b10011,'test simple assign')
+        @assert_eq(@dout.Port[1],0b10100,'test slice')
+        @assert_eq(@dout.Port[2],0b10110,'test reverse and fromMsb')
+        @assert_eq(@dout.Port[3],0b10111,'test select and fromLsb')
+        @assert_eq(@dout.Port[4],0b11001,'test field')
+        @assert_eq(@dout.Port[5],17,'test wire pending in always')
+        @assert_eq(@dout.Port[6],0b10100,'test Net and function')
+        @assert_eq(@dout.Port[7],0b10011,'test drive')
+        @assert_eq(@dout.Port[8],0b10011,'test Net declare')
+        @assert_eq(@dout.Port[9],0b10011,'test array')
+        @assert_eq(@dout.Port[10],0b10011,'test map')
+        @assert_eq(@dout.Port[11],0b10100,'test use interface')
+        @assert_eq(@dout.Port[12],0b10100,'test data pack return')
+        @assert_eq(@dout.Port[13],0b10101)
+        @assert_eq(@dout.Port[14],0b10110)
+      .delay(10) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=tb
