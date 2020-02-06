@@ -1,0 +1,76 @@
+class InitSimple extends Module
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+
+    Reg(
+      aa: vreg(16)
+      cc: vreg(16)
+    )
+
+  build: ->
+    v1= vreg()
+    v2= vreg()
+    v3= vreg()
+    forever
+      $sequence()
+      .delay(10) =>
+        assign(@cc) = @cc+1
+      .end()
+
+    s1=(d1,d2,d3)=>
+      $sequence('s1')
+        .posedge(v1) =>
+          assign(@aa) = d1
+        .negedge(v2) =>
+          assign(@aa) = d2
+        .wait($ v3==1) =>
+          assign(@aa) = d3
+        .delay(100) =>
+          assign(@aa) = 0
+        .end()
+
+    s2= =>
+      $sequence('s2')
+        .init  =>
+          assign(@aa) = 201
+          @verilog('$display("data is %d",aa);')
+        .delay(100) =>
+        .event('hello')
+        .end()
+
+    initial
+      s1(0x100,0x200,0x0300)
+      s2()
+
+    initial
+      $sequence('s3')
+      .trigger('hello') =>
+        assign(@aa) = 0x55aa
+      .end()
+
+    initial
+      $sequence()
+      .delay(105) =>
+        @assert_eq(@cc,10,'test forever')
+        assign v1 =1
+      .delay(100) =>
+        @assert_eq(@aa,0x100,'test posedge')
+        assign v2 =1
+      .delay(100) =>
+        assign v2 =0
+      .delay(100) =>
+        @assert_eq(@aa,0x200,'test nedgedge')
+        assign v3 =1
+      .delay(5) =>
+        @assert_eq(@aa,0x300,'test wait')
+      .trigger('hello') =>
+      .delay(5) =>
+        @assert_eq(@aa,0x55aa,'test event')
+      .delay(100) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+      
+module.exports=InitSimple
+

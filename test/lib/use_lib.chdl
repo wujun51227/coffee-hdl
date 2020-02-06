@@ -57,7 +57,15 @@ class UseLib extends Module
       dout5: wire(1)
       dout6: wire(1)
       dout7: wire(1)
+      dout8: wire(8)
     )
+
+    Reg(
+      v1: vreg(8).init(1)
+      v2: vreg(8).init(2)
+      v3: vreg(8).init(3)
+    )
+
 
     Channel(
       x: @createArray(10,=>channel())
@@ -95,6 +103,10 @@ class UseLib extends Module
     assign(@dout6) = $inRange(@select,@dout1,@dout2)
 
     assign(@dout7) = $delay(5,@dout6)
+
+    assign(@dout8) = $join([@v1,@v2,@v3],(sum,i)=>$(sum+i))
+
+    $bundleAssign(@a,@b)
 
     @dump_wave('hello.fsdb',1000)
 

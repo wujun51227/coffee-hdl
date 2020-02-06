@@ -1,6 +1,6 @@
 Wire=require 'chdl_wire'
 Reg=require 'chdl_reg'
-{toSignal,portDeclare,packEl,toNumber}=require 'chdl_utils'
+{toSignal,packEl,toNumber}=require 'chdl_utils'
 _ = require 'lodash'
 
 class Port extends Wire
@@ -147,7 +147,17 @@ class Port extends Wire
       throw new Error('Only output port can be treat as a register')
     return packEl('port',this)
 
-  portDeclare: ->portDeclare(@type,this)
+  portDeclare: ->
+    if @type=='input'
+      if @width==1
+        "input "+toSignal(@getName())
+      else
+        "input ["+(@width-1)+":0] "+toSignal(@getName())
+    else if @type=='output'
+      if @width==1
+        "output "+@getName()
+      else
+        "output ["+(@width-1)+":0] "+@getName()
 
   setShadowReg: (i)=> @shadowReg = i
 

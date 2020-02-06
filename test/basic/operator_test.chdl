@@ -1,0 +1,77 @@
+class OperatorTest extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    Reg (
+      sel: vreg(8)
+    )
+
+    Wire(
+      out0: wire(8)
+      out1: wire(8)
+      out2: wire(8)
+      out3: wire(8)
+    )
+
+  build: ->
+    data=100
+    assign(@out0) = {data+1}
+
+    assign(@out1) = has1(@sel) + 1
+    aaa = has1(@sel)
+    assign(@out2) = aaa + 1
+
+    assign(@out3) = has1(32\h10)
+
+    Net out5 = all1(32\hff)
+    Net out6 = all1(8\hff)
+
+    Net out7 = all0(32\h10)
+    Net out8 = all0(8\h0)
+
+    Net out9 = has0(32\hff)
+    Net out10 = has0(8\hff)
+
+    Net out11 = hasOdd1(8\h7f)
+    Net out12 = hasEven1(8\hf)
+
+    v1=vreg(2).init(0b11)
+    v2=vreg(4).init(0b1100)
+    v3=vreg(2).init(0b10)
+    Net(out13,6) = cat(v1,v2(3:2),v3)
+    Net(out14,6) = expand(v1.getWidth(), v2.fromLsb(3))
+    Net(out15,6) = expand(3, v3)
+
+    initial
+      $sequence()
+        .delay(100) =>
+          assign @sel = 8\h0
+        .delay(100) =>
+          @assert_eq(@out0,101,'test local calc')
+          @assert_eq(@out1,1,'test has1')
+          @assert_eq(@out2,1,'test has1')
+          @assert_eq(@out3,1,'test has1')
+        .delay(100) =>
+          assign @sel = 8\h10
+        .delay(100) =>
+          @assert_eq(@out1,2,'test has1')
+          @assert_eq(@out2,2,'test has1')
+          @assert_eq(out5,0,'test all1')
+          @assert_eq(out6,1,'test all1')
+          @assert_eq(out7,0,'test all0')
+          @assert_eq(out8,1,'test all0')
+          @assert_eq(out9,1,'test has0')
+          @assert_eq(out10,0,'test has0')
+          @assert_eq(out11,1,'test hasOdd1')
+          @assert_eq(out12,1,'test hasEven1')
+          @assert_eq(out13,0b111110,'test cat')
+          @assert_eq(out14,0b100100,'test expand')
+          @assert_eq(out14,0b101010,'test expand')
+          @assert_report()
+          @sim_finish()
+        .end()
+
+module.exports=OperatorTest
+

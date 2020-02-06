@@ -12,7 +12,7 @@ toSignal= (i)->
 
 module.exports.toSignal=toSignal
 
-toHier= (a,b)->
+module.exports.toHier= (a,b)->
   if a? and b? and a.trim()!='' and b.trim()!=''
     return a+'.'+b
   if a? and a.trim()!=''
@@ -20,8 +20,6 @@ toHier= (a,b)->
   if b? and b.trim()!=''
     return b
   return ''
-
-module.exports.toHier=toHier
 
 toNumber=(s)->
   if isNaN(s)==false
@@ -39,7 +37,6 @@ toNumber=(s)->
       throw new Error(s+' is not a valid number format')
   else
     throw new Error(s+' is not a valid number format')
-
 
 module.exports.toNumber=toNumber
 
@@ -111,18 +108,6 @@ toFlatten = (data,target=null,root='') ->
   result
 
 module.exports.toFlatten = toFlatten
-
-module.exports.portDeclare= (type,inst)->
-  if type=='input'
-    if inst.width==1
-      "input "+toSignal(inst.getName())
-    else
-      "input ["+(inst.width-1)+":0] "+toSignal(inst.getName())
-  else if type=='output'
-    if inst.width==1
-      "output "+inst.getName()
-    else
-      "output ["+(inst.width-1)+":0] "+inst.getName()
 
 dumpInfo= (elList)->
   ret={}
@@ -220,13 +205,7 @@ module.exports.packEl = (type,bin)->
     ret[i]=bin[i]
   return ret
 
-getWidth = (number)->
-  if Number(number)==0
-    return 1
-  else
-    Math.floor(Math.log2(Number(number))+1)
-
-getValue=(i)=>
+module.exports.getValue=(i)=>
   if _.isString(i)
     return i
   if _.isNumber(i)
@@ -244,47 +223,6 @@ getValue=(i)=>
   if _.isFunction(i)
     return i().refName()
   throw new Error('arg type error'+i)
-
-module.exports.getValue=getValue
-
-catItemValidate=(item)->
-  if item.__type?
-    if ['wire','reg','port'].includes(item.__type)
-      return 1
-    else
-      return 0
-  else if item.constructor?.name?
-    if item.constructor.name == 'Vnumber'
-      return 1
-    else
-      return 0
-  else
-    return 0
-
-module.exports.cat= (args...)->
-  list=[]
-  if args.length==1 and _.isPlainObject(args[0])
-    list=_.map(_.sortBy(_.entries(args[0]),(i)=>Number(i[0])),(i)=>i[1]).reverse()
-  else if args.length==1 and _.isArray(args[0])
-    list=args[0]
-  else
-    list=args
-  for i,index in list
-    if not catItemValidate(i)
-      throw new Error("cat function item should be reg/wire/port or width number at position #{index}")
-  return '{'+_.map(list,(i)=>getValue(i)).join(',')+'}'
-
-module.exports.expand= (num,sig)->
-  if not catItemValidate(sig)
-    throw new Error("expand function item should be reg/wire/port or width number")
-  return "{#{getValue(num)}{#{getValue(sig)}}}"
-
-module.exports.all1     = (sig)-> return  "(&#{getValue(sig)})"
-module.exports.all0     = (sig)-> return "!(|#{getValue(sig)})"
-module.exports.has1     = (sig)-> return  "(|#{getValue(sig)})"
-module.exports.has0     = (sig)-> return "!(&#{getValue(sig)})"
-module.exports.hasOdd1  = (sig)-> return  "(^#{getValue(sig)})"
-module.exports.hasEven1 = (sig)-> return "!(^#{getValue(sig)})"
 
 module.exports._expr= (s,lineno=null) ->
   if simMode

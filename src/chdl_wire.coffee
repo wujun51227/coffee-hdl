@@ -78,7 +78,7 @@ class Wire extends CircuitEl
 
   init: (v)=>
     @value=v
-    return this
+    return packEl('reg',this)
 
   pending: (v)=> @share.pendingValue=v
 

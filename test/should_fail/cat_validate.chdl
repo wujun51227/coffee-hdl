@@ -21,7 +21,8 @@ class cat_validate extends Module
     )
 
   build: ->
-    n0 = 3\b0
+    n0 = 0
+    #n0 = 1\b0
     n1 = hex(3,0)
     Net(cat_ret,30) = cat(@din,@dout,@w1,@r1,3\h0,hex(3,0),n0,n1)
     

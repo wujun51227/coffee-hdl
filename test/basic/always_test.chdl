@@ -1,0 +1,93 @@
+class AlwaysTest extends Module
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+
+    Wire(
+      w1: wire(8)
+      w2: wire(8)
+    )
+
+    Reg(
+      r1: reg(8).init(0)
+      r2: reg(8).init(0)
+    )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dump_wave('test.fsdb')
+
+    v1=vreg(5)
+    v2=vreg(5)
+    v3=vreg(5)
+    v4=vreg(5)
+
+    always
+      $if(v1==hex(5,1))
+        assign(@r1) = 100
+      $elseif(v2==hex(5,2))
+        assign(@r1) = 200
+
+    always
+      @w1.pending(77)
+      $if(v1==hex(5,1))
+        assign(@w1) = 100
+      $elseif(v2==hex(5,2))
+        assign(@w1) = 200
+
+    always_if(v3==1)
+      @r2.pending(200)
+      assign(@r2) = 100
+
+    always_if(v3==1)
+      @w2.pending(200)
+      assign(@w2)
+        $if(v4) => $ 77
+        $else => $ 88
+
+    initial
+      $sequence()
+      .delay(100) =>
+        assign v1 = 1
+        assign v2 = 2
+      .delay(100) =>
+        @assert_eq(@r1,100,'test always')
+        @assert_eq(@w1,100,'test always')
+      .delay(100) =>
+        assign v1 = 0
+        assign v2 = 2
+      .delay(100) =>
+        @assert_eq(@r1,200,'test always')
+        @assert_eq(@w1,200,'test always')
+      .delay(100) =>
+        assign v1 = 0
+        assign v2 = 0
+      .delay(100) =>
+        @assert_eq(@r1,200,'test always')
+        @assert_eq(@w1,77,'test always')
+        @assert_eq(@r2,200,'test always')
+        @assert_eq(@w2,200,'test always')
+      .delay(100) =>
+        assign v3 = 1
+      .delay(100) =>
+        @assert_eq(@r2,100,'test always')
+        @assert_eq(@w2,88,'test always')
+        assign v4 = 1
+      .delay(100) =>
+        @assert_eq(@w2,77,'test always')
+      .delay(100) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=AlwaysTest
+

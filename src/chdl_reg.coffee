@@ -36,6 +36,8 @@ class Reg extends CircuitEl
 
   setGlobal: => @local=false
 
+  isVirtual: => false
+
   init: (v,initial=false)=>
     @resetValue=v
     return packEl('reg',this)

@@ -1,0 +1,44 @@
+class ReduceTest extends Module
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+
+    Wire(
+      dout1: wire(16)
+      dout2: wire(16)
+    )
+
+  build: ->
+    v1=vreg(8).init(1)
+    v2=vreg(8).init(2)
+    v3=vreg(8).init(3)
+    v4=vreg(8).init(4)
+    assign(@dout1) = $reduce([v1,v2,v3,v4],(a,b,first,last)=>
+        if first
+          $ b
+        else
+          $ a + b * 2
+      )
+
+    assign(@dout2) = $reduceRight([[$(v1==2),2],[$(v2>1),v3],v4],(sum,a,first,last)=>
+      if first
+        $ a
+      else
+        $if(a[0])
+          $ a[1]
+        $else
+          $ sum
+    )
+
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@dout1,19,'test reduce')
+        @assert_eq(@dout2,3,'test reduce')
+        @assert_report()
+        @sim_finish()
+      .end()
+
+
+module.exports=ReduceTest
+

@@ -1,0 +1,97 @@
+class BranchBlock extends Module
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+
+    Wire(
+      dout1: wire(16)
+      dout2: wire(16)
+      dout3: wire(16)
+      dout4: wire(16)
+      dout5: wire(10)
+    )
+
+  build: ->
+    v1=vreg(5)
+    v2=vreg(5)
+    v3=vreg(16)
+    v4=vreg(16)
+
+    assign(@dout1)
+      $balance [
+        $cond(v1==1) => $ v3
+        $cond(v2==2) => $ v4
+      ]
+
+    assign(@dout2)
+      $balance [
+        $cond(v1==0) => $ v3
+        $cond(v2==0) => $ v4
+      ], 8
+
+    assign(@dout3)
+      $order(
+        [
+          $cond(v1==1) => $ v2
+          $cond(v1==2) => $ v3
+          $cond(v1==3)
+          $cond(v1==4) => $ v4
+          $cond() => $ v4+v2
+        ]
+      )
+
+    list=[]
+    for i in [0..3]
+      do(i)=>
+        list.push(
+          $lazy_cond(v1(i)) => assign(@dout4) = i
+        )
+
+    always
+      $if_blocks(list)
+
+    always
+      $case(v1) =>
+        [
+          $lazy_cond(10) =>
+            assign(@dout5) = 100
+          $lazy_cond(11)
+          $lazy_cond(12)
+          $lazy_cond(13) =>
+            assign(@dout5) = 200
+          $lazy_cond() =>
+            assign(@dout5) = 300
+        ]
+
+    initial
+      $sequence()
+      .delay(100) =>
+        assign v1 = 0
+        assign v2 = 2
+        assign v3 = 0x55aa
+        assign v4 = 0x2211
+      .delay(100) =>
+        @assert_eq(@dout1,0x2211,'test balance auto width')
+        @assert_eq(@dout2,0xaa,'test balance specify width')
+        @assert_eq(@dout3,0x2213,'test order mux')
+        assign v1 = 3
+      .delay(100) =>
+        @assert_eq(@dout3,0x2211,'test order mux')
+        assign v1 = 4
+      .delay(100) =>
+        @assert_eq(@dout4,0x2,'test if blocks')
+        assign v1 = 10
+      .delay(100) =>
+        @assert_eq(@dout5,100,'test case')
+        assign v1 = 12
+      .delay(100) =>
+        @assert_eq(@dout5,200,'test case')
+        assign v1 = 14
+      .delay(100) =>
+        @assert_eq(@dout5,300,'test case')
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=BranchBlock
+
