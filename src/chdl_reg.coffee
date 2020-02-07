@@ -267,6 +267,7 @@ class Reg extends CircuitEl
     return list.join("\n")
 
   verilogUpdate: ->
+    throw new Error("clock can not be null") unless @getClock()
     list=[]
     activeEdge= if @negClock then 'negedge' else 'posedge'
     if @resetMode=='async'

@@ -1,0 +1,145 @@
+class SynSequenceTest extends Module
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+    Reg(
+      aa: reg(8)
+    )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      )
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dump_wave("test.fsdb")
+
+    v1 = vreg()
+    v2 = vreg().init(1)
+    v3 = vreg(2)
+
+    always
+      $sequence('test_seq')
+      .init ()=>
+        assign(@aa) = 1
+      .posedge(v1) =>
+        assign(@aa) = 2
+      .next(5) =>
+        assign(@aa) = 3
+      .negedge(v2) (transition,next)=>
+        $if(transition) => assign(@aa) = 4
+        $elseif(next) => assign(@aa) = 6
+        $else => assign(@aa) = 5
+      .wait($(v3==1)) (trans,next)=>
+        assign(@aa) = 7
+      .wait($(v3==2)) (trans,next)=>
+        $if(next)  #this next is posedge v1
+          assign(@aa) =8
+        $else
+          assign(@aa) =9
+      .end()
+
+    initial
+      $sequence()
+      .delay(1001) =>
+        @assert_eq(@aa,1,'test init')
+        assign v1 = 1
+      .posedge($clock()) =>   # sample v1 goto next state update aa data point
+        assign v1 = 0
+      .posedge($clock()) =>   # update to aa q point
+      .delay(5) =>
+        @assert_eq(@aa,2,'test posedge')
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>  # wait 5 clock
+      .delay(5) =>
+        @assert_eq(@aa,3,'test next')
+        assign v2 = 0
+      .posedge($clock()) =>  # sample v2
+        assign v2 = 1
+      .posedge($clock()) =>  # aa update
+      .delay(5) =>
+        @assert_eq(@aa,4,'test negedge')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,5,'test not in transition')
+        assign v3 = 1
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,6,'test next')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,7,'test wait')
+        assign v3 = 2
+      .posedge($clock()) =>
+        assign v1 = 0
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,9,'test last state')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,1,'test go idle')
+      .end()
+
+      $sequence()
+      .delay(1001) =>
+        @assert_eq(@aa,1,'test init')
+        assign v1 = 1
+      .posedge($clock()) =>   # sample v1 goto next state update aa data point
+        assign v1 = 0
+      .posedge($clock()) =>   # update to aa q point
+      .delay(5) =>
+        @assert_eq(@aa,2,'test posedge')
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>
+        @assert_eq(@aa,2)
+      .posedge($clock()) =>  # wait 5 clock
+      .delay(5) =>
+        @assert_eq(@aa,3,'test next')
+        assign v2 = 0
+      .posedge($clock()) =>  # sample v2
+        assign v2 = 1
+      .posedge($clock()) =>  # aa update
+      .delay(5) =>
+        @assert_eq(@aa,4,'test negedge')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,5,'test not in transition')
+        assign v3 = 1
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,6,'test next')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,7,'test wait')
+        assign v3 = 2
+      .posedge($clock()) =>
+        assign v1 = 1
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,8,'test skip idle if possible')
+      .posedge($clock()) =>
+      .delay(5) =>
+        @assert_eq(@aa,2,'test start from first state')
+      .delay(100) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=SynSequenceTest
+
