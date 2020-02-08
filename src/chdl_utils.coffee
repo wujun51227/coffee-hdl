@@ -225,6 +225,8 @@ module.exports.getValue=(i)=>
     return i().refName()
   throw new Error('arg type error'+i)
 
+sharpToDot = (s)->  s.replace(/#/g,'.')
+
 module.exports._expr= (s,lineno=null) ->
   if simMode
     if s.str?
@@ -236,11 +238,11 @@ module.exports._expr= (s,lineno=null) ->
     if lineno? and lineno>=0
       append=' /* '+lineno+' */ '
     if s.str?
-      toSignal(s.str+append)
+      sharpToDot(s.str+append)
     else if _.isArray(s)
       s
     else
-      toSignal(s+append)
+      sharpToDot(s+append)
 
 rhsTraceExpand= (target,slice,expandItem,bin=[])=>
   if _.isString(expandItem) or _.isNumber(expandItem)

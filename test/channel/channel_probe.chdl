@@ -64,7 +64,7 @@ class ChannelProbe extends Module
 
   build: ->
     assign @cell1_ch.Port.din = 0x2222
-    assign @cell2_probe.din = 0x3333
+    assign @cell2_probe.din   = 0x3333
     assign(@dout) = @cell2_port.din+@cell1_select.Port+@cell1_ch.Port.dout(3:0)+@cell2_probe.dout
 
 class tb extends Module

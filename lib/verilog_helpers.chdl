@@ -16,6 +16,23 @@ module.exports={
   sim_finish: ()->
     @verilog("$finish;")
 
+  fopen:(name=null)->
+    fileName = name ? @getHierarchy()+'.dump'
+    handle=vreg(32)
+    initial
+      $sequence()
+      .init =>
+        assign handle= {"$fopen(\"#{fileName}\")"}
+        @display("#{assert_module.message_prefix} Create file #{fileName}")
+      .end()
+    return handle
+
+  fdisplay:(handle,s,args...)->
+    if args.length==0
+      @verilog("$fdisplay(#{$(handle)},\"#{s}\");")
+    else
+      @verilog("$fdisplay(#{$(handle)},\"#{s}\",#{args.join(',')});")
+
   create_clock: (clk,period=10)->
     forever
       $sequence()

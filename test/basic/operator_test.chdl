@@ -68,7 +68,7 @@ class OperatorTest extends Module
           @assert_eq(out12,1,'test hasEven1')
           @assert_eq(out13,0b111110,'test cat')
           @assert_eq(out14,0b100100,'test expand')
-          @assert_eq(out14,0b101010,'test expand')
+          @assert_eq(out15,0b101010,'test expand')
           @assert_report()
           @sim_finish()
         .end()

@@ -677,6 +677,17 @@ class Module
 
     return [out,assignList]
 
+  _autoBind: (inst)->
+    ret={}
+    bindTable={}
+    channelName=_id('__channel')
+    for i in Object.keys(inst.__ports)
+      ret[i]=Channel.create()
+      bindTable[i]=ret[i]
+    @_channel({[channelName]:ret})
+    inst.bind(bindTable)
+    return ret
+    
   bind: (obj)->
     for port,channel of obj when _.get(@__ports,port)?
       if channel instanceof Channel
@@ -992,6 +1003,8 @@ class Module
     keys=Object.keys(@__signature)
     for i in keys
       delete @__signature[i]
+
+  getHierarchy: -> @_getPath()
           
   _getPath:(cell=null,list=[])->
     cell=this if cell==null
