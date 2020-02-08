@@ -1,0 +1,47 @@
+#########################################################3
+# Design
+#########################################################3
+class SubModule extends Module
+  constructor: ->
+    super()
+    Port(
+      dout: output(16)
+    )
+    @moduleParameter([
+      { key:'hello',value:100}
+    ])
+
+  build: ->
+    assign @dout = @getParameter('hello')
+
+class ParameterTest extends Module
+  u0_cell: new SubModule()
+
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+    Port()
+
+    @u0_cell.instParameter([
+      { key:'hello',value:200}
+    ])
+
+    Channel(
+      ch: channel()
+    )
+
+    @u0_cell.bind(
+      dout: @ch
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@ch.Port,200,'test parameter')
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=ParameterTest
+
