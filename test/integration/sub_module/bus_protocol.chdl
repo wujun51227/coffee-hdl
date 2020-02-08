@@ -1,0 +1,12 @@
+
+module.exports={
+  master: => {
+    ready: input()
+    valid: output()
+  }
+  slave: => {
+    ready: output()
+    valid: input()
+  }
+}
+

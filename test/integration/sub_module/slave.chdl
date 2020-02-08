@@ -1,0 +1,14 @@
+bus=importLib('./bus_protocol.chdl')
+
+class slave_cell extends Module
+  constructor: ->
+    super()
+    Port(
+      slave: bus.slave()
+    )
+
+  build: ->
+    assign @slave.ready = ~@slave.ready
+
+
+module.exports=slave_cell

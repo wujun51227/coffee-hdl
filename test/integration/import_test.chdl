@@ -1,32 +1,5 @@
-#########################################################3
-# Design
-#########################################################3
-bus={
-  master:
-    ready: input()
-    valid: output()
-  slave:
-    ready: output()
-    valid: input()
-}
-
-class master_cell extends Module
-  constructor: ->
-    super()
-    Port(
-      master: bus.master
-    )
-
-  build: ->
-
-class slave_cell extends Module
-  constructor: ->
-    super()
-    Port(
-      slave: bus.slave
-    )
-
-  build: ->
+master_cell = importLib('./sub_module/master.chdl')
+slave_cell = importLib('./sub_module/slave.chdl')
 
 class cell1 extends Module
   u0_master_cell: new master_cell()
@@ -59,23 +32,28 @@ class cell2 extends Module
   build: ->
 
 
-class HubSimple extends Module
+class ImportTest extends Module
   u0_cell1: new cell1()
   u0_cell2: new cell2()
 
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
 
     Probe(
       aaa: 'u0_cell1.master_channel'
       bbb: 'u0_cell2.slave_channel'
     )
-    #Hub(
-    #  bus_connect: ['u0_cell1.master_channel','u0_cell2.slave_channel']
-    #  )
 
   build: ->
     $channelPortHub(@aaa,@bbb)
 
-module.exports=HubSimple
+    initial
+      $sequence()
+      .delay(1000) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=ImportTest
 
