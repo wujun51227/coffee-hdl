@@ -138,6 +138,13 @@ class Module
 
   moduleParameter: (s)->  @__moduleParameter=s
 
+  getParameter: (key)->
+    item=_.find(@__moduleParameter,{key:key})
+    if item?
+      return key
+    else
+      throw new Error("Can not find parameter key #{key}")
+
   constructor: (param=null)->
     @param=param
     @__id = uuid()

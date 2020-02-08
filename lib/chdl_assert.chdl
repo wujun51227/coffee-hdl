@@ -7,20 +7,22 @@ class chdl_assert extends Module
     super()
     Reg(
       assert_fail_flag: vreg().init(0)
-      assert_message: vreg(512).init(0)
+      assert_message: vreg(8*256).init(0)
     )
     @message_prefix='[chdl_message]  '
     @assert_prefix='[chdl_assert]  '
 
-  sToHex: (s)->
-    buf=Buffer.from(s)
-    return "512'h"+buf.toString('hex')
+  sToString: (s)->
+    if s.length<256
+      return "\"#{s}\""
+    else
+      throw new Error("'#{s}' length shoud not great than 256")
 
   report_gen: ()->
     self=this
     return (message='')->
       if message
-        assign self.assert_message = self.sToHex(message)
+        assign self.assert_message = self.sToString(message)
         @display("#{self.message_prefix}%0s",$(self.assert_message))
       $if(self.assert_fail_flag==0)
         @display("#{self.assert_prefix}===============")
@@ -40,7 +42,7 @@ class chdl_assert extends Module
     self=this
     return (sig,value,message='')->
       if message
-        assign self.assert_message = self.sToHex(message)
+        assign self.assert_message = self.sToString(message)
         @verilog("$display(\"#{self.message_prefix}%0s\",#{$(self.assert_message)});")
       if type=='eq'
         $if(sig!=value)
