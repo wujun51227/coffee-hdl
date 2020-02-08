@@ -165,22 +165,25 @@ class Wire extends CircuitEl
       return packEl('wire',wire)
 
   refName: =>
+    oomr=''
+    if @cell._isGlobal()
+      oomr=@cell.getModuleName()+'#'
     if @cell.__sim
       if @lsb>=0
         if @width==1
-          @hier+".bit("+@lsb+")"
+          oomr+@hier+".bit("+@lsb+")"
         else
-          @hier+".slice("+@msb+","+@lsb+")"
+          oomr+@hier+".slice("+@msb+","+@lsb+")"
       else
         @hier+'.getValue()'
     else
       if @lsb>=0
         if @width==1
-          @elName+"["+@lsb+"]"
+          oomr+@elName+"["+@lsb+"]"
         else
-          @elName+"["+@msb+":"+@lsb+"]"
+          oomr+@elName+"["+@msb+":"+@lsb+"]"
       else
-        @elName
+        oomr+@elName
 
   get: -> @value
 
@@ -199,23 +202,28 @@ class Wire extends CircuitEl
 
   isAssigned: => @staticWire==false or @staticAssign
 
-  assign: (assignFunc,lineno=-1)=>
-    @cell.__assignWaiting=true
-    @cell.__assignWidth=@width
-    if @cell.__assignEnv=='always'
+  assign: (assignFunc,lineno=-1,self_cell=null)=>
+    if self_cell!=null
+      cell=self_cell
+    else
+      cell=@cell
+
+    cell.__assignWaiting=true
+    cell.__assignWidth=@width
+    if cell.__assignEnv=='always'
       @staticWire=false
       if @staticAssign
         throw new Error("This wire have been static assigned #{@elName}")
-      @cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
-      @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
+      cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
+      cell.__updateWires.push({type:'wire',name:@hier,inst:this})
     else
       if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again #{@elName}")
       assignItem=["assign",this,assignFunc(),lineno]
-      @cell.__wireAssignList.push assignItem
+      cell.__wireAssignList.push assignItem
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
-    @cell.__assignWaiting=false
+    cell.__assignWaiting=false
 
   getDepNames: => _.uniq(@depNames)
 

@@ -162,6 +162,7 @@ class Module
     @__sequenceBlock=null
     @__cells      =[]
     @__uniq       = true
+    @__global     = false
 
     @__bindChannels=[]
     @__defaultClock=null
@@ -185,6 +186,13 @@ class Module
 
   _setSim: ->
     @__sim=true
+
+  _setGlobal: ->
+    @__global=true
+    @notUniq()
+    @setCombModule()
+
+  _isGlobal: -> @__global
 
   _setParentNode: (node)->
     @__parentNode=node
@@ -681,8 +689,10 @@ class Module
               netEl.setType(sig.getType())
               channel.Port=netEl
           else
-            if @__channels[sig.bindChannel].Port.__type=='wire'
-              v=@__channels[sig.bindChannel].Port
+            channelInst = _.get(this,sig.bindChannel)
+            throw new Error("Can find bindChannel #{sig.bindChannel}") unless channelInst
+            if channelInst.Port.__type=='wire'
+              v=channelInst.Port
               net=Wire.create(v.getWidth())
               if name
                 net.link(channel.cell,toHier(channel.hier,name))
@@ -695,7 +705,7 @@ class Module
                 netEl.setType(v.getType())
                 channel.Port=netEl
             else
-              for k,v of @__channels[sig.bindChannel].Port
+              for k,v of channelInst.Port
                 net=Wire.create(v.getWidth())
                 if name
                   net.link(channel.cell,toHier(channel.hier,name+'.'+k))
@@ -965,6 +975,12 @@ class Module
   verilog: (s)->
     @__regAssignList.push ['verilog',s]
 
+  display: (s,args...)->
+    if args.length==0
+      @__regAssignList.push ['verilog',"$display(\"#{s}\");"]
+    else
+      @__regAssignList.push ['verilog',"$display(\"#{s}\",#{args.join(',')});"]
+
   _clean: ->
     keys=Object.keys(@__signature)
     for i in keys
@@ -980,6 +996,7 @@ class Module
       @_getPath(cell.__parentNode,list)
 
   _assign: (signal,lineno=-1)=>
+    self=this
     if _.isPlainObject(signal) or _.isArray(signal)
       return (block)=>
         if _.isFunction(block)
@@ -991,24 +1008,24 @@ class Module
           el=_.get(signal,path)
           if el?
             if _.isFunction(item)
-              el.assign(item,lineno)
+              el.assign(item,lineno,self)
             else
-              el.assign((->item),lineno)
+              el.assign((->item),lineno,self)
     else if _.isFunction(signal)
       return (block)->
         if _.isFunction(block)
-          signal().assign(block,lineno)
+          signal().assign(block,lineno,self)
         else
-          signal().assign((->block),lineno)
+          signal().assign((->block),lineno,self)
     else
       return (block)->
         if _.isFunction(block)
           if signal?
-            signal.assign(block,lineno)
+            signal.assign(block,lineno,self)
           else
             throw new Error("Assign to signal is undefined at line: #{lineno}")
         else
-          signal.assign((->block),lineno)
+          signal.assign((->block),lineno,self)
 
   _while: (cond)=>
     if @__sequenceBlock==null

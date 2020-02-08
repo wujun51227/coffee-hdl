@@ -11,10 +11,12 @@ class cell1 extends Module
     )
 
   build: ->
+    assign @bundle.din=@bundle.dout
 
 class cell2 extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       bundles: [
         {
@@ -29,15 +31,25 @@ class cell2 extends Module
     )
 
   build: ->
+    assign @bundles[0].dout=0x1111
+    assign @bundles[1].dout=0x2222
+
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@bundles[0].din,0x1111,'check cell1 bundle connection')
+        @assert_eq(@bundles[1].din,0x2222,'check cell2 bundle connection')
+      .end()
 
 
-class ChannelPortHub extends Module
+class ChannelPortArrayHub extends Module
   u0_cell2: new cell2()
   u0_cell1: new cell1()
   u1_cell1: new cell1()
 
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
 
     Channel(
       conn0: channel()
@@ -61,5 +73,12 @@ class ChannelPortHub extends Module
     $channelPortHub(@conn0.Port[0],@conn1.Port)
     $channelPortHub(@conn0.Port[1],@conn2.Port)
 
-module.exports=ChannelPortHub
+    initial
+      $sequence()
+      .delay(200) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=ChannelPortArrayHub
 

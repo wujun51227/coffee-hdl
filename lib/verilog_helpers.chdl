@@ -1,17 +1,6 @@
-sToHex=(s)->
-  buf=Buffer.from(s)
-  return "512'h"+buf.toString('hex')
-
-prefix='[chdl_assert] '
-message_prefix='[chdl_message] '
+assert_module = GlobalModule(importLib('./chdl_assert.chdl.js'))
 
 module.exports={
-  init: ->
-    Reg(
-      assert_fail_flag: vreg().init(0)
-      assert_message: vreg(512).init(0)
-    )
-
   dump_wave: (fileName)->
     initial
       $sequence()
@@ -44,76 +33,29 @@ module.exports={
       .end()
 
   assert_1: (sig,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig!==1)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 1\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('eq').call(this,sig,1,message)
 
   assert_0: (sig,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig!==0)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be 0\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('eq').call(this,sig,0,message)
 
   assert_eq: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig!==value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should be #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('eq').call(this,sig,value,message)
 
   assert_ne: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig===value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should NOT be #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('ne').call(this,sig,value,message)
 
   assert_ge: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig<value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should >= #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('ge').call(this,sig,value,message)
 
   assert_gt: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig<=value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should > #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('gt').call(this,sig,value,message)
 
   assert_le: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig>value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should <= #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('le').call(this,sig,value,message)
 
   assert_lt: (sig,value,message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(sig>=value)
-      @verilog("$display(\"#{prefix}%0t Error: #{sig.getName()} should < #{value}\",$time);")
-      assign @assert_fail_flag = 1
+    assert_module.compare_gen('lt').call(this,sig,value,message)
 
   assert_report: (message='')->
-    if message
-      assign @assert_message = sToHex(message)
-      @verilog("$display(\"#{message_prefix}%0s\",assert_message);")
-    $if(@assert_fail_flag==0)
-      @verilog("$display(\"#{prefix}Simulation Pass\");")
-    $else
-      @verilog("$display(\"#{prefix}Simulation Fail\");")
-      
+    assert_module.report_gen().call(this,message)
 }

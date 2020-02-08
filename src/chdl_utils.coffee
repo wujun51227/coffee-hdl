@@ -8,7 +8,8 @@ toSignal= (i)->
   a=i.replace(/^\$\./,'')
   b=a.replace(/\.$/,'')
   c=b.replace(/\./g,'__')
-  return c
+  d=c.replace(/#/g,'.')
+  return d
 
 module.exports.toSignal=toSignal
 

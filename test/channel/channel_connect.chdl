@@ -1,20 +1,19 @@
-#########################################################3
-# Design
-#########################################################3
 class cell1 extends Module
   constructor: ->
     super()
     Port(
       bundle:
-        din: input(16)
-        dout: output(16)
+        din: output(16)
+        dout: input(16)
     )
 
   build: ->
+    assign @bundle.din= @bundle.dout
 
 class cell2 extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       bundle:
         din: input(16)
@@ -22,6 +21,17 @@ class cell2 extends Module
     )
 
   build: ->
+    v1 = vreg(16)
+    assign @bundle.dout = v1
+    initial
+      $sequence()
+      .delay(100) =>
+        assign v1 = 0x55aa
+      .delay(100) =>
+        @assert_eq(@bundle.din,0x55aa,'test connection')
+        @assert_report()
+        @sim_finish()
+      .end()
 
 
 class ChannelConn extends Module

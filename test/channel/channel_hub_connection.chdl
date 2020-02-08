@@ -1,9 +1,11 @@
 #########################################################3
 # Design
 #########################################################3
+
 class cell1 extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       bundle:
         din: input(16)
@@ -14,10 +16,19 @@ class cell1 extends Module
     )
 
   build: ->
+    assign @bundle.dout=0x1111
+    assign @bundle.sub.dout=0x2222
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@bundle.din,0x4444,'check cell1 bundle din')
+        @assert_eq(@bundle.sub.din,0x3333,'check cell1 sub din')
+      .end()
 
 class cell2 extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       sub:
         din: output(16)
@@ -25,10 +36,17 @@ class cell2 extends Module
     )
 
   build: ->
+    assign @sub.din=0x3333
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@sub.dout,0x2222,'check cell2 sub dout')
+      .end()
 
 class cell3 extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       bundle:
         din: output(16)
@@ -39,15 +57,23 @@ class cell3 extends Module
     )
 
   build: ->
+    assign @bundle.din= 0x4444
+    initial
+      $sequence()
+      .delay(100) =>
+        @assert_eq(@bundle.dout,0x1111,'check cell3 bundle dout')
+        @assert_eq(@bundle.sub.din,0x3333,'check cell3 sub din')
+      .end()
 
 
-class ChannelPartConn extends Module
+class ChannelHubConnection extends Module
   u0_cell1: new cell1()
   u0_cell2: new cell2()
   u0_cell3: new cell3()
 
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
 
     Channel(
       c1_bundle: channel()
@@ -72,5 +98,12 @@ class ChannelPartConn extends Module
     $channelPortHub( @c1_bundle.Port.sub,@c2_sub.Port,@c3_bundle.Port.sub)
     $channelPortHub( @c1_bundle.Port,@c3_bundle.Port)
 
-module.exports=ChannelPartConn
+    initial
+      $sequence()
+      .delay(1000) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=ChannelHubConnection
 

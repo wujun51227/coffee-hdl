@@ -17,6 +17,8 @@ moduleIndex=0
 
 moduleCache={}
 
+globalModuleCache={}
+
 config={
   autoClock: false
   tree: false
@@ -106,9 +108,9 @@ statementGen=(statement)->
     if lhs.constructor?.name is 'Port'
       lhs=lhs.refName()
     if lineno? and lineno>=0
-      "  #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+      "  #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
     else
-      "  #{lhs} = #{rhsExpand(rhs)};"
+      "  #{toSignal lhs} = #{rhsExpand(rhs)};"
   else if statement[0]=='end'
     "  end"
   else if statement[0]=='verilog'
@@ -270,9 +272,9 @@ code_gen= (inst)=>
       else if lhs.constructor?.name is 'Port'
         lhs=lhs.refName()
       if lineno? and lineno>=0
-        printBuffer.add "assign #{lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
       else
-        printBuffer.add "assign #{lhs} = #{rhsExpand(rhs)};"
+        printBuffer.add "assign #{toSignal lhs} = #{rhsExpand(rhs)};"
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)
@@ -432,6 +434,14 @@ toSim=(inst)->
   inst._clean()
   return out
 
+module.exports.buildGlobalModule=(globalModule)->
+  inst=new globalModule()
+  inst._setGlobal()
+  name=inst.getModuleName() ? inst.constructor.name
+  if not globalModuleCache[name]?
+    globalModuleCache[name]=inst
+    toVerilog(inst)
+  return globalModuleCache[name]
 
 toVerilog=(inst)->
   if (not inst.__isCombModule) and config.autoClock
@@ -489,6 +499,7 @@ module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   =(path)->
   moduleCache={}
+  GlobalModuleCache={}
   moduleIndex=0
 module.exports.Op       = {
   xor        : 'xor'

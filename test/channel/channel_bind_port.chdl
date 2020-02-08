@@ -11,24 +11,19 @@ class cell1 extends Module
     )
 
   build: ->
+    assign @bundle.dout = @bundle.din
 
 class cell2 extends Module
   u0_cell1: new cell1()
-  u1_cell1: new cell1()
   constructor: ->
     super()
 
     Channel(
       ch1: channel()
-      ch2: channel()
       )
 
     @u0_cell1.bind(
       bundle: @ch1
-    )
-
-    @u1_cell1.bind(
-      bundle: @ch2
     )
 
   build: ->
@@ -37,10 +32,11 @@ class cell3 extends Module
   constructor: ->
     super()
     Port(
-      din: input(16)
+      dout: output(16)
     )
 
   build: ->
+    assign @dout = 0x1234
 
 
 class ChannelBindPort extends Module
@@ -66,10 +62,42 @@ class ChannelBindPort extends Module
     )
 
     @u0_cell3.bind(
-      din: @cell3_ch
+      dout: @cell3_ch
     )
 
   build: ->
 
-module.exports=ChannelBindPort
+class tb extends Module
+  dut: new ChannelBindPort()
+
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+    Channel(
+      cell1_port: channel()
+      cell2_port: channel()
+      cell3_port: channel()
+    )
+
+    @dut.bind(
+      cell1_port: @cell1_port
+      cell2_port: @cell2_port
+      cell3_port: @cell3_port
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(100) =>
+        assign @cell1_port.Port.din = 0x55aa
+        assign @cell2_port.Port.din = 0x7788
+      .delay(100) =>
+        @assert_eq(@cell1_port.Port.dout,0x55aa,'test connection')
+        @assert_eq(@cell2_port.Port.dout,0x7788,'test connection')
+        @assert_eq(@cell3_port.Port,0x1234,'test connection')
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=tb
 

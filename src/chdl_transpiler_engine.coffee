@@ -622,6 +622,14 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='GlobalModule'
+      list =[
+        ['IDENTIFIER', 'chdl_base', {range:[]}]
+        [ '.',     '.',  {range:[]} ]
+        ['PROPERTY', 'buildGlobalModule', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='vec'
       list =[
         ['IDENTIFIER', 'chdl_base', {range:[]}]
@@ -1085,33 +1093,58 @@ transToJs= (fullFileName,text,debug=false) ->
   return require("#{fullFileName}.js")
 
 importLib=(path)->
-  if path.match(/^\./)
-    for i in module.paths
-      fullName = require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+  if path.match(/\.js$/)
+    if path.match(/^\./)
+      for i in module.paths
+        fullName = require('path').resolve(i+'/'+path)
+        if fs.existsSync(fullName)
+          return require(fullName)
+      throw new Error("Cant find file "+fullName)
+    else if path.match(/\//)
+      fullName= require('path').resolve(path)
       if fs.existsSync(fullName)
-        text=fs.readFileSync(fullName, 'utf-8')
-        module.paths.push require('path').dirname(fullName)
-        return transToJs(fullName,text,false)
-    throw new Error("Cant find file "+fullName)
-  else if path.match(/\//)
-    fullName= require('path').resolve(path.replace(/\.chdl$/,'')+'.chdl')
-    if fs.existsSync(fullName)
-      text=fs.readFileSync(fullName, 'utf-8')
-      return transToJs(fullName,text,false)
-    throw new Error("Cant find file "+fullName)
+        return require(fullName)
+      throw new Error("Cant find file "+fullName)
+    else
+      list=[]
+      list.push(process.cwd())
+      list.push(module.paths...)
+      if process.env.CHDL_LIB?
+        list.push(process.env.CHDL_LIB.split(/:/)...)
+      list.push(process.env.NODE_PATH.split(/:/)...)
+      for i in list
+        fullName= require('path').resolve(i+'/'+path)
+        if fs.existsSync(fullName)
+          return require(fullName)
+      throw new Error("Cant find file "+path)
   else
-    list=[]
-    list.push(process.cwd())
-    list.push(module.paths...)
-    if process.env.CHDL_LIB?
-      list.push(process.env.CHDL_LIB.split(/:/)...)
-    list.push(process.env.NODE_PATH.split(/:/)...)
-    for i in list
-      fullName= require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+    if path.match(/^\./)
+      for i in module.paths
+        fullName = require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+        if fs.existsSync(fullName)
+          text=fs.readFileSync(fullName, 'utf-8')
+          module.paths.push require('path').dirname(fullName)
+          return transToJs(fullName,text,false)
+      throw new Error("Cant find file "+fullName)
+    else if path.match(/\//)
+      fullName= require('path').resolve(path.replace(/\.chdl$/,'')+'.chdl')
       if fs.existsSync(fullName)
         text=fs.readFileSync(fullName, 'utf-8')
         return transToJs(fullName,text,false)
-    throw new Error("Cant find file "+path)
+      throw new Error("Cant find file "+fullName)
+    else
+      list=[]
+      list.push(process.cwd())
+      list.push(module.paths...)
+      if process.env.CHDL_LIB?
+        list.push(process.env.CHDL_LIB.split(/:/)...)
+      list.push(process.env.NODE_PATH.split(/:/)...)
+      for i in list
+        fullName= require('path').resolve(i+'/'+path.replace(/\.chdl$/,'')+'.chdl')
+        if fs.existsSync(fullName)
+          text=fs.readFileSync(fullName, 'utf-8')
+          return transToJs(fullName,text,false)
+      throw new Error("Cant find file "+path)
 
 expandNum=(tokens)->
   out=[]
