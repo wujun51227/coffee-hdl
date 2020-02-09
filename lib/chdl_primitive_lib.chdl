@@ -282,7 +282,7 @@ module.exports={
 
   $rise: (sig,clock='',reset='')->
     d1 = reg(1,'r_').clock(clock).reset(reset)
-    assign(d1) = $ sig
+    assign(d1) = sig
     return $ (sig & (!d1))
 
   $sample: (sig,clock='',reset='')->
@@ -292,7 +292,7 @@ module.exports={
 
   $fall: (sig,clock='',reset='')->
     d1 = reg(1,'f_').clock(clock).reset(reset)
-    assign(d1) = $ sig
+    assign(d1) = sig
     return $ ((!sig) & d1)
 
   $divider: (n,clk='',reset='')->

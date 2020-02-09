@@ -1,0 +1,193 @@
+_ = require 'lodash'
+
+
+class UsePrimitiveLib extends Module
+  constructor: ->
+    super()
+
+    @lib=importLib('chdl_primitive_lib.chdl')
+    Mixin importLib('verilog_helpers.chdl')
+
+    a={
+      b:
+        c: input()
+        d: [
+          output(5)
+          input(6)
+          ]
+    }
+    Port(
+      in: @lib.createArray(10,=>input(10))
+      a: a
+      t:@mirrorPort(a)
+      clk1: input(1).asClock()
+    )
+
+    template={
+      e:
+        f: [wire(),wire()]
+    }
+
+    Wire(
+      w: @createArray(32,=>wire(10))
+      select: wire(3)
+      d: @bundleClone(template)
+      g: @bundleClone(template)
+      h: @bundleClone(template)
+      syncin: wire(1)
+      dout: wire(1)
+      dout1: wire(1)
+      dout2: wire(1)
+      dout3: wire(1)
+      dout4: wire(1)
+      dout5: wire(1)
+      dout6: wire(1)
+      dout7: wire(1)
+      dout8: wire(8)
+    )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+      )
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dump_wave('test.fsdb')
+
+    v1 = vreg(1,'v1')
+    v2 = vreg(8,'v2')
+    v3 = vreg(8,'v3')
+    v4 = vreg(8,'v4')
+    enable = vreg()
+    clear= vreg()
+    for i in _.range(10)
+      assign @w[i] = i
+
+    Net(d1,8) = $sigMux(v1,v2,v3)
+    Net d2    = $rise(v1)
+    Net d3 = $divider(4,$clock())
+    Net d4 = $oneOf(v2,[v3,v4,0x12])
+    Net d5 = $same([v2,v3,0x12])
+    Net(d6,8) = $count1(v2)
+    Net d7 = $inRange(v2,v3,v4)
+    Net(d8,8) = $delay(2,v2)
+    Net(d9,8)= $join([v4,v2,v3],(sum,i)=>$(sum+i))
+    Net(d10,4) =  $grayNextCode(v2(3:0))
+    Net(d11,8) =  $sample(v2)
+    Net d12    = $fall(v1)
+    Net(d13,32) = $arrayDecode(@w,v2)
+    #count hold1 hold0 holdData headPadding tailPadding headPaddingTo tailPaddingTo
+    
+    initial
+      $sequence()
+      .init =>
+        assign v1=0
+        assign v2=0x55
+        assign v3=0xaa
+      .delay(100) =>
+      .delay(10) =>
+        @assert_eq(d1,0xaa,'test sigMux')
+        assign v1=1
+      .delay(10) =>
+        @assert_eq(d1,0x55,'test sigMux')
+        assign v1=0
+      .posedge($clock()) =>
+      .delay(1) =>
+        assign v1=1
+      .posedge($clock()) =>
+        @assert_1(d2,'test rise')
+      .posedge($clock()) =>
+        @assert_0(d2,'test rise')
+      .posedge(d3) =>
+      .posedge($clock()) =>
+        @assert_1(d3,'test divider')
+      .posedge($clock()) =>
+        @assert_0(d3,'test divider')
+      .posedge($clock()) =>
+        @assert_0(d3,'test divider')
+      .posedge($clock()) =>
+        @assert_0(d3,'test divider')
+      .posedge($clock()) =>
+        @assert_1(d3,'test divider')
+        assign v2=0x12
+        assign v3=0x10
+        assign v4=0x11
+      .posedge($clock()) =>
+        @assert_1(d4,'test oneOf')
+        assign v2=0x9
+      .posedge($clock()) =>
+        @assert_0(d4,'test oneOf')
+        assign v2=0x12
+        assign v3=0x10
+      .posedge($clock()) =>
+        @assert_0(d5,'test same')
+        assign v3=0x12
+      .posedge($clock()) =>
+        @assert_1(d5,'test same')
+        assign v2=0x7f
+      .posedge($clock()) =>
+        @assert_eq(d6,7,'test count1')
+        assign v2=0x0
+      .posedge($clock()) =>
+        @assert_eq(d6,0,'test count1')
+        assign v2=0x12
+        assign v3=0x10
+        assign v4=0x13
+      .posedge($clock()) =>
+        @assert_1(d7,'test inRange')
+        assign v2=0x9
+      .posedge($clock()) =>
+        @assert_0(d7,'test inRange')
+        assign v2=0xaa
+      .posedge($clock()) =>
+        @assert_ne(d8,0xaa,'test delay')
+      .posedge($clock()) =>
+        @assert_ne(d8,0xaa,'test delay')
+      .posedge($clock()) =>
+        @assert_eq(d8,0xaa,'test delay')
+        assign v2=0x12
+        assign v3=0x10
+        assign v4=0x13
+      .posedge($clock()) =>
+        @assert_eq(d9,0x35,'test join')
+        assign v2=0x3
+      .posedge($clock()) =>
+        @assert_eq(d10,0x2,'test grayNextCode')
+        assign v2=0x2
+      .posedge($clock()) =>
+        @assert_eq(d10,0x6,'test grayNextCode')
+        assign v2=0xaa
+      .posedge($clock()) =>
+        @assert_ne(d11,0xaa,'test sample')
+      .posedge($clock()) =>
+        @assert_eq(d11,0xaa,'test sample')
+      .posedge($clock()) =>
+        @assert_eq(d11,0xaa,'test sample')
+        assign v1 = 1
+      .posedge($clock()) =>
+        assign v1 = 0
+      .posedge($clock()) =>
+        @assert_1(d12,'test fall')
+      .posedge($clock()) =>
+        @assert_0(d12,'test fall')
+        assign v2=5
+      .posedge($clock()) =>
+        @assert_eq(d13,5,'test array decode')
+        assign v2=9
+      .posedge($clock()) =>
+        @assert_eq(d13,9,'test array decode')
+      .delay(10) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+
+
+
+
+module.exports=UsePrimitiveLib
