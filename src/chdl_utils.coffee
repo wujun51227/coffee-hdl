@@ -165,21 +165,20 @@ printBuffer= do ->
       outList.push "// #{new Date()} "
       outList.push '//*******************************************'
       outList.push "\n"
+      infoTable={}
       for item in allBin
         outList.push '//**************************'
         outList.push "// Module #{item.name} "
         outList.push '//**************************'
         modules.push item.name
+        infoTable[item.name]=item.info
         for line in item.list
           outList.push line
       return {
         name: name
         modules: modules
         list: outList
-        info:
-          ports: dumpInfo(inst.__ports)
-          regs: dumpInfo(inst.__regs)
-          wires: dumpInfo(inst.__wires)
+        info: infoTable
       }
     register:(i)->inst=i
     getInst: -> inst
