@@ -162,7 +162,6 @@ class tb extends Module
     @create_clock(@clk,10)
     @create_resetn(@rstn)
 
-    @dump_wave("test.fsdb")
     initial
       $sequence()
       .delay(10000) =>

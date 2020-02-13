@@ -31,7 +31,10 @@ program
   .option('-i, --info')
   .option('-n, --new <module name>')
   .option('--flist <file list name>')
+  .option('--no_always_comb')
   .option('--ncsim')
+  .option('--vcs')
+  .option('--iverilog')
   .option('--sim')
   .option('--nolineno')
   .option('--debug')
@@ -73,6 +76,7 @@ cfg={
   info: program.info ? false
   noLineno: program.nolineno ? false
   sim: program.sim ? false
+  noAlwaysComb: program.no_always_comb ? false
 }
 
 configBase(cfg)
@@ -125,6 +129,14 @@ processFile= (fileName,outDir) ->
           fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
         if program.ncsim
           spawn('ncverilog',['-64bit','-access +rwc',flist...],{stdio:[0,1,2]})
+        if program.vcs
+          spawn('ncverilog',['-full64','-R','-debug_access+all','-sverilog',flist...],{stdio:[0,1,2]})
+        if program.iverilog
+          handler=spawn('iverilog',['-g2012','-osim_i',flist...],{stdio:[0,1,2]})
+          handler.on('exit',->
+            handler=spawn('./sim_i',{stdio:[0,1,2]})
+          )
+
     catch e
       log.error e
       if (e instanceof TypeError) or (e instanceof ReferenceError)

@@ -25,6 +25,7 @@ config={
   info: false
   noLineno: false
   sim: false
+  noAlwaysComb: false
 }
 
 getCellList= (inst)->
@@ -359,9 +360,15 @@ code_gen= (inst)=>
   printBuffer.blank('//register update logic') if inst.__alwaysList.length>0
   for [assignList,updateWires,lineno] in inst.__alwaysList when assignList? and assignList.length>0
     if lineno? and lineno>=0
-      printBuffer.add 'always_comb begin'+"#{lineComment(lineno)}"
+      if config.noAlwaysComb
+        printBuffer.add 'always @* begin'+"#{lineComment(lineno)}"
+      else
+        printBuffer.add 'always_comb begin'+"#{lineComment(lineno)}"
     else
-      printBuffer.add 'always_comb begin'
+      if config.noAlwaysComb
+        printBuffer.add 'always @* begin'
+      else
+        printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
         printBuffer.add '  _'+i.inst.getName()+'='+getValue(i.inst.getPending())+';'

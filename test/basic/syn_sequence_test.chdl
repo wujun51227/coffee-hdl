@@ -16,7 +16,6 @@ class SynSequenceTest extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dump_wave("test.fsdb")
 
     v1 = vreg()
     v2 = vreg().init(1)
