@@ -132,9 +132,9 @@ processFile= (fileName,outDir) ->
         if program.vcs
           spawn('ncverilog',['-full64','-R','-debug_access+all','-sverilog',flist...],{stdio:[0,1,2]})
         if program.iverilog
-          handler=spawn('iverilog',['-g2012','-osim_i',flist...],{stdio:[0,1,2]})
+          handler=spawn('iverilog',['-g2012','-osim_ivl',flist...],{stdio:[0,1,2]})
           handler.on('exit',->
-            handler=spawn('./sim_i',{stdio:[0,1,2]})
+            handler=spawn('./sim_ivl',{stdio:[0,1,2]})
           )
 
     catch e
