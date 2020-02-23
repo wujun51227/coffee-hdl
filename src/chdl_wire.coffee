@@ -236,9 +236,15 @@ class Wire extends CircuitEl
       for i in _.sortBy(@states,(n)=>n.value)
         list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
     if @width==1
-      list.push "logic "+@elName+";"
+      if @type=='input'
+        list.push "wire "+@elName+";"
+      else
+        list.push "logic "+@elName+";"
     else if @width>1
-      list.push "logic ["+(@width-1)+":0] "+@elName+";"
+      if @type=='input'
+        list.push "wire ["+(@width-1)+":0] "+@elName+";"
+      else
+        list.push "logic ["+(@width-1)+":0] "+@elName+";"
 
     if @virtual
       list.push "initial begin"

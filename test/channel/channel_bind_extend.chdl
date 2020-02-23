@@ -93,7 +93,7 @@ class tb extends Module
         @assert_eq(@ch.Port.ch1.dout,0x55aa,'test connection')
         @assert_eq(@ch.Port.ch2.dout,0x1234,'test connection')
         @assert_eq(@ch.Port.dout,0x7788,'test connection')
-        @assert_report()
+        @assert_report('channel bind extend')
         @sim_finish()
       .end()
 

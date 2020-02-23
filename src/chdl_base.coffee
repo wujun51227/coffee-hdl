@@ -26,6 +26,7 @@ config={
   noLineno: false
   sim: false
   noAlwaysComb: false
+  waveFormat: 'vcd'
 }
 
 getCellList= (inst)->
@@ -304,10 +305,10 @@ code_gen= (inst)=>
             if _.isNumber(item.delay)
               printBuffer.add "  ##{item.delay}"
           if item.type=='polling'
-            printBuffer.add "  while(1) begin"
+            printBuffer.add "  while(#{item.active}) begin"
             printBuffer.add "    @(posedge #{item.signal});"
             printBuffer.add "    if(#{item.expr}) begin"
-            printBuffer.add "      break;"
+            printBuffer.add "      #{item.active} = 0;"
             printBuffer.add "    end;"
             printBuffer.add "  end;"
           if item.type=='posedge'
@@ -336,10 +337,10 @@ code_gen= (inst)=>
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
         if item.type=='polling'
-          printBuffer.add "  while(1) begin"
+          printBuffer.add "  while(#{item.active}) begin"
           printBuffer.add "    @(posedge #{item.signal});"
           printBuffer.add "    if(#{item.expr}) begin"
-          printBuffer.add "      break;"
+          printBuffer.add "      #{item.active} = 0;"
           printBuffer.add "    end;"
           printBuffer.add "  end;"
         if item.type=='posedge'

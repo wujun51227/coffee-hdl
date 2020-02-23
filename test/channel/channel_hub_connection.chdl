@@ -101,7 +101,7 @@ class ChannelHubConnection extends Module
     initial
       $sequence()
       .delay(1000) =>
-        @assert_report()
+        @assert_report('channel hub connection')
         @sim_finish()
       .end()
 

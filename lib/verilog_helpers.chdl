@@ -5,11 +5,11 @@ module.exports={
     initial
       $sequence()
       .init ()=>
-        if fileName.match(/\.fsdb$/)
-          @verilog("$fsdbDumpfile(\"#{fileName}\");")
+        if chdl_base.getConfig('waveFormat')=='fsdb'
+          @verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
           @verilog("$fsdbDumpvars;")
         else
-          @verilog("$dumpfile(\"#{fileName}\");")
+          @verilog("$dumpfile(\"#{fileName}.vcd\");")
           @verilog("$dumpvars;")
       .end()
 

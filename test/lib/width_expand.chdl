@@ -29,7 +29,6 @@ class widthExpandTb extends Module
   build: ->
     @create_clock(@tx_clk,10)
     @create_resetn(@rstn)
-    @dump_wave("test.fsdb")
 
     initial
       $sequence()
@@ -54,6 +53,22 @@ class widthExpandTb extends Module
         assign @push=1
       .posedge(@tx_clk) =>
         assign @push=0
+      .delay(5) =>
+        @assert_1(@ready,'ready set test')
+        @display('dout is %x',$(@dout))
+        @assert_eq(@dout,64\h0002000300000007,'expand test')
+      .posedge(@tx_clk) =>
+      .delay(5) =>
+        @assert_1(@ready,'ready set test')
+      .posedge(@tx_clk) =>
+      .delay(5) =>
+        @assert_1(@ready,'ready set test')
+      .posedge(@tx_clk) =>
+      .delay(5) =>
+        @assert_1(@ready,'ready set test')
+      .posedge(@tx_clk) =>
+      .delay(5) =>
+        @assert_0(@ready,'ready set test')
       .posedge(@tx_clk) =>
         assign @din=0x5
         assign @push=1
@@ -74,6 +89,10 @@ class widthExpandTb extends Module
         assign @push=1
       .posedge(@tx_clk) =>
         assign @push=0
+      .delay(5) =>
+        @assert_1(@ready,'ready set test')
+        @display('dout is %x',$(@dout))
+        @assert_eq(@dout,64\h0001000400060005,'expand test')
       .posedge(@tx_clk) =>
         assign @din=0x7
         assign @push=1
@@ -89,7 +108,10 @@ class widthExpandTb extends Module
         assign @push=1
       .posedge(@tx_clk) =>
         assign @push=0
+      .delay(5) =>
+        @assert_0(@ready,'ready set test')
       .delay(100) =>
+        @assert_report("width expand test")
         @sim_finish()
       .end()
 

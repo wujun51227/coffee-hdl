@@ -76,7 +76,7 @@ class ChannelPortArrayHub extends Module
     initial
       $sequence()
       .delay(200) =>
-        @assert_report()
+        @assert_report('channel port array hub')
         @sim_finish()
       .end()
 

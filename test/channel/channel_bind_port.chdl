@@ -95,7 +95,7 @@ class tb extends Module
         @assert_eq(@cell1_port.Port.dout,0x55aa,'test connection')
         @assert_eq(@cell2_port.Port.dout,0x7788,'test connection')
         @assert_eq(@cell3_port.Port,0x1234,'test connection')
-        @assert_report()
+        @assert_report('channel bind port')
         @sim_finish()
       .end()
 

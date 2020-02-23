@@ -57,7 +57,7 @@ class ChannelAutoBind extends Module
     initial
       $sequence()
       .delay(200) =>
-        @assert_report()
+        @assert_report('channel autobind')
         @sim_finish()
       .end()
 

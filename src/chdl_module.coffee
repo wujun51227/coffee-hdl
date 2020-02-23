@@ -861,10 +861,11 @@ class Module
             @__regAssignList=[]
             func()
             id = stepName ? _id('poll')
+            active=@_localVreg(1,'break').init(1)
             if _.isString(signal)
-              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal})
+              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signal})
             else
-              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
+              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signal.getName()})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin,clock,reset)

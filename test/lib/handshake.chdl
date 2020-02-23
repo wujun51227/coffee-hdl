@@ -30,81 +30,46 @@ class handshakeTb extends Module
     @create_clock(@tx_clk,35)
     @create_clock(@rx_clk,25)
     @create_resetn(@rstn)
-    @dump_wave("test.fsdb")
 
     Net valid
     Net(data,16)
 
+    list=[
+      0x1122
+      0x3344
+      0xa122
+      0x1b22
+      0x11c2
+      0x112d
+      0x9122
+      0x1922
+      0x1192
+      0x1129
+      0x0011
+    ]
 
     initial
-      $sequence()
-      .delay(500) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x7
-        assign @push=1
-      .posedge(@tx_clk) =>
+      seq = $sequence()
+      seq.delay(500) =>
+      for i in list
+        seq.posedge(@tx_clk) =>
+          assign @din=i
+          assign @push=1
+        .posedge(@tx_clk) =>
+          assign @push=0
+        .wait($ @tx_done) =>
+      seq.posedge(@tx_clk) =>
         assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x0
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x3
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x2
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x5
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x6
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x4
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x1
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x7
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x3
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .wait($ @tx_done) =>
-      .posedge(@tx_clk) =>
-        assign @din=0x0
-        assign @push=1
-      .posedge(@tx_clk) =>
-        assign @push=0
-      .delay(100) =>
+      seq.end()
+
+    initial
+      seq = $sequence()
+      seq.delay(100) =>
+      for i in list
+        seq.polling(@rx_clk,$(@rx_done==1)) =>
+          @assert_eq(@rx_data,i)
+      seq.delay(100) =>
+        @assert_report('handshake test')
         @sim_finish()
       .end()
 

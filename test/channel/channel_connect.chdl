@@ -29,7 +29,7 @@ class cell2 extends Module
         assign v1 = 0x55aa
       .delay(100) =>
         @assert_eq(@bundle.din,0x55aa,'test connection')
-        @assert_report()
+        @assert_report('channel connect')
         @sim_finish()
       .end()
 

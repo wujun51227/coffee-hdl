@@ -31,11 +31,12 @@ program
   .option('-i, --info')
   .option('-n, --new <module name>')
   .option('--flist <file list name>')
+  .option('--fsdb')
   .option('--no_always_comb')
   .option('--ncsim')
   .option('--vcs')
   .option('--iverilog')
-  .option('--sim')
+  #.option('--sim')
   .option('--nolineno')
   .option('--debug')
   .parse(process.argv)
@@ -74,10 +75,18 @@ cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
   info: program.info ? false
-  noLineno: program.nolineno ? false
+  noLineno: program.no_lineno ? false
   sim: program.sim ? false
   noAlwaysComb: program.no_always_comb ? false
+  waveFormat: do ->
+    if program.fsdb
+      'fsdb'
+    else
+      'vcd'
 }
+
+if program.iverilog
+  cfg.noAlwaysComb = true
 
 configBase(cfg)
 
@@ -119,22 +128,26 @@ processFile= (fileName,outDir) ->
               outDir+'/'+i.name
             else
               i.name
-          do(fname,code) ->
-            flist.push(fname+'.sv')
-            fs.writeFile fname+'.sv', code, (err) =>
-              throw err if err
-              log "generate code",fname+".sv"
+          flist.push(fname+'.sv')
+          fs.writeFileSync(fname+'.sv', code,'utf8')
+          log "generate code",fname+".sv"
 
         if program.flist
           fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
         if program.ncsim
-          spawn('ncverilog',['-64bit','-access +rwc',flist...],{stdio:[0,1,2]})
+          args=['-64bit','-access +rwc',flist...]
+          log "[ncverilog #{args.join(' ')}]"
+          spawn('ncverilog',args,{stdio:[0,1,2]})
         if program.vcs
-          spawn('ncverilog',['-full64','-R','-debug_access+all','-sverilog',flist...],{stdio:[0,1,2]})
+          args=['-full64','-R','-debug_access+all','-sverilog',flist...]
+          log "[vcs #{args.join(' ')}]"
+          spawn('vcs',args,{stdio:[0,1,2]})
         if program.iverilog
-          handler=spawn('iverilog',['-g2012','-osim_ivl',flist...],{stdio:[0,1,2]})
+          args=['-o',outDir+'/sim_ivl','-g2012',flist...]
+          log "[iverilog #{args.join(' ')}]"
+          handler=spawn('iverilog',args,{stdio:[0,1,2]})
           handler.on('exit',->
-            handler=spawn('./sim_ivl',{stdio:[0,1,2]})
+            handler=spawn(outDir+'/sim_ivl',{stdio:[0,1,2]})
           )
 
     catch e

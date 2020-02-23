@@ -25,8 +25,6 @@ class lruTb extends Module
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
-    @dump_wave("test.fsdb")
-
 
     initial
       $sequence()
@@ -37,36 +35,70 @@ class lruTb extends Module
       .posedge(@clk) =>
         assign @din=0x0
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,0,'lru select')
       .posedge(@clk) =>
         assign @din=0x3
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x2
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x5
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x6
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x4
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x1
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,1,'lru select')
       .posedge(@clk) =>
         assign @din=0x7
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,7,'lru select')
       .posedge(@clk) =>
         assign @din=0x3
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,0,'lru select')
       .posedge(@clk) =>
         assign @din=0x0
         assign @push=1
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,0,'lru select')
       .posedge(@clk) =>
         assign @push=0
+      .delay(5) =>
+        @display("dout is %d",$(@dout))
+        @assert_eq(@dout,2,'lru select')
       .delay(100) =>
+        @assert_report('lru test')
         @sim_finish()
       .end()
 

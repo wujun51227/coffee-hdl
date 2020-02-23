@@ -26,10 +26,55 @@ class asyncFifoTb extends Module
 
 
   build: ->
-    @create_clock(@clk,10)
+    @create_clock(@clk,20)
     @create_resetn(@rstn)
-    @dump_wave("test.fsdb")
 
+    initial
+      $sequence()
+      .delay(5000) =>
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0x55)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0xaa)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0x55)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0xaa)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0x55)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0xaa)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0x55)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0xaa)
+      .polling(@clk,$(@empty==0)) =>
+        assign @pop = 1
+      .delay(5) =>
+        @assert_eq(@dout,0x55)
+      .posedge(@clk) =>
+      .delay(5) =>
+        @assert_1(@empty)
+      .delay(1000) =>
+        @assert_report('async fifo test')
+        @sim_finish()
+      .end()
 
     initial
       $sequence()
@@ -58,20 +103,17 @@ class asyncFifoTb extends Module
       .posedge(@clk) =>
         assign @din=0xaa
         assign @push=1
+      .delay(5) =>
+        @assert_0(@full)
       .posedge(@clk) =>
         assign @din=0x55
         assign @push=1
+      .delay(5) =>
+        @assert_0(@full)
       .posedge(@clk) =>
         assign @push=0
-      .wait($(@empty==0)) =>
-      .posedge(@clk) =>
-        assign @pop=1
-      #.posedge(@clk) =>
-      #  assign @pop=1
-      .posedge(@clk) =>
-        assign @pop=0
-      .delay(100) =>
-        @sim_finish()
+      .delay(5) =>
+        @assert_1(@full)
       .end()
 
     assign({dout:@dout,empty:@empty,full:@full}) = $async_fifo(8,@din,@push.attach(@clk,@rstn),@pop.attach(@clk,@rstn))
