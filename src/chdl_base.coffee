@@ -98,8 +98,9 @@ rhsExpand=(expandItem)->
         str+="#{v}#{anno}"
     return str
 
-statementGen=(statement)->
-  if statement[0]=='assign'
+statementGen=(buffer,statement)->
+  stateType=statement[0]
+  if stateType=='assign'
     lhs=statement[1]
     rhs=statement[2]
     lineno=statement[3]
@@ -110,35 +111,82 @@ statementGen=(statement)->
     if lhs.constructor?.name is 'Port'
       lhs=lhs.refName()
     if lineno? and lineno>=0
-      "  #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+      buffer.add "  #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
     else
-      "  #{toSignal lhs} = #{rhsExpand(rhs)};"
-  else if statement[0]=='end'
-    "  end"
-  else if statement[0]=='verilog'
-    statement[1]
-  else if statement[0]=='if'
+      buffer.add "  #{toSignal lhs} = #{rhsExpand(rhs)};"
+  else if stateType=='end'
+    buffer.add "  end"
+  else if stateType=='verilog'
+    buffer.add statement[1]
+  else if stateType=='while'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  if(#{toSignal cond}) begin #{lineComment(lineno)}"
+      buffer.add "  while(#{toSignal cond}) begin #{lineComment(lineno)}"
     else
-      "  if(#{toSignal cond}) begin"
-  else if statement[0]=='elseif'
+      buffer.add "  while(#{toSignal cond}) begin"
+  else if stateType=='if'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      "  else if(#{toSignal cond}) begin #{lineComment(lineno)}"
+      buffer.add "  if(#{toSignal cond}) begin #{lineComment(lineno)}"
     else
-      "  else if(#{toSignal cond}) begin"
-  else if statement[0]=='else'
+      buffer.add "  if(#{toSignal cond}) begin"
+  else if stateType=='elseif'
+    cond=statement[1]
+    lineno=statement[2]
+    if lineno? and lineno>=0
+      buffer.add "  else if(#{toSignal cond}) begin #{lineComment(lineno)}"
+    else
+      buffer.add "  else if(#{toSignal cond}) begin"
+  else if stateType=='else'
     lineno=statement[1]
     if lineno? and lineno>=0
-      "  else begin #{lineComment(lineno)}"
+      buffer.add "  else begin #{lineComment(lineno)}"
     else
-      "  else begin"
+      buffer.add "  else begin"
+  else if stateType=='delay'
+    item = statement[1]
+    if _.isNumber(item.delay)
+      if item.delay!=null
+        buffer.add "  ##{item.delay}"
+      for i in item.list
+        statementGen(buffer,i)
+  else if stateType=='event'
+    item = statement[1]
+    buffer.add "  -> #{item.event};"
+  else if stateType=='trigger'
+    item = statement[1]
+    buffer.add "  @(#{item.signal});"
+    for i in item.list
+      statementGen(buffer,i)
+  else if stateType=='polling'
+    item = statement[1]
+    buffer.add "  while(#{item.active}) begin"
+    buffer.add "    @(posedge #{item.signal});"
+    buffer.add "    if(#{item.expr}) begin"
+    buffer.add "      #{item.active} = 0;"
+    buffer.add "    end;"
+    buffer.add "  end;"
+  else if stateType=='posedge'
+    item = statement[1]
+    buffer.add "  @(posedge #{item.signal});"
+    for i in item.list
+      statementGen(buffer,i)
+  else if stateType=='negedge'
+    item = statement[1]
+    buffer.add "  @(negedge #{item.signal});"
+    for i in item.list
+      statementGen(buffer,i)
+  else if stateType=='wait'
+    item = statement[1]
+    buffer.add "  wait(#{item.expr})"
+    for i in item.list
+      statementGen(buffer,i)
+  else if stateType=='endif'
+    1
   else
-    null
+    throw new Error("can not find type #{stateType}")
 
 sim_gen= (inst,out=[])=>
   buildName = do ->
@@ -285,44 +333,34 @@ code_gen= (inst)=>
   for seqList in inst.__initialList when seqList.length>0
     printBuffer.add "initial begin"
     for seq in seqList
-      if seq.isTag
-        if seq.tagType=='while_begin'
-          printBuffer.add "  while(#{seq.cond}) begin"
-        else if seq.tagType=='while_end'
-          printBuffer.add "  end"
-        if seq.tagType=='when_begin'
-          printBuffer.add "  if(#{seq.cond}) begin"
-        else if seq.tagType=='when_end'
-          printBuffer.add "  end"
-      else
-        initSegmentList = seq.bin
-        seqName= seq.name ? ''
-        if seqName!=''
-          printBuffer.add "  $display(\"start sequence #{seqName}\");"
-        for initSegment in initSegmentList
-          item = initSegment
-          if item.type=='delay'
-            if _.isNumber(item.delay)
-              printBuffer.add "  ##{item.delay}"
-          if item.type=='polling'
-            printBuffer.add "  while(#{item.active}) begin"
-            printBuffer.add "    @(posedge #{item.signal});"
-            printBuffer.add "    if(#{item.expr}) begin"
-            printBuffer.add "      #{item.active} = 0;"
-            printBuffer.add "    end;"
-            printBuffer.add "  end;"
-          if item.type=='posedge'
-            printBuffer.add "  @(posedge #{item.signal});"
-          if item.type=='negedge'
-            printBuffer.add "  @(negedge #{item.signal});"
-          if item.type=='wait'
-            printBuffer.add "  wait(#{item.expr})"
-          if item.type=='event'
-            printBuffer.add "  -> #{item.event};"
-          if item.type=='trigger'
-            printBuffer.add "  @(#{item.signal});"
-          for statement in item.list
-            printBuffer.add statementGen(statement)
+      initSegmentList = seq.bin
+      seqName= seq.name ? ''
+      if seqName!=''
+        printBuffer.add "  $display(\"start sequence #{seqName}\");"
+      for initSegment in initSegmentList
+        item = initSegment
+        if item.type=='delay'
+          if _.isNumber(item.delay)
+            printBuffer.add "  ##{item.delay}"
+        if item.type=='polling'
+          printBuffer.add "  while(#{item.active}) begin"
+          printBuffer.add "    @(posedge #{item.signal});"
+          printBuffer.add "    if(#{item.expr}) begin"
+          printBuffer.add "      #{item.active} = 0;"
+          printBuffer.add "    end;"
+          printBuffer.add "  end;"
+        if item.type=='posedge'
+          printBuffer.add "  @(posedge #{item.signal});"
+        if item.type=='negedge'
+          printBuffer.add "  @(negedge #{item.signal});"
+        if item.type=='wait'
+          printBuffer.add "  wait(#{item.expr})"
+        if item.type=='event'
+          printBuffer.add "  -> #{item.event};"
+        if item.type=='trigger'
+          printBuffer.add "  @(#{item.signal});"
+        for statement in item.list
+          statementGen(printBuffer,statement)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -354,7 +392,7 @@ code_gen= (inst)=>
         if item.type=='trigger'
           printBuffer.add "  @(#{item.signal});"
         for statement in item.list
-          printBuffer.add statementGen(statement)
+          statementGen(printBuffer,statement)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -377,7 +415,7 @@ code_gen= (inst)=>
         printBuffer.add '  '+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
     if assignList
       for statement in assignList
-        printBuffer.add statementGen(statement)
+        statementGen(printBuffer,statement)
     printBuffer.add 'end'
     printBuffer.blank()
 

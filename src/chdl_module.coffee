@@ -182,7 +182,6 @@ class Module
     @__assignWaiting=false
     @__assignEnv=null
     @__parentNode=null
-    @__indent=0
     @__postProcess=[]
     @__isBlackBox=false
     @__specify=false
@@ -509,12 +508,6 @@ class Module
 
   build: ->
 
-  _getSpace: ->
-    if @__indent>0
-      return Array(@__indent+1).join('  ')
-    else
-      return ''
-
   _if_blocks: (list)=>
     ret=null
     for item,index in list
@@ -532,25 +525,19 @@ class Module
       _if: (cond,lineno)=>
         return (block)=>
           @__regAssignList.push ["if","#{cond.str}",lineno]
-          @__indent+=1
           block()
-          @__indent-=1
           @__regAssignList.push ["end"]
           return @_regProcess()
       _elseif: (cond,lineno=-1)=>
         return (block)=>
           @__regAssignList.push ["elseif","#{cond.str}",lineno]
-          @__indent+=1
           block()
-          @__indent-=1
           @__regAssignList.push ["end"]
           return @_regProcess()
       _else: (lineno)=>
         return (block)=>
           @__regAssignList.push ["else",lineno]
-          @__indent+=1
           block()
-          @__indent-=1
           @__regAssignList.push ["end"]
           return @_regProcess()
       _endif: =>
@@ -791,6 +778,21 @@ class Module
 
     return @_sequence(_id(name+'_'),[],clock,reset)
 
+  _seqAction: (env,bin,cb)->
+    if @__assignEnv==env
+      save=@__regAssignList
+      @__regAssignList=[]
+      ret=cb()
+      save.push([ret.type,ret])
+      @__regAssignList=save
+    else
+      @__assignEnv=env
+      @__regAssignList=[]
+      ret=cb()
+      bin.push(ret)
+      @__assignEnv=null
+      @__regAssignList=[]
+
   _sequence: (name,bin=[],clock,reset)->
     env='always'
     ret = {
@@ -811,77 +813,71 @@ class Module
           @__regAssignList=[]
         return @_sequence(_id(name+'_'),bin,clock,reset)
       do: (func) =>
-        @__assignEnv=env
-        @__regAssignList=[]
-        func()
-        bin.push({type:'delay',id:_id('delay'),delay:null,list:@__regAssignList})
-        @__assignEnv=null
-        @__regAssignList=[]
+        @_seqAction(env,bin,()=>
+          func()
+          return ({type:'delay',id:_id('delay'),delay:null,list:@__regAssignList})
+        )
         return @_sequence(name,bin,clock,reset)
       delay: (delay) =>
         return (func)=>
-          @__assignEnv=env
-          @__regAssignList=[]
-          func()
-          bin.push({type:'delay',id:_id('delay'),delay:delay,list:@__regAssignList})
-          @__assignEnv=null
-          @__regAssignList=[]
-          return @_sequence(name,bin,clock,reset)
-      then: () =>
-        return (func)=>
-          @__assignEnv=env
-          @__regAssignList=[]
-          func(ret)
-          #bin.push({type:'then',id:_id('then'),list:@__regAssignList})
-          @__assignEnv=null
-          @__regAssignList=[]
+          @_seqAction(env,bin,()=>
+            func()
+            return ({type:'delay',id:_id('delay'),delay:delay,list:@__regAssignList})
+          )
           return @_sequence(name,bin,clock,reset)
       repeat: (num)=>
-        repeatItem=_.last(bin)
-        for i in [0...num]
-          bin.push(repeatItem)
+        if @__assignEnv==env
+          repeatItem=_.last(@__regAssignList)
+          for i in [0...num]
+            @__regAssignList.push(repeatItem)
+        else
+          repeatItem=_.last(bin)
+          for i in [0...num]
+            bin.push(repeatItem)
         return @_sequence(name,bin,clock,reset)
       event: (trigName)=>
-        @__trigMap[trigName]=1
-        bin.push({type:'event',id:_id('event'),event:trigName,list:[]})
+        if @__assignEnv==env
+          @__trigMap[trigName]=1
+          @__regAssignList.push(['event',{type:'event',id:_id('event'),event:trigName,list:[]}])
+        else
+          @__trigMap[trigName]=1
+          bin.push({type:'event',id:_id('event'),event:trigName,list:[]})
         return @_sequence(name,bin,clock,reset)
       trigger: (signal)=>
         return (func)=>
-          @__assignEnv=env
-          @__regAssignList=[]
-          func()
-          bin.push({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
-          @__assignEnv=null
-          @__regAssignList=[]
+          @_seqAction(env,bin,()=>
+            func()
+            return ({type:'trigger',id:_id('trigger'),signal:signal,list:@__regAssignList})
+          )
           return @_sequence(name,bin,clock,reset)
       polling: (signal,expr, stepName=null)=>
+        signalName = do ->
+          if _.isString(signal)
+            signal
+          else
+            signal.getName()
         return (func)=>
           if @__initialMode
-            @__assignEnv=env
-            @__regAssignList=[]
-            func()
-            id = stepName ? _id('poll')
-            active=@_localVreg(1,'break').init(1)
-            if _.isString(signal)
-              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signal})
-            else
-              bin.push({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signal.getName()})
-            @__assignEnv=null
-            @__regAssignList=[]
+            @_seqAction(env,bin,()=>
+              func()
+              id = stepName ? _id('poll')
+              active=@_localVreg(1,'break').init(1)
+              return ({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signalName})
+            )
           return @_sequence(name,bin,clock,reset)
       posedge: (signal,stepName=null)=>
+        signalName = do ->
+          if _.isString(signal)
+            signal
+          else
+            signal.getName()
         return (func)=>
           if @__initialMode
-            @__assignEnv=env
-            @__regAssignList=[]
-            func()
-            id = stepName ? _id('rise')
-            if _.isString(signal)
-              bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
-            else
-              bin.push({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
-            @__assignEnv=null
-            @__regAssignList=[]
+            @_seqAction(env,bin,()=>
+              func()
+              id = stepName ? _id('rise')
+              return ({type:'posedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signalName})
+            )
           else
             expr=@_rise(signal,clock)
             active=@_localWire(1,'trans')
@@ -889,23 +885,23 @@ class Module
             @__assignEnv=env
             @__regAssignList=[]
             id = stepName ? _id('rise')
-            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signal.getName(),func:func})
+            bin.push({type:'posedge',id:id,expr:expr,list:@__regAssignList,active:active,next:next,signal:signalName,func:func})
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin,clock,reset)
       negedge: (signal,stepName=null)=>
+        signalName = do ->
+          if _.isString(signal)
+            signal
+          else
+            signal.getName()
         return (func)=>
           if @__initialMode
-            @__assignEnv=env
-            @__regAssignList=[]
-            func()
-            id = stepName ? _id('fall')
-            if _.isString(signal)
-              bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal})
-            else
-              bin.push({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signal.getName()})
-            @__assignEnv=null
-            @__regAssignList=[]
+            @_seqAction(env,bin,()=>
+              func()
+              id = stepName ? _id('fall')
+              return ({type:'negedge',id:id,expr:null,list:@__regAssignList,active:null,next:null,signal:signalName})
+            )
           else
             expr=@_fall(signal,clock)
             active=@_localWire(1,'trans')
@@ -920,13 +916,11 @@ class Module
       wait: (expr,stepName=null)=>
         return (func)=>
           if @__initialMode
-            @__assignEnv=env
-            @__regAssignList=[]
-            func()
-            id = stepName ? _id('wait')
-            bin.push({type:'wait',id:id,expr:expr,list:@__regAssignList,active:null,next:null})
-            @__assignEnv=null
-            @__regAssignList=[]
+            @_seqAction(env,bin,()=>
+              func()
+              id = stepName ? _id('wait')
+              return ({type:'wait',id:id,expr:expr,list:@__regAssignList,active:null,next:null})
+            )
           else
             @__assignEnv=env
             @__regAssignList=[]
@@ -1054,9 +1048,7 @@ class Module
 
     return (block)=>
       @__regAssignList.push ["while","#{cond.str}",lineno]
-      @__indent+=1
       block()
-      @__indent-=1
       @__regAssignList.push ["end"]
 
   _parameterDeclare: ->
