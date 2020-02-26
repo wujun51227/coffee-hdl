@@ -1048,30 +1048,16 @@ class Module
         else
           signal.assign((->block),lineno,self)
 
-  _while: (cond)=>
+  _while: (cond,lineno)=>
     if @__sequenceBlock==null
       throw new Error("while only can run in initial")
 
-    return (func)=>
-      if @__initialMode
-        @__sequenceBlock.push {isTag:true,tagType:'while_begin',cond:cond.str}
-        func()
-        @__sequenceBlock.push {isTag:true,tagType:'while_end'}
-      else
-        throw new Error("while only can run in initial")
-
-  _when: (cond)=>
-    if @__sequenceBlock==null
-      throw new Error("when only can run in initial")
-
-    return (func)=>
-      if @__initialMode
-        @__sequenceBlock.push {isTag:true,tagType:'when_begin',cond:cond.str}
-        func()
-        @__sequenceBlock.push {isTag:true,tagType:'when_end'}
-      else
-        throw new Error("while only can run in initial")
-
+    return (block)=>
+      @__regAssignList.push ["while","#{cond.str}",lineno]
+      @__indent+=1
+      block()
+      @__indent-=1
+      @__regAssignList.push ["end"]
 
   _parameterDeclare: ->
     out=''

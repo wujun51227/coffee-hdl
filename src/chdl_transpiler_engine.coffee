@@ -766,22 +766,6 @@ extractLogic = (tokens)->
       patchLength=findCondBlock(tokens,callEnd)
       tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
-    else if token[0] is 'IDENTIFIER' and token[1]=='$when'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_when', {range:[]}]
-      ]
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      extractSlice=tokens.slice(callStart+1,callEnd)
-      tokenExpand(extractSlice,true)
-      list.push tokens[callStart]
-      list.push extractSlice...
-      list.push [',',',',{range:[]}]
-      list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
-      list.push tokens[callEnd]
-      patchLength=findCondBlock(tokens,callEnd)
-      tokens.splice i, callEnd-i+1, list...
-      i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='$if_blocks'
       list =[
         ['@', '@', {range:[]}]
