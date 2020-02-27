@@ -545,7 +545,7 @@ module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   =(path)->
   moduleCache={}
-  GlobalModuleCache={}
+  globalModuleCache={}
   moduleIndex=0
 module.exports.Op       = {
   xor        : 'xor'

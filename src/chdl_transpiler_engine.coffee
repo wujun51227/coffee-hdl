@@ -1028,9 +1028,17 @@ tokenExpand = (tokens,skip_indent=false)->
     else
       i++
 
-buildCode= (fullFileName,text,debug=false,param=null) ->
+pushToReload=(s,type='user')->
+  reloadList.push({path:s,type:type})
+
+cleanCache= ->
   for i in reloadList
-    delete require.cache[i]
+    if i.type=='user'
+      delete require.cache[i.path]
+  reloadList=[]
+
+buildCode= (fullFileName,text,debug=false,param=null) ->
+  cleanCache()
   printBuffer.reset()
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
@@ -1081,7 +1089,7 @@ transToJs= (fullFileName,text,debug=false) ->
   for fragment in fragments
     javaScript += fragment.code
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
-  reloadList.push("#{fullFileName}.js")
+  pushToReload("#{fullFileName}.js")
   return require("#{fullFileName}.js")
 
 importLib=(path)->
@@ -1090,11 +1098,13 @@ importLib=(path)->
       for i in module.paths
         fullName = Path.resolve(i+'/'+path)
         if fs.existsSync(fullName)
+          pushToReload(fullName)
           return require(fullName)
       throw new Error("Cant find file "+fullName)
     else if Path.isAbsolute(path)
       fullName= Path.resolve(path)
       if fs.existsSync(fullName)
+        pushToReload(fullName)
         return require(fullName)
       throw new Error("Cant find file "+fullName)
     else
@@ -1107,6 +1117,7 @@ importLib=(path)->
       for i in list
         fullName= Path.resolve(i+'/'+path)
         if fs.existsSync(fullName)
+          pushToReload(fullName,'sys')
           return require(fullName)
       throw new Error("Cant find file "+path)
   else
@@ -1137,6 +1148,7 @@ importLib=(path)->
         else
           fullName= Path.resolve(i+'/'+path)
         if fs.existsSync(fullName)
+          pushToReload(fullName,'sys')
           return require(fullName)
           #text=fs.readFileSync(fullName, 'utf-8')
           #return transToJs(fullName,text,false)

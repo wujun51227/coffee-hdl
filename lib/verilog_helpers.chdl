@@ -1,4 +1,4 @@
-assert_module = GlobalModule(importLib('./chdl_assert.chdl.js'))
+assert_module = GlobalModule(importLib('chdl_assert.chdl.js'))
 
 module.exports={
   dump_wave: (fileName)->
