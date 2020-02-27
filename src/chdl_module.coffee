@@ -3,6 +3,7 @@ Expr    = require 'chdl_expr'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
+global  = require('chdl_global')
 {table} = require 'table'
 {toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
@@ -667,7 +668,7 @@ class Module
   _autoBind: (inst)->
     ret={}
     bindTable={}
-    channelName=_id('__channel')
+    channelName=_id(global.getPrefix()+'__channel')
     for i in Object.keys(inst.__ports)
       ret[i]=Channel.create()
       bindTable[i]=ret[i]
@@ -729,7 +730,7 @@ class Module
     pWire=Wire.create(Number(width))
     pWire.cell=this
     pWire.setLocal()
-    pWire.elName=toSignal(_id('__'+name))
+    pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pWire.hier=pWire.elName
     ret = packEl('wire',pWire)
     @__local_wires.push(ret)
@@ -740,7 +741,7 @@ class Module
     pWire.cell=this
     pWire.setLocal()
     pWire.setVirtual()
-    pWire.elName=toSignal(_id('__'+name))
+    pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pWire.hier=pWire.elName
     ret = packEl('reg',pWire)
     @__local_wires.push(ret)
@@ -750,7 +751,7 @@ class Module
     pReg=Reg.create(Number(width))
     pReg.cell=this
     pReg.setLocal()
-    pReg.elName=toSignal(_id('__'+name))
+    pReg.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pReg.hier=pReg.elName
     ret = packEl('reg',pReg)
     @__local_regs.push(ret)

@@ -10,6 +10,7 @@ Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 Vnumber  = require('chdl_number')
+global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
 {getValue,setSim,packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
 
@@ -49,15 +50,15 @@ cell_build = (inst) =>
           i.inst._setDefaultClock(inst.__defaultClock)
           i.inst._addPort(inst.__defaultClock,'input',1)
         else if config.autoClock
-          i.inst._setDefaultClock('__clock')
-          i.inst._addPort('__clock','input',1)
+          i.inst._setDefaultClock(global.getPrefix()+'__clock')
+          i.inst._addPort(global.getPrefix()+'__clock','input',1)
       if i.inst.__defaultReset==null
         if inst.__defaultReset
           i.inst._setDefaultReset(inst.__defaultReset)
           i.inst._addPort(inst.__defaultReset,'input',1)
         else if config.autoClock
-          i.inst._setDefaultReset('__resetn')
-          i.inst._addPort('__resetn','input',1)
+          i.inst._setDefaultReset(global.getPrefix()+'__resetn')
+          i.inst._addPort(global.getPrefix()+'__resetn','input',1)
     cell_build(i.inst)
   inst._postElaboration()
 
@@ -410,7 +411,7 @@ code_gen= (inst)=>
         printBuffer.add 'always_comb begin'
     for i in _.uniqBy(updateWires,(n)=>n.name)
       if i.type=='reg'
-        printBuffer.add '  _'+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
+        printBuffer.add "  #{global.getPrefix()}_"+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
       if i.type=='wire'
         printBuffer.add '  '+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
     if assignList
@@ -469,11 +470,11 @@ getVerilogParameter=(inst)->
 toSim=(inst)->
   if (not inst.__isCombModule) and config.autoClock
     if inst.__defaultClock==null
-      inst._setDefaultClock('__clock')
-      inst._addPort('__clock','input',1)
+      inst._setDefaultClock(global.getPrefix()+'__clock')
+      inst._addPort(global.getPrefix()+'__clock','input',1)
     if inst.__defaultReset==null
-      inst._setDefaultReset('__resetn')
-      inst._addPort('__resetn','input',1)
+      inst._setDefaultReset(global.getPrefix()+'__resetn')
+      inst._addPort(global.getPrefix()+'__resetn','input',1)
   cell_build(inst)
   setSim()
   out=sim_gen(inst)
@@ -492,11 +493,11 @@ module.exports.buildGlobalModule=(globalModule)->
 toVerilog=(inst)->
   if (not inst.__isCombModule) and config.autoClock
     if inst.__defaultClock==null
-      inst._setDefaultClock('__clock')
-      inst._addPort('__clock','input',1)
+      inst._setDefaultClock(global.getPrefix()+'__clock')
+      inst._addPort(global.getPrefix()+'__clock','input',1)
     if inst.__defaultReset==null
-      inst._setDefaultReset('__resetn')
-      inst._addPort('__resetn','input',1)
+      inst._setDefaultReset(global.getPrefix()+'__resetn')
+      inst._addPort(global.getPrefix()+'__resetn','input',1)
   cell_build(inst)
   code_gen(inst)
   if config.tree

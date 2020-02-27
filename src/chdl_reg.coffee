@@ -3,6 +3,7 @@ Wire = require 'chdl_wire'
 _ = require 'lodash'
 {cat,rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
 Vnumber = require 'chdl_number'
+global  = require('chdl_global')
 
 class Reg extends CircuitEl
   resetMode: 'async' #async or sync
@@ -232,14 +233,14 @@ class Reg extends CircuitEl
     if @cell.__sim
       @hier+'.getD()'
     else
-      '_'+@refName()
+      global.getPrefix()+'_'+@refName()
 
   getD: =>
     if @cell.__sim
       @hier+'.getD()'
     else
       wire= Wire.create(@width)
-      wire.link(@cell,'_'+@hier)
+      wire.link(@cell,global.getPrefix()+'_'+@hier)
       wire.setLsb(@lsb)
       wire.setMsb(@msb)
       return packEl('wire',wire)
@@ -308,7 +309,7 @@ class Reg extends CircuitEl
           throw new Error("cant not find enable signal #{@enableSignal}")
       else
         list.push "  else begin"
-      list.push "    "+@elName+" <= #`UDLY _"+@elName+";"
+      list.push "    "+@elName+" <= #`UDLY #{global.getPrefix()}_"+@elName+";"
       list.push "  end"
     else
       if @enableSignal?
@@ -318,12 +319,12 @@ class Reg extends CircuitEl
           enableSig=@enableSignal
         if enableSig?
           list.push "  if(#{enableSig.getName()}==#{@enableValue} )  begin"
-          list.push "    "+@elName+" <= #`UDLY _"+@elName+";"
+          list.push "    "+@elName+" <= #`UDLY #{global.getPrefix()}_"+@elName+";"
           list.push "  end"
         else
           throw new Error("cant not find enable signal #{@enableSignal}")
       else
-        list.push "  "+@elName+" <= #`UDLY _"+@elName+";"
+        list.push "  "+@elName+" <= #`UDLY #{global.getPrefix()}_"+@elName+";"
     list.push "end"
     return list.join("\n")
 

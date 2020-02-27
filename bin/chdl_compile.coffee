@@ -7,6 +7,7 @@ log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
 {buildSim,buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
+global  = require('chdl_global')
 mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
 program = require('commander')
@@ -36,6 +37,7 @@ program
   .option('--ncsim')
   .option('--vcs')
   .option('--iverilog')
+  .option('--prefix <prefix to auto signal>')
   #.option('--sim')
   .option('--nolineno')
   .option('--debug')
@@ -84,6 +86,9 @@ cfg={
     else
       'vcd'
 }
+
+if program.prefix?
+  global.setPrefix(program.prefix)
 
 if program.iverilog
   cfg.noAlwaysComb = true
