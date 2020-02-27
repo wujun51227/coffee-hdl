@@ -142,17 +142,17 @@ processFile= (fileName,outDir) ->
         if program.ncsim
           args=['-64bit','-access +rwc',flist...]
           log "[ncverilog #{args.join(' ')}]"
-          spawn('ncverilog',args,{stdio:[0,1,2]})
+          spawn('ncverilog',args,{stdio:['pipe',1,2]})
         if program.vcs
           args=['-full64','-R','-debug_access+all','-sverilog',flist...]
           log "[vcs #{args.join(' ')}]"
-          spawn('vcs',args,{stdio:[0,1,2]})
+          spawn('vcs',args,{stdio:['pipe',1,2]})
         if program.iverilog
           args=['-o',outDir+'/sim_ivl','-g2012',flist...]
           log "[iverilog #{args.join(' ')}]"
-          handler=spawn('iverilog',args,{stdio:[0,1,2]})
+          handler=spawn('iverilog',args,{stdio:['pipe',1,2]})
           handler.on('exit',->
-            handler=spawn(outDir+'/sim_ivl',{stdio:[0,1,2]})
+            handler=spawn(outDir+'/sim_ivl',{stdio:['pipe',1,2]})
           )
 
     catch e

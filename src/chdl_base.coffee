@@ -344,6 +344,7 @@ code_gen= (inst)=>
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
         if item.type=='polling'
+          printBuffer.add "  #{item.active} = 1;"
           printBuffer.add "  while(#{item.active}) begin"
           printBuffer.add "    @(posedge #{item.signal});"
           printBuffer.add "    if(#{item.expr}) begin"
@@ -376,6 +377,7 @@ code_gen= (inst)=>
           if _.isNumber(item.delay)
             printBuffer.add "  ##{item.delay}"
         if item.type=='polling'
+          printBuffer.add "  #{item.active} = 1;"
           printBuffer.add "  while(#{item.active}) begin"
           printBuffer.add "    @(posedge #{item.signal});"
           printBuffer.add "    if(#{item.expr}) begin"
