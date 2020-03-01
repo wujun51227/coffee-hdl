@@ -100,16 +100,19 @@ statementGen=(buffer,statement)->
     lhs=statement[1]
     rhs=statement[2]
     lineno=statement[3]
+    lhsName=''
     if lhs.constructor?.name is 'Reg'
-      lhs=lhs.getDwire().refName()
-    if lhs.constructor?.name is 'Wire'
-      lhs=lhs.refName()
-    if lhs.constructor?.name is 'Port'
-      lhs=lhs.refName()
-    if lineno? and lineno>=0
-      buffer.add "  #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+      lhsName=lhs.getDwire().refName()
+    else if lhs.constructor?.name is 'Wire'
+      lhsName=lhs.refName()
+    else if lhs.constructor?.name is 'Port'
+      lhsName=lhs.refName()
     else
-      buffer.add "  #{toSignal lhs} = #{rhsExpand(rhs)};"
+      throw new Error("Unknown lhs type")
+    if lineno? and lineno>=0
+      buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+    else
+      buffer.add "  #{toSignal lhsName} = #{rhsExpand(rhs)};"
   else if stateType=='end'
     buffer.add "  end"
   else if stateType=='verilog'
@@ -309,16 +312,19 @@ code_gen= (inst)=>
       lhs=statement[1]
       rhs=statement[2]
       lineno=statement[3]
+      lhsName=''
       if lhs.constructor?.name is 'Reg'
-        lhs=lhs.getDwire().refName()
+        lhsName=lhs.getDwire().refName()
       else if lhs.constructor?.name is 'Wire'
-        lhs=lhs.refName()
+        lhsName=lhs.refName()
       else if lhs.constructor?.name is 'Port'
-        lhs=lhs.refName()
-      if lineno? and lineno>=0
-        printBuffer.add "assign #{toSignal lhs}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+        lhsName=lhs.refName()
       else
-        printBuffer.add "assign #{toSignal lhs} = #{rhsExpand(rhs)};"
+        throw new Error('Unknown lhs type')
+      if lineno? and lineno>=0
+        printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+      else
+        printBuffer.add "assign #{toSignal lhsName} = #{rhsExpand(rhs)};"
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)

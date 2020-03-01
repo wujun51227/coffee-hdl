@@ -226,8 +226,6 @@ module.exports.getValue=(i)=>
     return i().refName()
   throw new Error('arg type error'+i)
 
-sharpToDot = (s)->  s.replace(/#/g,'.')
-
 module.exports._expr= (s,lineno=null) ->
   if global.getSim()
     if s.str?
