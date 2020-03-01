@@ -1,3 +1,4 @@
+rm -rf out
 chdl_compile.coffee --no_always_comb --iverilog -o out/always_test always_test.chdl
 chdl_compile.coffee --no_always_comb --iverilog -o out/assign_simple assign_simple.chdl
 chdl_compile.coffee --no_always_comb --iverilog -o out/branch_block branch_block.chdl

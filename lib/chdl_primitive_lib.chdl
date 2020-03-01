@@ -467,11 +467,11 @@ module.exports={
     cache={}
     for i,index in bin when i.next?
       expr= $ (stateReg.getState(bin[index+1].id)==nextState)
-      if cache[expr]?
-        assign(i.next) = cache[expr]
+      if cache[expr.e.str]?
+        assign(i.next) = cache[expr.e.str]
       else
         assign(i.next) = expr
-        cache[expr]=i.next
+        cache[expr.e.str]=i.next
 
   $buildSeqBlock:(seqBlock)->
     stateReg=seqBlock.stateReg

@@ -1,4 +1,5 @@
 {toSignal} = require('chdl_utils')
+global= require 'chdl_global'
 class CircuitEl
 
   constructor: ->
@@ -17,7 +18,7 @@ class CircuitEl
   getName: -> @elName
 
   sign: ->
-    if @cell.__sim
+    if global.getSim()
       "signed(#{@hier})"
     else
       "$signed(#{@hier})"

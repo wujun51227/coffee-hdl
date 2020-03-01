@@ -1,8 +1,6 @@
 _ =require 'lodash'
+global= require 'chdl_global'
 
-simMode=false
-
-module.exports.setSim= -> simMode=true
 
 toSignal= (i)->
   a=i.replace(/^\$\./,'')
@@ -61,6 +59,10 @@ toFlatten = (data,target=null,root='') ->
     else if cur.__type=='wire'
       checkTarget()
       result.push [prop, cur()]
+      return
+    else if cur.__type=='expr'
+      checkTarget()
+      result.push [prop, cur]
       return
     else if cur.constructor?.name=='Port'
       checkTarget()
@@ -227,7 +229,7 @@ module.exports.getValue=(i)=>
 sharpToDot = (s)->  s.replace(/#/g,'.')
 
 module.exports._expr= (s,lineno=null) ->
-  if simMode
+  if global.getSim()
     if s.str?
       s.str
     else
@@ -236,12 +238,14 @@ module.exports._expr= (s,lineno=null) ->
     append=''
     if lineno? and lineno>=0
       append=' /* '+lineno+' */ '
-    if s.str?
-      sharpToDot(s.str+append)
-    else if _.isArray(s)
-      s
-    else
-      sharpToDot(s+append)
+    if s.constructor?.name == 'Expr'            # return simple expression
+      return {
+        __type : 'expr'
+        e: s
+        append: append
+      }
+    else if _.isArray(s) # return condition array
+      return s
 
 rhsTraceExpand= (target,slice,expandItem,bin=[])=>
   if _.isString(expandItem) or _.isNumber(expandItem)

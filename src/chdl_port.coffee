@@ -124,14 +124,16 @@ class Port extends Wire
         @staticWire=false
         if @staticAssign
           throw new Error("This wire have been static assigned")
-        @cell.__regAssignList.push ["assign",this,assignFunc(),-1]
+        rhs = assignFunc()
+        @cell.__regAssignList.push ["assign",this,rhs,-1]
         @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
       else
         @shadowReg.assign(assignFunc,lineno)
     else
       if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again")
-      assignItem=["assign",this,assignFunc(),lineno]
+      rhs = assignFunc()
+      assignItem=["assign",this,rhs,lineno]
       @cell.__wireAssignList.push assignItem
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
@@ -150,14 +152,14 @@ class Port extends Wire
   portDeclare: ->
     if @type=='input'
       if @width==1
-        "input "+toSignal(@getName())
+        "input "+toSignal(@elName)
       else
-        "input ["+(@width-1)+":0] "+toSignal(@getName())
+        "input ["+(@width-1)+":0] "+toSignal(@elName)
     else if @type=='output'
       if @width==1
-        "output "+@getName()
+        "output "+@elName
       else
-        "output ["+(@width-1)+":0] "+@getName()
+        "output ["+(@width-1)+":0] "+@elName
 
   setShadowReg: (i)=> @shadowReg = i
 

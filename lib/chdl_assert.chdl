@@ -43,7 +43,7 @@ class chdl_assert extends Module
     return (sig,value,message='')->
       if message
         assign self.assert_message = self.sToString(message)
-        @verilog("$display(\"#{self.message_prefix} %0s\",#{$(self.assert_message)});")
+        @display("#{self.message_prefix} %0s",$(self.assert_message))
       if type=='eq'
         $if(sig!=value)
           @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should == #{value}\",$time);")

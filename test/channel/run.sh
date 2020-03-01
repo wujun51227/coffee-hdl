@@ -1,3 +1,4 @@
+rm -rf out
 chdl_compile.coffee --no_always_comb --iverilog -o out/channel_autobind channel_autobind.chdl
 chdl_compile.coffee --no_always_comb --iverilog -o out/channel_bind_extend channel_bind_extend.chdl
 chdl_compile.coffee --no_always_comb --iverilog -o out/channel_bind_port channel_bind_port.chdl

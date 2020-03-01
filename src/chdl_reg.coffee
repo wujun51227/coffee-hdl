@@ -1,5 +1,6 @@
 CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
+Expr = require 'chdl_expr'
 _ = require 'lodash'
 {cat,rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
 Vnumber = require 'chdl_number'
@@ -101,7 +102,7 @@ class Reg extends CircuitEl
 
   pending: (v)=> @share.pendingValue=v
 
-  getPending: => @share.pendingValue ? @getName()
+  getPending: => @share.pendingValue ? @elName
 
   noReset: =>
     console.log '=========================='
@@ -211,8 +212,8 @@ class Reg extends CircuitEl
       reg.share=@share
       return packEl('reg',reg)
 
-  refName: ->
-    if @cell.__sim
+  refName: =>
+    if global.getSim()
       if @lsb>=0
         if @width==1
           @hier+".bit("+@lsb+")"
@@ -229,14 +230,8 @@ class Reg extends CircuitEl
       else
         @elName
 
-  dName: ->
-    if @cell.__sim
-      @hier+'.getD()'
-    else
-      global.getPrefix()+'_'+@refName()
-
-  getD: =>
-    if @cell.__sim
+  getDwire: =>
+    if global.getSim()
       @hier+'.getD()'
     else
       wire= Wire.create(@width)
@@ -251,19 +246,19 @@ class Reg extends CircuitEl
     list=[]
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
-        list.push "localparam "+@elName+'__'+i.state+" = "+i.value+";"
+        list.push i.verilogDeclare()
     if @width==1
-      list.push "reg "+@getName()+";"
+      list.push "reg "+@elName+";"
       if @staticAssign
-        list.push "wire "+@dName()+";"
+        list.push "wire "+@getDwire().refName()+";"
       else
-        list.push "reg "+@dName()+";"
+        list.push "reg "+@getDwire().refName()+";"
     else if @width>1
-      list.push "reg ["+(@width-1)+":0] "+@getName()+";"
+      list.push "reg ["+(@width-1)+":0] "+@elName+";"
       if @staticAssign
-        list.push "wire ["+(@width-1)+":0] "+@dName()+";"
+        list.push "wire ["+(@width-1)+":0] "+@getDwire().refName()+";"
       else
-        list.push "reg ["+(@width-1)+":0] "+@dName()+";"
+        list.push "reg ["+(@width-1)+":0] "+@getDwire().refName()+";"
 
     return list.join("\n")
 
@@ -335,9 +330,11 @@ class Reg extends CircuitEl
     else
       return ''
 
+  pack: -> Expr.start().next(packEl('reg',this))
+
   drive: (list...)=>
     for i in list
-      i.assign(=>_expr(@refName()))
+      i.assign(=>_expr(@pack()))
 
   assign: (assignFunc,lineno=-1)=>
     @cell.__assignWaiting=true
@@ -360,7 +357,7 @@ class Reg extends CircuitEl
 
   stateIsValid: (name)->
     for i in @states
-      if name==i.state
+      if name==i.label
         return true
     return false
 
@@ -368,71 +365,79 @@ class Reg extends CircuitEl
     @states=[] if @states==null
     if _.isArray(arg)
       for i,index in arg
-        @states.push {state:i,value:index}
+        @states.push @cell._const(index,{el:this,label:i})
     else if _.isPlainObject(arg)
       for k,v of arg
-        @states.push {state:k,value:v}
+        @states.push @cell._const(v,{el:this,label:k})
     else
       throw new Error("Set sateMap error "+JSON.stringify(arg))
 
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "(#{@dName()}==#{@elName+'__'+name})"
+    item = _.find(@states,(i)=> i.label==name)
+    Expr.start().next(@getDwire()).next('==').next(item)
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "(#{@refName()}==#{@elName+'__'+name})"
+    item = _.find(@states,(i)=> i.label==name)
+    Expr.start().next(packEl('reg',this)).next('==').next(item)
 
   isNthState: (n)=>
     item=@states[n]
-    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
+    Expr.start().next(packEl('reg',this)).next('==').next(item)
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
-    item=@states[n]
-    _expr @elName+'__'+item.state
+    return @states[n]
 
   isLastState: ()=>
     item=_.last(@states)
-    _expr "(#{@refName()}==#{@elName+'__'+item.state})"
+    Expr.start().next(packEl('reg',this)).next('==').next(item)
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
-    _expr "((#{@refName()}==#{@elName+'__'+prevState}) && (#{@dName()}==#{@elName+'__'+nextState}))"
+    previtem = _.find(@states,(i)=> i.label==prevState)
+    nextitem = _.find(@states,(i)=> i.label==nextState)
+    Expr.start().next(packEl('reg',this)).next('==').next(previtem).next('&&').next(@getDwire()).next('==').next(nextitem)
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
-    _expr "(#{@refName()}!=#{@elName+'__'+name})"
+    item = _.find(@states,(i)=> i.label==name)
+    Expr.start().next(packEl('reg',this)).next('!=').next(item)
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
-    @cell.__regAssignList.push ['assign',this,"#{@elName+'__'+name}",-1]
+    item = _.find(@states,(i)=> i.label==name)
+    expr=_expr Expr.start().next(item)
+    @cell.__regAssignList.push ['assign',this,expr,-1]
     @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
 	
-  getState: (name)=> _expr @elName+'__'+name
+  getState: (name)=>
+    item = _.find(@states,(i)=> i.label==name)
+    return Expr.start().next(item)
 
   stateSwitch: (obj)=>
-    @cell.__regAssignList.push ['assign',this,"#{@refName()}",-1]
+    @cell.__regAssignList.push ['assign',this,_expr(@pack()),-1]
     for src,list of obj
-      @cell.__regAssignList.push ["if","#{@refName()}==#{@elName+'__'+src}",-1]
+      @cell.__regAssignList.push ["if",@isState(src),-1]
       for item,index in list
         dst = item.value()
         if index==0
-          if item.cond? and item.cond.str!='null'
-            @cell.__regAssignList.push ["if","#{item.cond.str}",-1]
-            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+          if item.cond?
+            @cell.__regAssignList.push ["if",item.cond,-1]
+            @cell.__regAssignList.push ["assign",this, _expr(@getState(dst)),-1]
             @cell.__regAssignList.push ["end",-1]
           else
-            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
         else
-          if item.cond? and item.cond.str!='null'
-            @cell.__regAssignList.push ["elseif","#{item.cond.str}",-1]
-            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+          if item.cond?
+            @cell.__regAssignList.push ["elseif",item.cond,-1]
+            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
             @cell.__regAssignList.push ["end",-1]
           else
             @cell.__regAssignList.push ["else",-1]
-            @cell.__regAssignList.push ["assign",this, "#{@elName+'__'+dst}",-1]
+            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
             @cell.__regAssignList.push ["end",-1]
       @cell.__regAssignList.push ["end",-1]
 

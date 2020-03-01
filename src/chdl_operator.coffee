@@ -26,12 +26,19 @@ module.exports.cat= (args...)->
   for i,index in list
     if not catItemValidate(i)
       throw new Error("cat function item should be reg/wire/port or width number at position #{index}")
-  return '{'+_.map(list,(i)=>getValue(i)).join(',')+'}'
+  return {
+    __type: 'op_cat'
+    list: _.map(list,(i)=>i)
+  }
 
 module.exports.expand= (num,sig)->
   if not catItemValidate(sig)
     throw new Error("expand function item should be reg/wire/port or width number")
-  return "{#{getValue(num)}{#{getValue(sig)}}}"
+  return {
+    __type: 'op_expand'
+    num: num
+    sig: sig
+  }
 
 module.exports.all1     = (sig)-> return  "(&#{getValue(sig)})"
 module.exports.all0     = (sig)-> return "!(|#{getValue(sig)})"

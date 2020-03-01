@@ -11,7 +11,7 @@ class Vec extends CircuitEl
     @depth=depth
     @__type='vec'
 
-  set: (n,data)=>
+  set: (n,expr)=>
     addr=0
     if n.constructor?.name=='Expr'
       addr=Number(n.str)
@@ -21,7 +21,7 @@ class Vec extends CircuitEl
       addr=n().hier
     else
       addr=n.hier
-    @cell.verilog(@elName+"[#{addr}] = #{data};")
+    @cell.verilog(@elName+"[#{addr}] = #{expr.e.str};")
 
   get: (n)->
     addr=0

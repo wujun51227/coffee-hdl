@@ -3,6 +3,8 @@ _ = require 'lodash'
 {rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
 {cat} = require 'chdl_operator'
 Vnumber = require 'chdl_number'
+Expr    = require('chdl_expr')
+global= require 'chdl_global'
 
 class Wire extends CircuitEl
   width: 0
@@ -169,7 +171,7 @@ class Wire extends CircuitEl
     oomr=''
     if @cell._isGlobal()
       oomr=@cell.getModuleName()+'#'
-    if @cell.__sim
+    if global.getSim()
       if @lsb>=0
         if @width==1
           oomr+@hier+".bit("+@lsb+")"
@@ -197,9 +199,11 @@ class Wire extends CircuitEl
     else
       return ''
 
+  pack: -> Expr.start().next(packEl('wire',this))
+
   drive: (list...)=>
     for i in list
-      i.assign(=>_expr(@refName()))
+      i.assign(=>_expr(@pack()))
 
   isAssigned: => @staticWire==false or @staticAssign
 
@@ -215,12 +219,14 @@ class Wire extends CircuitEl
       @staticWire=false
       if @staticAssign
         throw new Error("This wire have been static assigned #{@elName}")
-      cell.__regAssignList.push ["assign",this,assignFunc(),lineno]
+      rhs = assignFunc()
+      cell.__regAssignList.push ["assign",this,rhs,lineno]
       cell.__updateWires.push({type:'wire',name:@hier,inst:this})
     else
       if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again #{@elName}")
-      assignItem=["assign",this,assignFunc(),lineno]
+      rhs = assignFunc()
+      assignItem=["assign",this,rhs,lineno]
       cell.__wireAssignList.push assignItem
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
@@ -234,7 +240,7 @@ class Wire extends CircuitEl
     list=[]
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
-        list.push "localparam "+@elName+'__'+i.state+"="+i.value+";"
+        list.push i.verilogDeclare()
     if @width==1
       if @type=='input'
         list.push "wire "+@elName+";"
@@ -257,31 +263,43 @@ class Wire extends CircuitEl
   setWidth:(w)-> @width=w
   getWidth:()=> @width
 
+  stateIsValid: (name)->
+    for i in @states
+      if name==i.label
+        return true
+    return false
+
   stateDef: (arg)=>
     @states=[] if @states==null
     if _.isArray(arg)
       for i,index in arg
-        @states.push {state:i,value:index}
+        @states.push @cell._const(index,{el:this,label:i})
     else if _.isPlainObject(arg)
       for k,v of arg
-        @states.push {state:k,value:v}
+        @states.push @cell._const(v,{el:this,label:k})
     else
       throw new Error('Set sateMap error')
 
   isState: (name)=>
-    _expr "#{@refName()}==#{@elName+'__'+name}"
+    throw new Error(name+' is not valid') unless @stateIsValid(name)
+    item = _.find(@states,(i)=> i.label==name)
+    return @pack().next('==').next(item)
 
   notState: (name)=>
-    _expr "#{@refName()}!=#{@elName+'__'+name}"
+    throw new Error(name+' is not valid') unless @stateIsValid(name)
+    item = _.find(@states,(i)=> i.label==name)
+    return @pack().next('!=').next(item)
 
-  getState: (name)=> @elName+'__'+name
+  getState: (name)=>
+    item = _.find(@states,(i)=> i.label==name)
+    return Expr.start().next(item)
 
   reverse: ()=>
     tempWire=@cell._localWire(@width,'reverse')
     list=[]
     for i in [0...@width]
       list.push @bit(i)
-    tempWire.assign((=> cat(list)))
+    tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
 
   select: (cb)=>
@@ -291,7 +309,7 @@ class Wire extends CircuitEl
       if cb(index)
         list.push @bit(index)
     tempWire=@cell._localWire(list.length,'select')
-    tempWire.assign((=> cat(list)))
+    tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
 
   simList: =>

@@ -12,7 +12,7 @@ Module  = require('chdl_module')
 Vnumber  = require('chdl_number')
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
-{getValue,setSim,packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
+{getValue,packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -79,9 +79,13 @@ get_module_build_name= (inst)->
 
 lineComment=(lineno)-> " /* #{lineno} */ "
 
+sharpToDot = (s)->  s.replace(/#/g,'.')
+
 rhsExpand=(expandItem)->
   if _.isString(expandItem) or _.isNumber(expandItem)
     return expandItem
+  else if expandItem?.__type == 'expr'
+    return sharpToDot(expandItem.e.str)+expandItem.append
   else if _.isArray(expandItem)
     str=''
     for item,index in expandItem
@@ -90,11 +94,11 @@ rhsExpand=(expandItem)->
           "#{lineComment(item.lineno)}"
         else
           ""
-      v= if _.isArray(item.value) then rhsExpand(item.value) else item.value
+      v= rhsExpand(item.value)
       if index==0
-        str="(#{item.cond}#{anno})?(#{v}):"
+        str="(#{item.cond.str}#{anno})?(#{v}):"
       else if item.cond?
-        str+="(#{item.cond}#{anno})?(#{v}):"
+        str+="(#{item.cond.str}#{anno})?(#{v}):"
       else
         str+="#{v}#{anno}"
     return str
@@ -106,7 +110,7 @@ statementGen=(buffer,statement)->
     rhs=statement[2]
     lineno=statement[3]
     if lhs.constructor?.name is 'Reg'
-      lhs=lhs.dName()
+      lhs=lhs.getDwire().refName()
     if lhs.constructor?.name is 'Wire'
       lhs=lhs.refName()
     if lhs.constructor?.name is 'Port'
@@ -123,23 +127,23 @@ statementGen=(buffer,statement)->
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      buffer.add "  while(#{toSignal cond}) begin #{lineComment(lineno)}"
+      buffer.add "  while(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
-      buffer.add "  while(#{toSignal cond}) begin"
+      buffer.add "  while(#{toSignal cond.str}) begin"
   else if stateType=='if'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      buffer.add "  if(#{toSignal cond}) begin #{lineComment(lineno)}"
+      buffer.add "  if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
-      buffer.add "  if(#{toSignal cond}) begin"
+      buffer.add "  if(#{toSignal cond.str}) begin"
   else if stateType=='elseif'
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
-      buffer.add "  else if(#{toSignal cond}) begin #{lineComment(lineno)}"
+      buffer.add "  else if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
-      buffer.add "  else if(#{toSignal cond}) begin"
+      buffer.add "  else if(#{toSignal cond.str}) begin"
   else if stateType=='else'
     lineno=statement[1]
     if lineno? and lineno>=0
@@ -181,7 +185,7 @@ statementGen=(buffer,statement)->
       statementGen(buffer,i)
   else if stateType=='wait'
     item = statement[1]
-    buffer.add "  wait(#{item.expr})"
+    buffer.add "  wait(#{item.expr.e.str})"
     for i in item.list
       statementGen(buffer,i)
   else if stateType=='endif'
@@ -213,7 +217,6 @@ sim_gen= (inst,out=[])=>
     sim_gen(i.inst,out)
 
   instEnv.register(inst)
-  inst._setSim()
   inst.build()
   simPackage={
     name    : buildName
@@ -317,7 +320,7 @@ code_gen= (inst)=>
       rhs=statement[2]
       lineno=statement[3]
       if lhs.constructor?.name is 'Reg'
-        lhs=lhs.dName()
+        lhs=lhs.getDwire().refName()
       else if lhs.constructor?.name is 'Wire'
         lhs=lhs.refName()
       else if lhs.constructor?.name is 'Port'
@@ -347,7 +350,7 @@ code_gen= (inst)=>
           printBuffer.add "  #{item.active} = 1;"
           printBuffer.add "  while(#{item.active}) begin"
           printBuffer.add "    @(posedge #{item.signal});"
-          printBuffer.add "    if(#{item.expr}) begin"
+          printBuffer.add "    if(#{item.expr.e.str}) begin"
           printBuffer.add "      #{item.active} = 0;"
           printBuffer.add "    end;"
           printBuffer.add "  end;"
@@ -356,7 +359,7 @@ code_gen= (inst)=>
         if item.type=='negedge'
           printBuffer.add "  @(negedge #{item.signal});"
         if item.type=='wait'
-          printBuffer.add "  wait(#{item.expr})"
+          printBuffer.add "  wait(#{item.expr.e.str})"
         if item.type=='event'
           printBuffer.add "  -> #{item.event};"
         if item.type=='trigger'
@@ -380,7 +383,7 @@ code_gen= (inst)=>
           printBuffer.add "  #{item.active} = 1;"
           printBuffer.add "  while(#{item.active}) begin"
           printBuffer.add "    @(posedge #{item.signal});"
-          printBuffer.add "    if(#{item.expr}) begin"
+          printBuffer.add "    if(#{item.expr.e.str}) begin"
           printBuffer.add "      #{item.active} = 0;"
           printBuffer.add "    end;"
           printBuffer.add "  end;"
@@ -389,7 +392,7 @@ code_gen= (inst)=>
         if item.type=='negedge'
           printBuffer.add "  @(negedge #{item.signal});"
         if item.type=='wait'
-          printBuffer.add "  wait(#{item.expr})"
+          printBuffer.add "  wait(#{item.expr.e.str})"
         if item.type=='event'
           printBuffer.add "  -> #{item.event};"
         if item.type=='trigger'
@@ -477,8 +480,8 @@ toSim=(inst)->
     if inst.__defaultReset==null
       inst._setDefaultReset(global.getPrefix()+'__resetn')
       inst._addPort(global.getPrefix()+'__resetn','input',1)
+  global.setSim()
   cell_build(inst)
-  setSim()
   out=sim_gen(inst)
   inst._clean()
   return out
@@ -550,16 +553,3 @@ module.exports.resetBase   =(path)->
   moduleCache={}
   globalModuleCache={}
   moduleIndex=0
-module.exports.Op       = {
-  xor        : 'xor'
-  or         : 'or'
-  and        : 'and'
-  inv        : 'inv'
-  logicInv   : 'logicInv'
-  logicOr    : 'logicOr'
-  logicAnd   : 'logicAnd'
-  plus       : 'plus'
-  minus      : 'minus'
-  multiple   : 'multiple'
-  neg        : 'neg'
-}

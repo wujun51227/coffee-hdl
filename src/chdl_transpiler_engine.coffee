@@ -395,9 +395,9 @@ scanToken= (tokens,index)->
     return [1,[token]]
 
 exprStart= () ->
-  tokens=coffee.tokens 'chdl_base.Expr.start(this)'
+  tokens=coffee.tokens 'chdl_base.Expr.start()'
   tokens.pop()
-  debugExpr+='\nchdl_base.Expr.start(this)'
+  debugExpr+='\nchdl_base.Expr.start()'
   return tokens
 
 exprNext= (n...) ->

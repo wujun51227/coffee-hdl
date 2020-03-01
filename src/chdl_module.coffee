@@ -3,6 +3,7 @@ Expr    = require 'chdl_expr'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
+Vconst  = require 'chdl_const'
 global  = require('chdl_global')
 {table} = require 'table'
 {toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
@@ -16,6 +17,8 @@ _id=(name)=>
   ret="#{name}_#{localCnt}"
   localCnt+=1
   return ret
+
+sharpToDot = (s)->  s.replace(/#/g,'.')
 
 class Module
   @create: (args...)-> new this(args...)
@@ -189,10 +192,6 @@ class Module
     @__specifyModuleName=null
     @__pinAssign=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
-    @__sim=false
-
-  _setSim: ->
-    @__sim=true
 
   _setGlobal: ->
     @__global=true
@@ -525,13 +524,13 @@ class Module
     return {
       _if: (cond,lineno)=>
         return (block)=>
-          @__regAssignList.push ["if","#{cond.str}",lineno]
+          @__regAssignList.push ["if",cond,lineno]
           block()
           @__regAssignList.push ["end"]
           return @_regProcess()
       _elseif: (cond,lineno=-1)=>
         return (block)=>
-          @__regAssignList.push ["elseif","#{cond.str}",lineno]
+          @__regAssignList.push ["elseif",cond,lineno]
           block()
           @__regAssignList.push ["end"]
           return @_regProcess()
@@ -560,11 +559,11 @@ class Module
     return {
       _if: (cond,lineno)=>
         return (block)=>
-          list.push {cond: cond.str, value: block(),lineno:lineno}
+          list.push {cond: cond, value: block(),lineno:lineno}
           return @_wireProcess(list)
       _elseif: (cond,lineno)=>
         return (block)=>
-          list.push {cond: cond.str, value: block(),lineno:lineno}
+          list.push {cond: cond, value: block(),lineno:lineno}
           return @_wireProcess(list)
       _else: (lineno)=>
         return (block)=>
@@ -725,6 +724,22 @@ class Module
                   _.set(channel.Port,k,netEl)
 
   _link: (name)-> @__instName=name
+
+  _const: (value,option=null)->
+    if option?
+      v= Vconst.create(option.label,value)
+    else
+      v= Vconst.create(null,value)
+    v.cell=this
+    if option==null
+      v.elName=toSignal(_id(global.getPrefix()+'__const'))
+    else
+      if option.el?
+        v.elName=toSignal(global.getPrefix()+'__'+option.el.getName()+'___'+option.label)
+      else
+        v.elName=toSignal(global.getPrefix()+'___'+option.label)
+    v.hier=v.elName
+    return v
 
   _localWire: (width=1,name='t')->
     pWire=Wire.create(Number(width))
@@ -993,7 +1008,8 @@ class Module
     if args.length==0
       @__regAssignList.push ['verilog',"$display(\"#{s}\");"]
     else
-      @__regAssignList.push ['verilog',"$display(\"#{s}\",#{args.join(',')});"]
+      list = _.map(args,(i)-> sharpToDot(i.e.str))
+      @__regAssignList.push ['verilog',"$display(\"#{s}\",#{list.join(',')});"]
 
   _clean: ->
     keys=Object.keys(@__signature)
@@ -1048,7 +1064,7 @@ class Module
       throw new Error("while only can run in initial")
 
     return (block)=>
-      @__regAssignList.push ["while","#{cond.str}",lineno]
+      @__regAssignList.push ["while",cond,lineno]
       block()
       @__regAssignList.push ["end"]
 
