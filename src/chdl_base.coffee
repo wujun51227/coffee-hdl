@@ -1,5 +1,4 @@
 _       = require 'lodash'
-fs      = require 'fs'
 log    =  require 'fancy-log'
 
 Expr    = require('chdl_expr')
@@ -64,17 +63,11 @@ cell_build = (inst) =>
 
 get_module_build_name= (inst)->
   baseName=inst.constructor.name
-  param=inst.param
   suffix=''
   if getCellList(inst).length>0 or inst.__uniq
     moduleIndex+=1
     suffix='__'+moduleIndex
   s=''
-  #if inst.param?
-  #  keys=Object.keys(inst.param).sort()
-  #  for k in keys
-  #    v=inst.param[k]
-  #    s+='_'+k+v
   return baseName+s+suffix
 
 lineComment=(lineno)-> " /* #{lineno} */ "
@@ -82,9 +75,7 @@ lineComment=(lineno)-> " /* #{lineno} */ "
 sharpToDot = (s)->  s.replace(/#/g,'.')
 
 rhsExpand=(expandItem)->
-  if _.isString(expandItem) or _.isNumber(expandItem)
-    return expandItem
-  else if expandItem?.__type == 'expr'
+  if expandItem?.__type == 'expr'
     return sharpToDot(expandItem.e.str)+expandItem.append
   else if _.isArray(expandItem)
     str=''
@@ -308,7 +299,6 @@ code_gen= (inst)=>
   printBuffer.blank('//assign logic') if inst.__wireAssignList.length>0
   for statement in inst.__wireAssignList
     if statement[0]=='reg'
-      width=statement[1]
       name=statement[2]
       lineno=statement[3]
       if lineno? and lineno>=0
@@ -549,7 +539,7 @@ module.exports.infer        = instEnv.infer
 module.exports.cell         = instEnv.cell
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.getConfig  = (v)-> config[v]
-module.exports.resetBase   =(path)->
+module.exports.resetBase   = ->
   moduleCache={}
   globalModuleCache={}
   moduleIndex=0

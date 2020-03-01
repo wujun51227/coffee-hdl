@@ -6,7 +6,7 @@ Channel = require 'chdl_channel'
 Vconst  = require 'chdl_const'
 global  = require('chdl_global')
 {table} = require 'table'
-{toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
+{_expr,toEventList,rhsTraceExpand,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
 _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
@@ -389,21 +389,22 @@ class Module
             netEl.setType(dir)
           else
             net=_.get(this,newPath)
+            netEl=packEl('wire',net)
         if dir=='input'
           if type=='Wire'
-            wire.assign(->toSignal(net.getName()))
+            wire.assign(->_expr(Expr.start().next(netEl)))
             @__pinAssign.push({
               from: toSignal(net.getName())
               to: wireName
             })
           else
-            wire.assign(->toSignal(newPath))
+            wire.assign(->_expr(Expr.start().next(netEl)))
             @__pinAssign.push({
               from: toSignal(newPath)
               to: wireName
             })
         else if dir=='output'
-          net.assign(->wire.getName())
+          net.assign(->_expr(Expr.start().next(packEl('wire',wire))))
           @__pinAssign.push({
             from: toSignal(wire.getName())
             to: net.getName()
@@ -555,7 +556,7 @@ class Module
   _lazy_cond: (cond=null,lineno=-1)=>
     return (block)=> {cond:cond,value:block,lineno:lineno}
 
-  _wireProcess: (list=[],lineno)=>
+  _wireProcess: (list=[])=>
     return {
       _if: (cond,lineno)=>
         return (block)=>
@@ -671,7 +672,9 @@ class Module
     for i in Object.keys(inst.__ports)
       ret[i]=Channel.create()
       bindTable[i]=ret[i]
-    @_channel({[channelName]:ret})
+    bindObj={}
+    bindObj[channelName] = ret
+    @_channel(bindObj)
     inst.bind(bindTable)
     return ret
     
@@ -735,7 +738,10 @@ class Module
       v.elName=toSignal(_id(global.getPrefix()+'__const'))
     else
       if option.el?
-        v.elName=toSignal(global.getPrefix()+'__'+option.el.getName()+'___'+option.label)
+        if option.el.isLocal()
+          v.elName=toSignal(global.getPrefix()+option.el.getName()+'___'+option.label)
+        else
+          v.elName=toSignal(global.getPrefix()+'__'+option.el.getName()+'___'+option.label)
       else
         v.elName=toSignal(global.getPrefix()+'___'+option.label)
     v.hier=v.elName

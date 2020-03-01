@@ -34,13 +34,15 @@ class Reg extends CircuitEl
       pendingValue:null
     }
 
+  isLocal: => @local
+
   setLocal: => @local=true
 
   setGlobal: => @local=false
 
   isVirtual: => false
 
-  init: (v,initial=false)=>
+  init: (v)=>
     @resetValue=v
     return packEl('reg',this)
 
