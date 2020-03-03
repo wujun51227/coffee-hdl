@@ -215,32 +215,20 @@ class Reg extends CircuitEl
       return packEl('reg',reg)
 
   refName: =>
-    if global.getSim()
-      if @lsb>=0
-        if @width==1
-          @hier+".bit("+@lsb+")"
-        else
-          @hier+".slice("+@msb+","+@lsb+")"
+    if @lsb>=0
+      if @width==1
+        @elName+"["+@lsb+"]"
       else
-        @hier+'.getQ()'
+        @elName+"["+@msb+":"+@lsb+"]"
     else
-      if @lsb>=0
-        if @width==1
-          @elName+"["+@lsb+"]"
-        else
-          @elName+"["+@msb+":"+@lsb+"]"
-      else
-        @elName
+      @elName
 
   getDwire: =>
-    if global.getSim()
-      @hier+'.getD()'
-    else
-      wire= Wire.create(@width)
-      wire.link(@cell,global.getPrefix()+'_'+@hier)
-      wire.setLsb(@lsb)
-      wire.setMsb(@msb)
-      return packEl('wire',wire)
+    wire= Wire.create(@width)
+    wire.link(@cell,global.getPrefix()+'_'+@hier)
+    wire.setLsb(@lsb)
+    wire.setMsb(@msb)
+    return packEl('wire',wire)
 
   @create: (width=1)-> new Reg(width)
 

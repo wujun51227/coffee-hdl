@@ -171,22 +171,13 @@ class Wire extends CircuitEl
     oomr=''
     if @cell._isGlobal()
       oomr=@cell.getModuleName()+'#'
-    if global.getSim()
-      if @lsb>=0
-        if @width==1
-          oomr+@hier+".bit("+@lsb+")"
-        else
-          oomr+@hier+".slice("+@msb+","+@lsb+")"
+    if @lsb>=0
+      if @width==1
+        oomr+@elName+"["+@lsb+"]"
       else
-        @hier+'.getValue()'
+        oomr+@elName+"["+@msb+":"+@lsb+"]"
     else
-      if @lsb>=0
-        if @width==1
-          oomr+@elName+"["+@lsb+"]"
-        else
-          oomr+@elName+"["+@msb+":"+@lsb+"]"
-      else
-        oomr+@elName
+      oomr+@elName
 
   get: -> @value
 

@@ -5,7 +5,7 @@ path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
-{buildSim,buildCode,setPaths}=require 'chdl_transpiler_engine'
+{buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 global  = require('chdl_global')
 mkdirp= require 'mkdirp'
@@ -38,7 +38,7 @@ program
   .option('--vcs')
   .option('--iverilog')
   .option('--prefix <prefix to auto signal>')
-  #.option('--sim')
+  .option('--buildsim')
   .option('--nolineno')
   .option('--debug')
   .parse(process.argv)
@@ -78,7 +78,6 @@ cfg={
   tree: program.tree ? false
   info: program.info ? false
   noLineno: program.no_lineno ? false
-  sim: program.sim ? false
   noAlwaysComb: program.no_always_comb ? false
   waveFormat: do ->
     if program.fsdb
@@ -92,6 +91,9 @@ if program.prefix?
 
 if program.iverilog
   cfg.noAlwaysComb = true
+
+if program.buildsim
+  global.setSim()
 
 configBase(cfg)
 
@@ -113,47 +115,37 @@ processFile= (fileName,outDir) ->
       log.error error
       return
     try
-      if cfg.sim
-        out=buildSim(path.resolve(fileName),text,debug,programParam)
-        for i in out
-          fname= do ->
-            if outDir?
-              outDir+'/'+i.name+'.sim.json'
-            else
-              i.name+'.sim.json'
-          fs.writeFileSync(fname,JSON.stringify(i,null,'  '),'utf8')
-      else
-        buildCode(path.resolve(fileName),text,debug,programParam)
-        printBuffer.flush()
-        flist=[]
-        for i,index in printBuffer.getBin()
-          code= i.list.join("\n")
-          fname= do ->
-            if outDir?
-              outDir+'/'+i.name
-            else
-              i.name
-          flist.push(fname+'.sv')
-          fs.writeFileSync(fname+'.sv', code,'utf8')
-          log "generate code",fname+".sv"
+      buildCode(path.resolve(fileName),text,debug,programParam)
+      printBuffer.flush()
+      flist=[]
+      for i,index in printBuffer.getBin()
+        code= i.list.join("\n")
+        fname= do ->
+          if outDir?
+            outDir+'/'+i.name
+          else
+            i.name
+        flist.push(fname+'.sv')
+        fs.writeFileSync(fname+'.sv', code,'utf8')
+        log "generate code",fname+".sv"
 
-        if program.flist
-          fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
-        if program.ncsim
-          args=['-64bit','-access +rwc',flist...]
-          log "[ncverilog #{args.join(' ')}]"
-          spawn('ncverilog',args,{stdio:['pipe',1,2]})
-        if program.vcs
-          args=['-full64','-R','-debug_access+all','-sverilog',flist...]
-          log "[vcs #{args.join(' ')}]"
-          spawn('vcs',args,{stdio:['pipe',1,2]})
-        if program.iverilog
-          args=['-o',outDir+'/sim_ivl','-g2012',flist...]
-          log "[iverilog #{args.join(' ')}]"
-          handler=spawn('iverilog',args,{stdio:['pipe',1,2]})
-          handler.on('exit',->
-            handler=spawn(outDir+'/sim_ivl',{stdio:['pipe',1,2]})
-          )
+      if program.flist
+        fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
+      if program.ncsim
+        args=['-64bit','-access +rwc',flist...]
+        log "[ncverilog #{args.join(' ')}]"
+        spawn('ncverilog',args,{stdio:['pipe',1,2]})
+      if program.vcs
+        args=['-full64','-R','-debug_access+all','-sverilog',flist...]
+        log "[vcs #{args.join(' ')}]"
+        spawn('vcs',args,{stdio:['pipe',1,2]})
+      if program.iverilog
+        args=['-o',outDir+'/sim_ivl','-g2012',flist...]
+        log "[iverilog #{args.join(' ')}]"
+        handler=spawn('iverilog',args,{stdio:['pipe',1,2]})
+        handler.on('exit',->
+          handler=spawn(outDir+'/sim_ivl',{stdio:['pipe',1,2]})
+        )
 
     catch e
       log.error e

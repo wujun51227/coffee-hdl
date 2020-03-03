@@ -24,7 +24,6 @@ config={
   tree: false
   info: false
   noLineno: false
-  sim: false
   noAlwaysComb: false
   waveFormat: 'vcd'
 }
@@ -187,31 +186,14 @@ statementGen=(buffer,statement)->
   else
     throw new Error("can not find type #{stateType}")
 
-sim_gen= (inst,out=[])=>
-  buildName = do ->
-    if inst.__specify
-      if inst.__uniq
-        moduleIndex+=1
-        inst.__specifyModuleName+'__'+moduleIndex
-      else
-        inst.__specifyModuleName
-    else
-      get_module_build_name(inst)
-  inst._overrideModuleName(buildName)
-  log 'Build cell',inst._getPath(),'(',buildName,')'
-  if moduleCache[buildName]?
-    return
-  else if inst.isBlackBox()
-    log 'Warning:',inst._getPath(),'is blackbox'
-    return
-  else
-    moduleCache[buildName]=true
-
-  for i in getCellList(inst)
-    sim_gen(i.inst,out)
-
-  instEnv.register(inst)
-  inst.build()
+buildSim= (buildName,inst)=>
+  console.log '--------------------------------------------'
+  console.log(JSON.stringify(inst._dumpWire(),null,'  '))
+  console.log(JSON.stringify(inst._dumpPort(),null,'  '))
+  console.log(JSON.stringify(inst._dumpReg(),null,'  '))
+  console.log(JSON.stringify(inst._dumpVar(),null,'  '))
+  console.log(JSON.stringify(inst._dumpCell(),null,'  '))
+###
   simPackage={
     name    : buildName
     port    : inst._dumpPort()
@@ -222,9 +204,7 @@ sim_gen= (inst,out=[])=>
     cell    : inst._dumpCell()
     channel : inst._dumpChannel()
   }
-  out.push simPackage
-  return out
-  #console.log JSON.stringify(simPackage,null,'  ')
+###
 
 code_gen= (inst)=>
   buildName = do ->
@@ -251,6 +231,8 @@ code_gen= (inst)=>
 
   instEnv.register(inst)
   inst.build()
+  if global.getSim()
+    buildSim(buildName,inst)
   printBuffer.setName(buildName)
   printBuffer.add '`ifndef UDLY'
   printBuffer.add '`define UDLY 1'
@@ -468,20 +450,6 @@ getVerilogParameter=(inst)->
       list.push(".#{i.key}(#{i.value})")
     return " #(\n  "+list.join(",\n  ")+"\n) "
 
-toSim=(inst)->
-  if (not inst.__isCombModule) and config.autoClock
-    if inst.__defaultClock==null
-      inst._setDefaultClock(global.getPrefix()+'__clock')
-      inst._addPort(global.getPrefix()+'__clock','input',1)
-    if inst.__defaultReset==null
-      inst._setDefaultReset(global.getPrefix()+'__resetn')
-      inst._addPort(global.getPrefix()+'__resetn','input',1)
-  global.setSim()
-  cell_build(inst)
-  out=sim_gen(inst)
-  inst._clean()
-  return out
-
 module.exports.buildGlobalModule=(globalModule)->
   inst=new globalModule()
   inst._setGlobal()
@@ -521,7 +489,6 @@ instEnv= do ->
     register: (i)-> inst=i
     getWire: (name,path=null)-> inst._getChannelWire(name,path)
     hasChannel: (name)-> inst.__channels[name]?
-    cell: (name)-> inst._getCell(name)
     infer: ()-> inst.__assignWidth
   }
 
@@ -533,7 +500,6 @@ module.exports.bin = Vnumber.bin
 module.exports.Module    = Module
 module.exports.Expr      = Expr
 module.exports.toVerilog   = toVerilog
-module.exports.toSim       = toSim
 module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind
@@ -542,7 +508,6 @@ module.exports.vec         = vec
 module.exports.channel_wire = instEnv.getWire
 module.exports.channel_exist = instEnv.hasChannel
 module.exports.infer        = instEnv.infer
-module.exports.cell         = instEnv.cell
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   = ->

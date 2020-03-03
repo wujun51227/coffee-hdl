@@ -17,11 +17,7 @@ class CircuitEl
 
   getName: -> @elName
 
-  sign: ->
-    if global.getSim()
-      "signed(#{@hier})"
-    else
-      "$signed(#{@hier})"
+  sign: -> "$signed(#{@hier})"
 
   getPath: ->
     list=[@elName]

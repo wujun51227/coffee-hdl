@@ -227,23 +227,17 @@ module.exports.getValue=(i)=>
   throw new Error('arg type error'+i)
 
 module.exports._expr= (s,lineno=null) ->
-  if global.getSim()
-    if s.str?
-      s.str
-    else
-      s
-  else
-    append=''
-    if lineno? and lineno>=0
-      append=' /* '+lineno+' */ '
-    if s.constructor?.name == 'Expr'            # return simple expression
-      return {
-        __type : 'expr'
-        e: s
-        append: append
-      }
-    else if _.isArray(s) # return condition array
-      return s
+  append=''
+  if lineno? and lineno>=0
+    append=' /* '+lineno+' */ '
+  if s.constructor?.name == 'Expr'            # return simple expression
+    return {
+      __type : 'expr'
+      e: s
+      append: append
+    }
+  else if _.isArray(s) # return condition array
+    return s
 
 rhsTraceExpand= (target,slice,expandItem,bin=[])=>
   if _.isString(expandItem) or _.isNumber(expandItem)

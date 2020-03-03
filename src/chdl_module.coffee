@@ -52,7 +52,11 @@ class Module
     p=Object.getPrototypeOf(this)
     for k,v of p when typeof(v)=='object' and v instanceof Module
       return v if k==name
-    return _.find(@__cells,{name:name})
+    item=_.find(@__cells,{name:name})
+    if item?
+      return item.inst
+    else
+      return null
 
   _setConfig: (v) -> @__config=v
 
@@ -241,29 +245,29 @@ class Module
       console.trace()
 
   _dumpPort: ->
-    out={}
+    out=[]
     for [name,item] in toFlatten(@__ports)
-      _.set(out,name,{dir:item.getType(),width:item.getWidth(),sigName:toSignal(item.getName())})
+      out.push({dir:item.getType(),width:item.getWidth(),hier:item.hier})
     return out
 
   _dumpReg: ->
-    out={}
-    for [name,item] in toFlatten(@__regs)
-      if item.constructor.name=='Reg'
-        _.set(out,name,{width:item.getWidth(),property:item.simProperty(),simList:item.simList()})
+    out=[]
+    for [name,item] in toFlatten(@__local_regs)
+      out.push({width:item.getWidth(),property:item.simProperty(),hier:item.hier})
     return out
 
   _dumpVar: ->
-    out={}
-    for [name,item] in toFlatten(@__regs)
-      if item.constructor.name=='Wire'
-        _.set(out,name,{width:item.getWidth()})
+    out=[]
+    for [name,item] in toFlatten(@__local_wires)
+      if item.isVirtual()
+        out.push({width:item.getWidth(),hier:item.hier})
     return out
 
   _dumpWire: ->
-    out={}
-    for [name,item] in toFlatten(@__wires)
-      _.set(out,name,{width:item.getWidth(),simList:item.simList()})
+    out=[]
+    for [name,item] in toFlatten(@__local_wires)
+      if not item.isVirtual()
+        out.push({width:item.getWidth(),hier:item.hier})
     return out
 
   _addWire: (name,width)->
@@ -1103,8 +1107,8 @@ class Module
     for cellInfo in cellList
       cellInst=@_getCell(cellInfo.inst)
       connList=[]
-      for i in cellInst.__bindChannels
-        connList.push {port:i.portName,channel:i.channel.hier}
+      #for i in cellInst.__bindChannels
+      #  connList.push {port:i.portName,channel:i.channel.hier}
       cellInfo.conn=connList
       if cellInst.__defaultClock
         clockPort=cellInst.__ports[cellInst.__defaultClock]
