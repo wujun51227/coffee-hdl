@@ -28,7 +28,6 @@ class Wire extends CircuitEl
     @states=[]
     @bindChannel=null
     @fieldMap={}
-    @depNames=[]
     @local=false
     @clockName=null
     @resetName=null
@@ -223,10 +222,6 @@ class Wire extends CircuitEl
       @staticAssign=true
     cell.__assignWaiting=false
 
-  getDepNames: => _.uniq(@depNames)
-
-  pushDepNames: (n...)=> @depNames.push(n...)
-
   verilogDeclare: ->
     list=[]
     if @states?
@@ -302,36 +297,5 @@ class Wire extends CircuitEl
     tempWire=@cell._localWire(list.length,'select')
     tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
-
-  simList: =>
-    if @share.alwaysList?
-      list=[]
-      transfer=null
-      for i in @share.alwaysList
-        if i[0]=='if'
-          list.push({type:'cond',e:i[1],action:null})
-          transfer=_.last(list)
-        else if i[0]=='assign'
-          if i[1].hier==@hier
-            if transfer?
-              transfer.action=rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])
-            else
-              list.push(rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])...)
-        else if i[0]=='elseif'
-          list.push({type:'cond',e:i[1],action:null})
-          transfer=_.last(list)
-        else if i[0]=='else'
-          list.push({type:'cond',e:null,action:null})
-          transfer=_.last(list)
-        else if i[0]=='end'
-          list.push({type:'end'})
-          transfer=null
-      return list
-    else
-      list=[]
-      for i in @share.assignList
-        list.push(rhsTraceExpand(@hier,{lsb:i[0],msb:i[1]},i[2])...)
-      return list
-
 
 module.exports=Wire

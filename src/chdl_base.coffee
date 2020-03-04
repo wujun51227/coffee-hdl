@@ -202,7 +202,6 @@ buildSim= (buildName,inst)=>
     var     : inst._dumpVar()
     event   : inst._dumpEvent()
     cell    : inst._dumpCell()
-    channel : inst._dumpChannel()
   }
 ###
 

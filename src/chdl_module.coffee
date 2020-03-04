@@ -1120,18 +1120,5 @@ class Module
           connList.push {port:resetPort.elName,signal:@__defaultReset}
     return cellList
 
-  _dumpChannel: =>
-    out={}
-    for [name,channel] in toFlatten(@__channels)
-      for [path,port] in toFlatten(channel.Port)
-        hier=do ->
-          if path!=''
-            channel.hier+'.Port.'+path
-          else
-            channel.hier+'.Port'
-        _.set(out,hier,{width:port.getWidth(),simList:port.simList()})
-
-    return out
-    
 
 module.exports=Module

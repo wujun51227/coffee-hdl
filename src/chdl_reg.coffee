@@ -25,7 +25,6 @@ class Reg extends CircuitEl
     @clearSignal=null
     @clearValue=null
     @fieldMap={}
-    @depNames=[]
     @local=false
     @staticAssign=false
     @share={
@@ -343,8 +342,6 @@ class Reg extends CircuitEl
       @staticAssign=true
     @cell.__assignWaiting=false
 
-  getDepNames: => _.uniq(@depNames)
-
   stateIsValid: (name)->
     for i in @states
       if name==i.label
@@ -449,62 +446,12 @@ class Reg extends CircuitEl
       clockEdge: (if @negClock then 'negedge' else 'posedge')
       reset: @getReset()
       resetAssert: @assertHigh
+      resetValue: @resetValue
+      clearSignal: @clearSignal
+      clearValue: @clearValue
+      enableSignal: @enableSignal
+      enableValue: @enableValue
     }
-
-  simList: ->
-      list=[]
-      out={}
-      if @resetMode?
-        action={type:'transfer',e:@resetValue}
-        if @assertHigh
-          list.push {type:'cond',e:"#{@getReset()}==1",action:action}
-        else
-          list.push {type:'cond',e:"#{@getReset()}==0",action:action}
-
-      if @clearSignal?
-        action={type:'transfer',e:@resetValue}
-        list.push {type:"cond",e:"#{@clearSignal}==#{@clearValue}",action:action}
-
-      if @enableSignal?
-        action={type:'update'}
-        list.push {type:'cond',e:"#{@enableSignal}==#{@enableValue}",action:action}
-      else
-        action={type:'update'}
-        if list.length>0
-          list.push {type:'cond',e:null,action:action}
-          list.push {type:'condend'}
-        else
-          list.push {type:'update'}
-
-      out.trig=list
-
-      list=[]
-      for i in @share.assignList
-        list.push(rhsTraceExpand(@hier,{lsb:i[0],msb:i[1]},i[2])...)
-      if @share.alwaysList?
-        transfer=null
-        for i in @share.alwaysList
-          if i[0]=='if'
-            list.push({type:'cond',e:i[1],action:null})
-            transfer=_.last(list)
-          else if i[0]=='assign'
-            if i[1].hier==@hier
-              if transfer?
-                transfer.action=rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])
-              else
-                list.push(rhsTraceExpand(@hier,{lsb:i[1].lsb,msb:i[1].msb},i[2])...)
-          else if i[0]=='elseif'
-            list.push({type:'cond',e:i[1],action:null})
-            transfer=_.last(list)
-          else if i[0]=='else'
-            list.push({type:'cond',e:null,action:null})
-            transfer=_.last(list)
-          else if i[0]=='end'
-            list.push({type:'end'})
-            transfer=null
-
-      out.assign=list
-      return out
 
   reverse: ()=>
     tempWire=@cell._localWire(@width,'reverse')

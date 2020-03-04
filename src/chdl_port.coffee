@@ -42,7 +42,6 @@ class Port extends Wire
     @isRegConfig={}
     @bindChannel=null
     @bindSignal=null
-    @depNames=[]
 
     @isClock=false
     @isReset=false
@@ -138,8 +137,6 @@ class Port extends Wire
       @share.assignList.push [@lsb,@msb,assignItem[2]]
       @staticAssign=true
     @cell.__assignWaiting=false
-
-  getDepNames: => _.uniq(@depNames)
 
   asReg: (config={})=>
     if @type=='output'
