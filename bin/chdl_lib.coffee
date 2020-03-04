@@ -48,16 +48,10 @@ processFile= (fileName) ->
             [jsfile,lineno]=m[1].split(/:/)
             log.error 'Error at "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"'
 
-
-fileName = program.args[0]
-
-#if not fs.existsSync('./build')
-#  mkdirp.sync('./build')
-
-unless fileName
+if program.args.length==0
   log 'No file specified'
   process.exit()
 
-#banner()
-processFile(fileName)
+for fileName in program.args
+  processFile(fileName)
 
