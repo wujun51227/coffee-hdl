@@ -40,6 +40,7 @@ program
   .option('--prefix <prefix to auto signal>')
   .option('--buildsim')
   .option('--nolineno')
+  .option('--force')
   .option('--debug')
   .parse(process.argv)
 
@@ -88,6 +89,9 @@ cfg={
 
 if program.prefix?
   global.setPrefix(program.prefix)
+
+if program.force?
+  global.setForce()
 
 if program.iverilog
   cfg.noAlwaysComb = true

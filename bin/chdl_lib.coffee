@@ -12,6 +12,7 @@ log = require 'fancy-log'
 {printBuffer}=require 'chdl_utils'
 {buildLib,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
+global  = require('chdl_global')
 mkdirp= require 'mkdirp'
 chokidar = require('chokidar')
 program = require('commander')
@@ -20,10 +21,14 @@ program
   .version('0.0.1')
   .name('chdl_lib.coffee')
   .usage('[options] source_file')
+  .option('--force')
   .option('--debug')
   .parse(process.argv)
 
 debug = program.debug ? false
+
+if program.force?
+  global.setForce()
 
 configBase({lib:true})
 

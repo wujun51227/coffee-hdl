@@ -1,5 +1,5 @@
-master_cell = importLib('./sub_module/master.chdl')
-slave_cell = importLib('./sub_module/slave.chdl')
+master_cell = importDesign('./sub_module/master.chdl')
+slave_cell = importDesign('./sub_module/slave.chdl')
 
 class cell1 extends Module
   u0_master_cell: new master_cell()
