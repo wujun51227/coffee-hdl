@@ -1,6 +1,8 @@
 coffee = require 'coffeescript'
 _ = require 'lodash'
 fs = require 'fs'
+firstline = require 'firstline'
+md5 = require 'md5'
 log = require 'fancy-log'
 {printBuffer,cat,expand}=require 'chdl_utils'
 chdl_base = require 'chdl_base'
@@ -1048,6 +1050,13 @@ buildLib= (fullFileName,text,debug=false,param=null) ->
   transToJs(fullFileName,text,debug)
 
 transToJs= (fullFileName,text,debug=false) ->
+  md5Sign = md5(text)
+  if fs.existsSync(fullFileName+'.js')
+    signStr=fs.readFileSync(fullFileName+'.js','utf8').substr(0,38)
+    if signStr.substr(0,6)=='\/\/md5 '
+      if md5Sign==signStr.substr(6,32)
+        return require("#{fullFileName}.js")
+  log "Genarate #{fullFileName}.js"
   head = "chdl_base = require 'chdl_base'\n"
   head +="{_expr,printBuffer}=require 'chdl_utils'\n"
   head +="{cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_operator'\n"
@@ -1084,6 +1093,7 @@ transToJs= (fullFileName,text,debug=false) ->
   javaScript = ''
   for fragment in fragments
     javaScript += fragment.code
+  javaScript="\/\/md5 #{md5Sign}\n"+javaScript
   fs.writeFileSync("#{fullFileName}.js", javaScript,'utf8')
   pushToReload("#{fullFileName}.js")
   return require("#{fullFileName}.js")
