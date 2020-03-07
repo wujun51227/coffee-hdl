@@ -223,13 +223,13 @@ class Module
 
   _clock: =>
     if @__defaultClock?
-      this[@__defaultClock]
+      @__defaultClock
     else
       throw new Error("Can not find default clock")
 
   _reset: =>
     if @__defaultReset?
-      this[@__defaultReset]
+      @__defaultReset
     else
       throw new Error("Can not find default reset")
 

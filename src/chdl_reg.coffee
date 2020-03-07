@@ -2,7 +2,8 @@ CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
 Expr = require 'chdl_expr'
 _ = require 'lodash'
-{cat,rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
+{rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
+{cat} = require 'chdl_operator'
 Vnumber = require 'chdl_number'
 global  = require('chdl_global')
 
