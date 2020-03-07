@@ -89,12 +89,12 @@ class tb extends Module
     initial
       $sequence()
       .delay(100) =>
-        assign @cell1_port.Port.din = 0x55aa
-        assign @cell2_port.Port.din = 0x7788
+        assign @cell1_port.din = 0x55aa
+        assign @cell2_port.din = 0x7788
       .delay(100) =>
-        @assert_eq(@cell1_port.Port.dout,0x55aa,'test connection')
-        @assert_eq(@cell2_port.Port.dout,0x7788,'test connection')
-        @assert_eq(@cell3_port.Port,0x1234,'test connection')
+        @assert_eq(@cell1_port.dout,0x55aa,'test connection')
+        @assert_eq(@cell2_port.dout,0x7788,'test connection')
+        @assert_eq(@cell3_port,0x1234,'test connection')
         @assert_report('channel bind port')
         @sim_finish()
       .end()

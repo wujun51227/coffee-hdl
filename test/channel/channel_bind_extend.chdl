@@ -86,13 +86,13 @@ class tb extends Module
     initial
       $sequence()
       .delay(100) =>
-        assign @ch.Port.ch1.din= 0x55aa
-        assign @ch.Port.ch2.din= 0x1234
-        assign @ch.Port.din= 0x7788
+        assign @ch.ch1.din= 0x55aa
+        assign @ch.ch2.din= 0x1234
+        assign @ch.din= 0x7788
       .delay(100) =>
-        @assert_eq(@ch.Port.ch1.dout,0x55aa,'test connection')
-        @assert_eq(@ch.Port.ch2.dout,0x1234,'test connection')
-        @assert_eq(@ch.Port.dout,0x7788,'test connection')
+        @assert_eq(@ch.ch1.dout,0x55aa,'test connection')
+        @assert_eq(@ch.ch2.dout,0x1234,'test connection')
+        @assert_eq(@ch.dout,0x7788,'test connection')
         @assert_report('channel bind extend')
         @sim_finish()
       .end()

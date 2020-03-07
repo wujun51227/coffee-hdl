@@ -46,20 +46,20 @@ class tb extends Module
     initial
       $sequence()
       .init =>
-        assign @io.Port.din=0
+        assign @io.din=0
       .delay(505) =>
-        assign @io.Port.din=1
+        assign @io.din=1
       .posedge(@clk) =>
-        @assert_0(@io.Port.dout1)
-        @assert_0(@io.Port.dout2)
+        @assert_0(@io.dout1)
+        @assert_0(@io.dout2)
       .posedge(@clk) =>
-        @assert_0(@io.Port.dout1)
-        @assert_0(@io.Port.dout2)
+        @assert_0(@io.dout1)
+        @assert_0(@io.dout2)
       .posedge(@clk) =>
-        @assert_1(@io.Port.dout1)
-        @assert_0(@io.Port.dout2)
+        @assert_1(@io.dout1)
+        @assert_0(@io.dout2)
       .posedge(@clk) =>
-        @assert_1(@io.Port.dout2)
+        @assert_1(@io.dout2)
       .delay(10) =>
         @assert_report()
         @sim_finish()

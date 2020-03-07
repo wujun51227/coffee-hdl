@@ -95,8 +95,8 @@ class ChannelHubConnection extends Module
 
 
   build: ->
-    $channelPortHub( @c1_bundle.Port.sub,@c2_sub.Port,@c3_bundle.Port.sub)
-    $channelPortHub( @c1_bundle.Port,@c3_bundle.Port)
+    $channelPortHub( @c1_bundle.sub,@c2_sub,@c3_bundle.sub)
+    $channelPortHub( @c1_bundle,@c3_bundle)
 
     initial
       $sequence()

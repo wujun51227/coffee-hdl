@@ -237,13 +237,6 @@ class Module
 
   isBlackBox: ()=> @__isBlackBox
 
-  _getChannelWire: (channelName,path=null)->
-    if @__channels[channelName]?
-      return @__channels[channelName].getWire(path)
-    else
-      console.error 'Channel',channelName,'not found'
-      console.trace()
-
   _dumpPort: ->
     out=[]
     for [name,item] in toFlatten(@__ports)

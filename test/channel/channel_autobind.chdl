@@ -52,7 +52,7 @@ class ChannelAutoBind extends Module
     )
 
   build: ->
-    $channelPortHub(@ch2,@ch1.bundle.Port)
+    $channelPortHub(@ch2,@ch1.bundle)
 
     initial
       $sequence()

@@ -70,8 +70,8 @@ class ChannelPortArrayHub extends Module
     )
 
   build: ->
-    $channelPortHub(@conn0.Port[0],@conn1.Port)
-    $channelPortHub(@conn0.Port[1],@conn2.Port)
+    $channelPortHub(@conn0[0],@conn1)
+    $channelPortHub(@conn0[1],@conn2)
 
     initial
       $sequence()

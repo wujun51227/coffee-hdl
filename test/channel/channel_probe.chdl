@@ -63,9 +63,9 @@ class ChannelProbe extends Module
     )
 
   build: ->
-    assign @cell1_ch.Port.din = 0x2222
+    assign @cell1_ch.din = 0x2222
     assign @cell2_probe.din   = 0x3333
-    assign(@dout) = @cell2_port.din+@cell1_select.Port+@cell1_ch.Port.dout(3:0)+@cell2_probe.dout
+    assign(@dout) = @cell2_port.din+@cell1_select+@cell1_ch.dout(3:0)+@cell2_probe.dout
 
 class tb extends Module
   dut: new ChannelProbe()
@@ -87,10 +87,10 @@ class tb extends Module
     initial
       $sequence()
       .delay(100) =>
-        assign @ch1.Port.din= 0x1111
+        assign @ch1.din= 0x1111
       .delay(100) =>
-        @assert_eq(@ch1.Port.dout,0x1111,'test connection')
-        @assert_eq(@ch2.Port,0x4457,'test connection')
+        @assert_eq(@ch1.dout,0x1111,'test connection')
+        @assert_eq(@ch2,0x4457,'test connection')
         @assert_report('channel probe')
         @sim_finish()
       .end()

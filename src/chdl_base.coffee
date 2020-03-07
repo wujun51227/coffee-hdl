@@ -235,6 +235,11 @@ code_gen= (inst)=>
     code_gen(i.inst)
 
   instEnv.register(inst)
+
+  for [name,item] in toFlatten(inst.__channels)
+    if item.probeChannel==null
+      _.set(inst,name,item.Port)
+
   inst.build()
   if global.getSim()
     log("Build sim",buildName)
@@ -493,7 +498,6 @@ instEnv= do ->
   inst=null
   return {
     register: (i)-> inst=i
-    getWire: (name,path=null)-> inst._getChannelWire(name,path)
     hasChannel: (name)-> inst.__channels[name]?
     infer: ()-> inst.__assignWidth
   }

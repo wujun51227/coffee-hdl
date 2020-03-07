@@ -38,7 +38,7 @@ class ParameterTest extends Module
     initial
       $sequence()
       .delay(100) =>
-        @assert_eq(@ch.Port,200,'test parameter')
+        @assert_eq(@ch,200,'test parameter')
         @assert_report()
         @sim_finish()
       .end()
