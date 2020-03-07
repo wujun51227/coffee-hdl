@@ -20,6 +20,7 @@
     "recursive-iterator": "^3.3.0",
     "remarker": "^1.11.2",
     "rimraf": "^2.6.2",
+    "rxjs": "^6.5.4",
     "stringify-tree": "^1.0.2",
     "table": "^5.4.6",
     "uuid": "^3.3.2"

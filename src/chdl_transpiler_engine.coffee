@@ -1,7 +1,6 @@
 coffee = require 'coffeescript'
 _ = require 'lodash'
 fs = require 'fs'
-firstline = require 'firstline'
 md5 = require 'md5'
 log = require 'fancy-log'
 {printBuffer,cat,expand}=require 'chdl_utils'
@@ -1058,7 +1057,6 @@ cleanCache= ->
 
 buildCode= (fullFileName,text,debug=false,param=null) ->
   cleanCache()
-  printBuffer.reset()
   design=transToJs(fullFileName,text,debug)
   chdl_base.toVerilog(new design(param))
 

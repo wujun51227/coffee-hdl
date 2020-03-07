@@ -9,7 +9,6 @@ fs = require 'fs'
 path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
-{printBuffer}=require 'chdl_utils'
 {buildLib,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 global  = require('chdl_global')

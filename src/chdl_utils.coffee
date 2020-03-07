@@ -131,7 +131,7 @@ dumpInfo= (elList)->
   )
   return ret
 
-printBuffer= do ->
+outBufferGen= ->
   bin=[]
   list=[]
   name=''
@@ -145,19 +145,20 @@ printBuffer= do ->
       wires: dumpInfo(inst.__wires)
   }
   return {
-    reset: -> list=[]
-    clearBin: -> bin.length=0
-    add: (s)-> list.push s if s?
-    get: -> list
-    blank: (s='')-> list.push s
-    setName: (s)->
-      bin.push(dump()) if list.length>0
-      name=s
+    clearBin: ->
+      bin.length=0
       list=[]
+      name=''
       inst=null
-    flush: -> bin.push(dump()) if list.length>0
+    add: (s)-> list.push s if s?
+    blank: (s='')-> list.push s
+    setName: (s,cell)->
+      name=s
+      inst=cell
+      list=[]
+    flush: ->
+      bin.push(dump()) if list.length>0
     getBin: -> bin
-    dump: dump
     dumpAll: ->
       allBin=(i for i in bin).reverse()
       modules=[]
@@ -182,11 +183,10 @@ printBuffer= do ->
         list: outList
         info: infoTable
       }
-    register:(i)->inst=i
-    getInst: -> inst
   }
 
-module.exports.printBuffer = printBuffer
+module.exports.printBuffer = outBufferGen()
+module.exports.simBuffer = outBufferGen()
 
 module.exports.packEl = (type,bin)->
   ret = (msb=null,lsb=null)->

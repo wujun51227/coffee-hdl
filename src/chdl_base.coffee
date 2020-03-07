@@ -11,7 +11,7 @@ Module  = require('chdl_module')
 Vnumber  = require('chdl_number')
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
-{getValue,packEl,printBuffer,toSignal,toFlatten} = require('chdl_utils')
+{getValue,packEl,simBuffer,printBuffer,toSignal,toFlatten} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -187,12 +187,18 @@ statementGen=(buffer,statement)->
     throw new Error("can not find type #{stateType}")
 
 buildSim= (buildName,inst)=>
-  console.log '--------------------------------------------'
-  console.log(JSON.stringify(inst._dumpWire(),null,'  '))
-  console.log(JSON.stringify(inst._dumpPort(),null,'  '))
-  console.log(JSON.stringify(inst._dumpReg(),null,'  '))
-  console.log(JSON.stringify(inst._dumpVar(),null,'  '))
-  console.log(JSON.stringify(inst._dumpCell(),null,'  '))
+  #console.log(JSON.stringify(inst._dumpWire(),null,'  '))
+  #console.log(JSON.stringify(inst._dumpPort(),null,'  '))
+  #console.log(JSON.stringify(inst._dumpReg(),null,'  '))
+  #console.log(JSON.stringify(inst._dumpVar(),null,'  '))
+  #console.log(JSON.stringify(inst._dumpCell(),null,'  '))
+
+  simBuffer.setName(buildName,inst)
+  simBuffer.add 'const '+buildName+' = { }'
+  simBuffer.add _.map(toFlatten(inst.__ports), (i)=>
+    "_.set(#{buildName},'#{i[0]}',rxGen(#{i[1].getWidth()}))"
+  ).join("\n")
+  simBuffer.flush()
 ###
   simPackage={
     name    : buildName
@@ -231,8 +237,9 @@ code_gen= (inst)=>
   instEnv.register(inst)
   inst.build()
   if global.getSim()
+    log("Build sim",buildName)
     buildSim(buildName,inst)
-  printBuffer.setName(buildName)
+  printBuffer.setName(buildName,inst)
   printBuffer.add '`ifndef UDLY'
   printBuffer.add '`define UDLY 1'
   printBuffer.add '`endif'
@@ -438,7 +445,7 @@ code_gen= (inst)=>
 
   printBuffer.add 'endmodule'
   printBuffer.blank()
-  printBuffer.register(inst)
+  printBuffer.flush()
 
 getVerilogParameter=(inst)->
   if inst.__instParameter==null
