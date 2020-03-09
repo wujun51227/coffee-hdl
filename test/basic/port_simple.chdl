@@ -63,18 +63,18 @@ class tb extends Module
     initial
       $sequence()
       .delay(10) =>
-        assign @din.Port = 0x1a
-        assign @bus.Port.data.din=0x15
+        assign @din= 0x1a
+        assign @bus.data.din=0x15
         for i in _.range(5)
-          assign @din_arr.Port[i] = i
-        assign @compose.Port[1].enable=1
-        assign @compose.Port[1].din=0xa
+          assign @din_arr[i] = i
+        assign @compose[1].enable=1
+        assign @compose[1].din=0xa
       .delay(10) =>
-        @assert_eq(@dout.Port,0x1a)
-        @assert_eq(@bus.Port.data.dout,0b1010)
+        @assert_eq(@dout,0x1a)
+        @assert_eq(@bus.data.dout,0b1010)
         for i in _.range(5)
-          @assert_eq(@dout_arr.Port[i], i)
-        @assert_eq(@compose.Port[0].dout,0xb)
+          @assert_eq(@dout_arr[i], i)
+        @assert_eq(@compose[0].dout,0xb)
       .delay(10) =>
         @assert_report()
       .end()

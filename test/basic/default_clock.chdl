@@ -128,10 +128,10 @@ class DefaultClock extends Module
     )
 
   build: ->
-    assign @clk2_ch.Port = @ex_clock
-    assign @rst2_ch.Port = @ex_reset
-    assign @clk1_ch.Port = 1
-    assign @rst1_ch.Port = 1
+    assign @clk2_ch = @ex_clock
+    assign @rst2_ch = @ex_reset
+    assign @clk1_ch = 1
+    assign @rst1_ch = 1
 
 class tb extends Module
 
@@ -165,10 +165,10 @@ class tb extends Module
     initial
       $sequence()
       .delay(10000) =>
-        @assert_eq(@dout_ch.Port[0],777,'test auto clock module')
-        @assert_eq(@dout_ch.Port[1],0x123,'test combo module')
-        @assert_eq(@dout_ch.Port[2],111,'test overwrite auto clock module')
-        @assert_eq(@dout_ch.Port[3],333,'test multi clock module')
+        @assert_eq(@dout_ch[0],777,'test auto clock module')
+        @assert_eq(@dout_ch[1],0x123,'test combo module')
+        @assert_eq(@dout_ch[2],111,'test overwrite auto clock module')
+        @assert_eq(@dout_ch[3],333,'test multi clock module')
       .delay(100) =>
         @assert_report()
         @sim_finish()

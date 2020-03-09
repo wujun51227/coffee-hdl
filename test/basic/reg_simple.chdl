@@ -174,25 +174,25 @@ class tb extends Module
     initial
       $sequence()
       .init =>
-        assign @a_ch.Port = 1
-        assign @en_ch.Port.notupdateEnable = 1 #no enable
+        assign @a_ch= 1
+        assign @en_ch.notupdateEnable = 1 #no enable
       .delay(1000) =>
-        @assert_eq(@c_ch.Port[0],23,'test init value')
-        @assert_eq(@c_ch.Port[1],0xff,'test fromMsb')
-        @assert_ne(@c_ch.Port[2],0,'test no reset')
-        @assert_eq(@c_ch.Port[3],0x7f,'test clear enable')
-        @assert_eq(@c_ch.Port[4],0,'test reset parameter')
-        @assert_eq(@c_ch.Port[5],0x1ff,'test negedge clock')
-        @assert_eq(@c_ch.Port[6],0b111111110,'test drive function')
-        @assert_eq(@c_ch.Port[7],0x123,'test assign from else if')
-        @assert_eq(@c_ch.Port[8],0,'test enable')
-        @assert_eq(@c_ch.Port[9],0b111111110,'test local register')
-        @assert_eq(@c_ch.Port[10],200,'test register array')
-        @assert_eq(@c_ch.Port[11],22,'test register map')
-        @assert_1(@c_ch.Port[12],'test state set/is')
-        @assert_1(@c_ch.Port[13],'test state switch')
+        @assert_eq(@c_ch[0],23,'test init value')
+        @assert_eq(@c_ch[1],0xff,'test fromMsb')
+        @assert_ne(@c_ch[2],0,'test no reset')
+        @assert_eq(@c_ch[3],0x7f,'test clear enable')
+        @assert_eq(@c_ch[4],0,'test reset parameter')
+        @assert_eq(@c_ch[5],0x1ff,'test negedge clock')
+        @assert_eq(@c_ch[6],0b111111110,'test drive function')
+        @assert_eq(@c_ch[7],0x123,'test assign from else if')
+        @assert_eq(@c_ch[8],0,'test enable')
+        @assert_eq(@c_ch[9],0b111111110,'test local register')
+        @assert_eq(@c_ch[10],200,'test register array')
+        @assert_eq(@c_ch[11],22,'test register map')
+        @assert_1(@c_ch[12],'test state set/is')
+        @assert_1(@c_ch[13],'test state switch')
 
-        @assert_eq(@b_ch.Port.bb.cc,201,'test output use as reg')
+        @assert_eq(@b_ch.bb.cc,201,'test output use as reg')
       .delay(100) =>
         @assert_report()
         @sim_finish()
