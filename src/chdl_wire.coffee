@@ -224,7 +224,7 @@ class Wire extends CircuitEl
     list=[]
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
-        list.push i.verilogDeclare()
+        list.push i.verilogDeclare(true)
     if @width==1
       if @type=='input'
         list.push "wire "+@elName+";"

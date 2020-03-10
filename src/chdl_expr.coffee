@@ -15,7 +15,7 @@ class Expr
       @wstr+=s
     else if typeof(s)=='number'
       @str+=s
-      @wstr+='w'+s.toString(2).length
+      @wstr+=s.toString(10)
     else if s==null
       @str+=''
       @wstr+=''
@@ -82,11 +82,18 @@ class Expr
     else if s.constructor?.name == 'Vnumber'
       n=s.refName()
       @str+= n
-      @wstr+= 'w'+s.getWidth()
+      if s.isAutoWidth()
+        @wstr+= s.getNumber()
+      else
+        @wstr+= 'w'+s.getWidth()
     else if s.constructor?.name == 'Vconst'
       n=s.refName()
       @str+= n
       @wstr+= 'w'+s.value.toString(2).length
+    else if s.constructor?.name == 'VecMember'
+      n=s.refName()
+      @str+= n
+      @wstr+= 'w'+s.getWidth()
     else if s instanceof Expr
       @str+=s.str
       @wstr+= s.wstr

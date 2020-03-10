@@ -1,7 +1,6 @@
 CircuitEl = require 'chdl_el'
-Reg = require 'chdl_reg'
+VecMember = require 'chdl_vec_member'
 _ = require 'lodash'
-{packEl}=require 'chdl_utils'
 
 class Vec extends CircuitEl
 
@@ -21,7 +20,7 @@ class Vec extends CircuitEl
       addr=n().hier
     else
       addr=n.hier
-    @cell.verilog(@elName+"[#{addr}] = #{expr.e.str};")
+    @cell.__regAssignList.push ["assign",VecMember.create(this,addr),expr,-1]
 
   get: (n)->
     addr=0
@@ -33,9 +32,11 @@ class Vec extends CircuitEl
       addr=n().hier
     else
       addr=n.hier
-    return @elName+"[#{addr}]"
+    return VecMember.create(this,addr)
     
   @create: (width,depth)-> new Vec(width,depth)
+
+  getWidth:()=> @width
 
   verilogDeclare: ()->
     return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"];"

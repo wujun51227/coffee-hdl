@@ -11,6 +11,7 @@
     "@marp-team/marp-cli": "^0.16.2",
     "chokidar": "^3.0.2",
     "coffeescript": "^2.5.1",
+    "colors": "^1.4.0",
     "commander": "^2.19.0",
     "directory-tree": "^2.1.0",
     "glob": "^7.1.3",

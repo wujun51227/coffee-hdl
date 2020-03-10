@@ -1,5 +1,6 @@
 _       = require 'lodash'
 log    =  require 'fancy-log'
+colors   = require 'colors'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
@@ -107,6 +108,19 @@ rhsExpand=(expandItem)->
       w: w
     }
 
+checkAssignWidth=(lhs,rhsInfo,lineno)->
+  return if lint?.widthCheckLevel==0
+  return if rhsInfo.w.match(/^"/)
+  #console.log rhsInfo.code,rhsInfo.w
+  rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
+  if lint.widthCheckLevel==1
+    if lhs.getWidth()<rhsWidth
+      log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
+  else if lint.widthCheckLevel==2
+    if lhs.getWidth()!=rhsWidth
+      log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
+
+
 statementGen=(buffer,statement)->
   stateType=statement[0]
   if stateType=='assign'
@@ -120,16 +134,18 @@ statementGen=(buffer,statement)->
       lhsName=lhs.refName()
     else if lhs.constructor?.name is 'Port'
       lhsName=lhs.refName()
+    else if lhs.constructor?.name is 'VecMember'
+      lhsName=lhs.refName()
     else
       throw new Error("Unknown lhs type")
     if lineno? and lineno>=0
       rhsInfo=rhsExpand(rhs)
       buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
-      widthCheck(lhs,rhsInfo,lineno)
+      checkAssignWidth(lhs,rhsInfo,lineno)
     else
       rhsInfo=rhsExpand(rhs)
       buffer.add "  #{toSignal lhsName} = #{rhsInfo.code};"
-      widthCheck(lhs,rhsInfo,lineno)
+      checkAssignWidth(lhs,rhsInfo,lineno)
   else if stateType=='end'
     buffer.add "  end"
   else if stateType=='verilog'
@@ -229,18 +245,6 @@ buildSim= (buildName,inst)=>
   }
 ###
 
-widthCheck=(lhs,rhsInfo,lineno)->
-  return
-  return if lint?.widthCheckLevel==0
-  return if rhsInfo.w.match(/^"/)
-  rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
-  if lint.widthCheckLevel==1
-    if lhs.getWidth()<rhsWidth
-      log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}"
-  else if lint.widthCheckLevel==2
-    if lhs.getWidth()!=rhsWidth
-      log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}"
-
 code_gen= (inst)=>
   buildName = do ->
     if inst.__specify
@@ -252,7 +256,7 @@ code_gen= (inst)=>
     else
       get_module_build_name(inst)
   inst._overrideModuleName(buildName)
-  log 'Build cell',inst._getPath(),'(',buildName,')'
+  log ('Build cell '+inst._getPath()+' ( '+buildName+' )').green
   if moduleCache[buildName]?
     return
   else if inst.isBlackBox()
@@ -273,7 +277,7 @@ code_gen= (inst)=>
   lint = inst.__lint
   inst.build()
   if global.getSim()
-    log("Build sim",buildName)
+    log(("Build sim "+buildName).green)
     buildSim(buildName,inst)
   printBuffer.setName(buildName,inst)
   printBuffer.add '`ifndef UDLY'
@@ -285,7 +289,8 @@ code_gen= (inst)=>
   ).join(",\n")
   printBuffer.add ');'
   printBuffer.blank('//parameter declare')
-  printBuffer.add inst._parameterDeclare()
+  for i in inst.__moduleParameter
+    printBuffer.add i.verilogDeclare(false)
   printBuffer.blank('//port declare')
   _.map(toFlatten(inst.__ports), (i)=>
     printBuffer.add i[1].portDeclare()+";"
@@ -348,11 +353,11 @@ code_gen= (inst)=>
       if lineno? and lineno>=0
         rhsInfo=rhsExpand(rhs)
         printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
-        widthCheck(lhs,rhsInfo,lineno)
+        checkAssignWidth(lhs,rhsInfo,lineno)
       else
         rhsInfo=rhsExpand(rhs)
         printBuffer.add "assign #{toSignal lhsName} = #{rhsInfo.code};"
-        widthCheck(lhs,rhsInfo,lineno)
+        checkAssignWidth(lhs,rhsInfo,lineno)
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)
@@ -446,7 +451,7 @@ code_gen= (inst)=>
     for i in _.uniqBy(updateEls,(n)=>n.hier)
       if i.constructor?.name is 'Reg'
         printBuffer.add "  #{global.getPrefix()}_"+i.getName()+'='+getValue(i.getPending())+';'
-      else
+      else if (i.constructor?.name is 'Wire') or (i.constructor?.name is 'Port')
         printBuffer.add '  '+i.getName()+'='+getValue(i.getPending())+';'
     if assignList
       for statement in assignList

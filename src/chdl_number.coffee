@@ -37,6 +37,7 @@ class Vnumber
     # console.log '>>>>>',value,typeof(value),type,_.isNumber(value),_.isString(value)
     @signed=false
     @show_type=type
+    @autoWidth=true
     bInt=null
     if _.isNumber(value) and typeof(value)=='number'
       if value>=2**32
@@ -53,6 +54,7 @@ class Vnumber
     if bInt?
       if width>0
         @width=width
+        @autoWidth=false
       else
         @width=bInt.length
       @bits=new Array(@width).fill(0)
@@ -64,6 +66,8 @@ class Vnumber
           throw new Error("value bit width greater than request width")
 
   getBits: => _.clone(@bits)
+
+  isAutoWidth: => @autoWidth
 
   refName: =>
     if @show_type=='bin'
@@ -89,6 +93,9 @@ class Vnumber
 
   getWidth:()=> @width
 
+  getNumber: =>
+    return BigInt('0b'+@bits[..].reverse().join('')).toString(10)
+
   setWidth:(w)->
     newBits=new Array(w)
     for i in _.range(w)
@@ -98,6 +105,7 @@ class Vnumber
         new_bits[i]=0
     @width=w
     @bits=newBits
+    @autoWidth=false
 
   slice: (n,m)->
     out=Vnumber.create('0b'+@bits[m..n].reverse().join(''),n-m+1)

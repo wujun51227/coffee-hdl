@@ -142,12 +142,14 @@ class Module
 
   instParameter: (s)->  @__instParameter=s
 
-  moduleParameter: (s)->  @__moduleParameter=s
+  moduleParameter: (list)->
+    for i in list
+      @__moduleParameter.push @_const(i.value,{noPrefix:true,label:i.key})
 
   getParameter: (key)->
-    item=_.find(@__moduleParameter,{key:key})
+    item=_.find(@__moduleParameter,(i)->i.label==key)
     if item?
-      return key
+      return item
     else
       throw new Error("Can not find parameter key #{key}")
 
@@ -164,7 +166,7 @@ class Module
     @__moduleName=null
     @__isCombModule=false
     @__instParameter=null
-    @__moduleParameter=null
+    @__moduleParameter=[]
 
     @__lint ={
       widthCheckLevel: 1
@@ -730,7 +732,9 @@ class Module
     if option==null
       v.elName=toSignal(_id(global.getPrefix()+'__const'))
     else
-      if option.el?
+      if option.noPrefix
+        v.elName=toSignal(option.label)
+      else if option.el?
         if option.el.isLocal()
           v.elName=toSignal(global.getPrefix()+option.el.getName()+'___'+option.label)
         else
@@ -1059,13 +1063,6 @@ class Module
       @__regAssignList.push ["while",cond,lineno]
       block()
       @__regAssignList.push ["end"]
-
-  _parameterDeclare: ->
-    out=''
-    if @__moduleParameter?
-      for i in @__moduleParameter
-        out+="parameter #{i.key} = #{i.value};\n"
-    return out
 
   _dumpEvent: =>
     out=[]

@@ -4,6 +4,7 @@ fs = require 'fs'
 path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
+colors = require 'colors'
 {simBuffer,printBuffer}=require 'chdl_utils'
 {buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
@@ -15,10 +16,10 @@ spawn = require('child_process').spawn
 
 
 banner= (topFile)->
-    console.log '|          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬'
-    console.log '|          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││'
-    console.log '|          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘'
-    log "Top file #{topFile}"
+    console.log '          ╔═╗┌─┐┌─┐┌─┐┌─┐┌─┐  ┬ ┬┌┬┐┬           '.brightBlue
+    console.log '          ║  │ │├┤ ├┤ ├┤ ├┤   ├─┤ │││           '.brightBlue
+    console.log '          ╚═╝└─┘└  └  └─┘└─┘  ┴ ┴─┴┘┴─┘         '.brightBlue
+    log "Top file #{topFile}".magenta
 
 program
   .version('0.0.1')
@@ -137,7 +138,7 @@ processFile= (fileName,outDir) ->
             i.name
         flist.push(fname+'.sv')
         fs.writeFileSync(fname+'.sv', code,'utf8')
-        log "generate code",fname+".sv"
+        log ("generate code "+fname+".sv").magenta
 
       if program.flist
         fs.writeFileSync(program.flist,flist.join("\n"),'utf8')
@@ -151,7 +152,7 @@ processFile= (fileName,outDir) ->
         spawn('vcs',args,{stdio:['pipe',1,2]})
       if program.iverilog
         args=['-o',outDir+'/sim_ivl','-g2012',flist...]
-        log "[iverilog #{args.join(' ')}]"
+        log "[iverilog #{args.join(' ')}]".yellow
         handler=spawn('iverilog',args,{stdio:['pipe',1,2]})
         handler.on('exit',->
           handler=spawn(outDir+'/sim_ivl',{stdio:['pipe',1,2]})
@@ -181,7 +182,7 @@ unless fileName
   process.exit()
 
 banner(fileName)
-log 'Generate code to directory "'+outDir+'"' if outDir?
+log ('Generate code to directory "'+outDir+'"').magenta if outDir?
 processFile(fileName,outDir.replace(/\/$/,''))
 
 if program.watch

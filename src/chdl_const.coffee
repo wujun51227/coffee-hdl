@@ -12,8 +12,11 @@ class Vconst extends Wire
   assign: ()=>
     throw new Error("const can not be assigned")
 
-  verilogDeclare: ->
-    "localparam "+@elName+"="+@value+";"
+  verilogDeclare: (local=true)->
+    if local
+      "localparam "+@elName+"="+@value+";"
+    else
+      "parameter "+@elName+"="+@value+";"
 
   verilogUpdate: -> null
 
