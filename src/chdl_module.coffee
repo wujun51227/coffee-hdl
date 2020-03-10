@@ -41,8 +41,6 @@ class Module
 
   __config:{}
 
-  __signature:{}
-
   _cellmap: (v) ->
     for name,inst of v
       @__cells.push({name:name,inst:inst})
@@ -1013,11 +1011,6 @@ class Module
     else
       list = _.map(args,(i)-> sharpToDot(i.e.str))
       @__regAssignList.push ['verilog',"$display(\"#{s}\",#{list.join(',')});"]
-
-  _clean: ->
-    keys=Object.keys(@__signature)
-    for i in keys
-      delete @__signature[i]
 
   getHierarchy: -> @_getPath()
           

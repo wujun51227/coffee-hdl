@@ -482,7 +482,6 @@ toVerilog=(inst)->
   code_gen(inst)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
-  inst._clean()
 
 input=(width=1)->packEl('port',Port.in(width))
 
