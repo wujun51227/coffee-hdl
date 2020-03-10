@@ -125,7 +125,6 @@ class Port extends Wire
           throw new Error("This wire have been static assigned")
         rhs = assignFunc()
         @cell.__regAssignList.push ["assign",this,rhs,-1]
-        @cell.__updateWires.push({type:'wire',name:@hier,inst:this})
       else
         @shadowReg.assign(assignFunc,lineno)
     else

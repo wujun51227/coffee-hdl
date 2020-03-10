@@ -40,11 +40,29 @@ module.exports.expand= (num,sig)->
     sig: sig
   }
 
-module.exports.all1     = (sig)-> return  "(&#{getValue(sig)})"
-module.exports.all0     = (sig)-> return "!(|#{getValue(sig)})"
-module.exports.has1     = (sig)-> return  "(|#{getValue(sig)})"
-module.exports.has0     = (sig)-> return "!(&#{getValue(sig)})"
-module.exports.hasOdd1  = (sig)-> return  "(^#{getValue(sig)})"
-module.exports.hasEven1 = (sig)-> return "!(^#{getValue(sig)})"
+module.exports.all1     = (sig)-> return {
+    __type: 'op_all1'
+    sig: sig
+  }
+module.exports.all0     = (sig)-> return {
+    __type: 'op_all0'
+    sig: sig
+  }
+module.exports.has1     = (sig)-> return {
+    __type: 'op_has1'
+    sig: sig
+  }
+module.exports.has0     = (sig)-> return {
+    __type: 'op_has0'
+    sig: sig
+  }
+module.exports.hasOdd1  = (sig)-> return {
+    __type: 'op_hasOdd1'
+    sig: sig
+  }
+module.exports.hasEven1 = (sig)-> return {
+    __type: 'op_hasEven1'
+    sig: sig
+  }
 
 

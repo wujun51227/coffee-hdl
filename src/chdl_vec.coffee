@@ -1,7 +1,7 @@
 CircuitEl = require 'chdl_el'
 Reg = require 'chdl_reg'
 _ = require 'lodash'
-{packEl,toNumber}=require 'chdl_utils'
+{packEl}=require 'chdl_utils'
 
 class Vec extends CircuitEl
 

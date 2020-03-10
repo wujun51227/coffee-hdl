@@ -151,6 +151,12 @@ class Module
     else
       throw new Error("Can not find parameter key #{key}")
 
+  setLint:(key,value)->
+    if @__lint[key]?
+      @__lint[key]=value
+    else
+      log "Error: lint key #{key} not defined"
+
   constructor: (param=null)->
     @param=param
     @__id = uuid()
@@ -160,6 +166,9 @@ class Module
     @__instParameter=null
     @__moduleParameter=null
 
+    @__lint ={
+      widthCheckLevel: 1
+    }
     @__alwaysList     =  []
     @__foreverList     =  []
     @__regs           =  {}
@@ -184,7 +193,6 @@ class Module
     @__regAssignList=[]
     @__trigMap={}
     @__assignWidth=null
-    @__updateWires=[]
     @__assignWaiting=false
     @__assignEnv=null
     @__parentNode=null
@@ -447,7 +455,6 @@ class Module
     else
       assignWaitingSave=false
     @__regAssignList=[]
-    @__updateWires=[]
     @__sequenceBlock=[]
     block()
     if @__sequenceBlock.length>0
@@ -457,11 +464,8 @@ class Module
             throw new Error("Can not use delay in always sequence")
         @_buildSeqBlock(seqList)
       @__sequenceBlock=null
-    @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
-    for i in @__updateWires
-      i.inst.share.alwaysList=@__regAssignList
+    @__alwaysList.push([@__regAssignList,lineno])
     @__assignEnv = null
-    @__updateWires=[]
     @__regAssignList=[]
     if assignWaitingSave
       @__assignWaiting=true
@@ -470,23 +474,17 @@ class Module
     return (block)=>
       @__assignEnv = 'always'
       @__regAssignList=[]
-      @__updateWires=[]
       @_regProcess()._if(cond,lineno)(block)._endif()
-      @__alwaysList.push([@__regAssignList,@__updateWires,lineno])
-      for i in @__updateWires
-        i.inst.share.alwaysList=@__regAssignList
+      @__alwaysList.push([@__regAssignList,lineno])
       @__assignEnv = null
-      @__updateWires=[]
       @__regAssignList=[]
 
   _passAlways: (lineno,block)=>
     @__assignEnv = 'always'
     @__regAssignList=[]
-    @__updateWires=[]
     block()
-    @__alwaysList.push([@__regAssignList,[],lineno])
+    @__alwaysList.push([@__regAssignList,lineno])
     @__assignEnv = null
-    @__updateWires=[]
     @__regAssignList=[]
 
   eval: =>
@@ -972,9 +970,8 @@ class Module
         if bin[0].type!='idle'
           bin.unshift({type:'idle',id:'idle',list:[],next:null,func:null})
         if @__initialMode
-          saveData={name:name,bin:bin,stateReg:null,update:@__updateWires,nextState:null}
+          saveData={name:name,bin:bin,stateReg:null,nextState:null}
           @__sequenceBlock.push saveData
-          @__updateWires=[]
         else
           bitWidth=Math.floor(Math.log2(bin.length))+1
           stateReg=@_localReg(bitWidth,name).clock(clock).reset(reset)
@@ -993,9 +990,8 @@ class Module
           finalJump.func=null
           bin.push(finalJump)
 
-          retData={name:name,bin:bin,stateReg:stateReg,update:@__updateWires,nextState:nextState}
+          retData={name:name,bin:bin,stateReg:stateReg,nextState:nextState}
           @__sequenceBlock.push retData
-          @__updateWires=[]
           @_seqState(stateReg,nextState,lastStateReg,bin)
 
         return retData

@@ -38,6 +38,36 @@ class Expr
       @str+= n
       @wstr+= 'w'+s.getWidth()
       @driven.push(s)
+    else if s.__type? and s.__type=='op_all1'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(&('+getValue(s.sig)+'))'
+      @wstr+= '( w1 )'
+    else if s.__type? and s.__type=='op_all0'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(!(|('+getValue(s.sig)+')))'
+      @wstr+= '( w1 )'
+    else if s.__type? and s.__type=='op_has1'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(|('+getValue(s.sig)+'))'
+      @wstr+= '( w1 )'
+    else if s.__type? and s.__type=='op_has0'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(!(&('+getValue(s.sig)+')))'
+      @wstr+= '( w1 )'
+    else if s.__type? and s.__type=='op_hasOdd1'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(^('+getValue(s.sig)+'))'
+      @wstr+= '( w1 )'
+    else if s.__type? and s.__type=='op_hasEven1'
+      if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
+        @driven.push(s.sig)
+      @str+= '(!(^('+getValue(s.sig)+')))'
+      @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_cat'
       for i in s.list
         if i.__type? and ['reg','wire','port'].includes(i.__type)

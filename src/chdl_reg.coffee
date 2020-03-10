@@ -30,7 +30,6 @@ class Reg extends CircuitEl
     @staticAssign=false
     @share={
       assignList:[]
-      alwaysList:null
       pendingValue:null
     }
 
@@ -333,7 +332,6 @@ class Reg extends CircuitEl
       if @staticAssign
         throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]
-      @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
     else
       if @staticAssign
         throw new Error("This wire have been static assigned")
@@ -399,7 +397,6 @@ class Reg extends CircuitEl
     item = _.find(@states,(i)=> i.label==name)
     expr=_expr Expr.start().next(item)
     @cell.__regAssignList.push ['assign',this,expr,-1]
-    @cell.__updateWires.push({type:'reg',name:@hier,inst:this})
 	
   getState: (name)=>
     item = _.find(@states,(i)=> i.label==name)

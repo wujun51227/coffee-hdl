@@ -9,6 +9,7 @@ Port    = require('chdl_port')
 Channel = require('chdl_channel')
 Module  = require('chdl_module')
 Vnumber  = require('chdl_number')
+Verilog  = require('verilog')
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
 {getValue,packEl,simBuffer,printBuffer,toSignal,toFlatten} = require('chdl_utils')
@@ -27,6 +28,8 @@ config={
   noAlwaysComb: false
   waveFormat: 'vcd'
 }
+
+lint=null
 
 getCellList= (inst)->
   p = Object.getPrototypeOf(inst)
@@ -75,9 +78,13 @@ sharpToDot = (s)->  s.replace(/#/g,'.')
 
 rhsExpand=(expandItem)->
   if expandItem?.__type == 'expr'
-    return sharpToDot(expandItem.e.str)+expandItem.append
+    return {
+      code: sharpToDot(expandItem.e.str)+expandItem.append
+      w: expandItem.e.wstr
+    }
   else if _.isArray(expandItem)
     str=''
+    w=''
     for item,index in expandItem
       anno= do->
         if item.lineno>=0
@@ -86,12 +93,19 @@ rhsExpand=(expandItem)->
           ""
       v= rhsExpand(item.value)
       if index==0
-        str="(#{item.cond.str}#{anno})?(#{v}):"
+        str="(#{item.cond.str}#{anno})?(#{v.code}):"
       else if item.cond?
-        str+="(#{item.cond.str}#{anno})?(#{v}):"
+        str+="(#{item.cond.str}#{anno})?(#{v.code}):"
       else
-        str+="#{v}#{anno}"
-    return str
+        str+="#{v.code}#{anno}"
+      if index==0
+        w=v.w
+      else
+        w=w+'|'+v.w
+    return {
+      code:str
+      w: w
+    }
 
 statementGen=(buffer,statement)->
   stateType=statement[0]
@@ -109,9 +123,13 @@ statementGen=(buffer,statement)->
     else
       throw new Error("Unknown lhs type")
     if lineno? and lineno>=0
-      buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+      rhsInfo=rhsExpand(rhs)
+      buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
+      widthCheck(lhs,rhsInfo,lineno)
     else
-      buffer.add "  #{toSignal lhsName} = #{rhsExpand(rhs)};"
+      rhsInfo=rhsExpand(rhs)
+      buffer.add "  #{toSignal lhsName} = #{rhsInfo.code};"
+      widthCheck(lhs,rhsInfo,lineno)
   else if stateType=='end'
     buffer.add "  end"
   else if stateType=='verilog'
@@ -211,6 +229,18 @@ buildSim= (buildName,inst)=>
   }
 ###
 
+widthCheck=(lhs,rhsInfo,lineno)->
+  return
+  return if lint?.widthCheckLevel==0
+  return if rhsInfo.w.match(/^"/)
+  rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
+  if lint.widthCheckLevel==1
+    if lhs.getWidth()<rhsWidth
+      log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}"
+  else if lint.widthCheckLevel==2
+    if lhs.getWidth()!=rhsWidth
+      log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}"
+
 code_gen= (inst)=>
   buildName = do ->
     if inst.__specify
@@ -240,6 +270,7 @@ code_gen= (inst)=>
     if item.probeChannel==null
       _.set(inst,name,item.Port)
 
+  lint = inst.__lint
   inst.build()
   if global.getSim()
     log("Build sim",buildName)
@@ -315,9 +346,13 @@ code_gen= (inst)=>
       else
         throw new Error('Unknown lhs type')
       if lineno? and lineno>=0
-        printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsExpand(rhs)};"
+        rhsInfo=rhsExpand(rhs)
+        printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
+        widthCheck(lhs,rhsInfo,lineno)
       else
-        printBuffer.add "assign #{toSignal lhsName} = #{rhsExpand(rhs)};"
+        rhsInfo=rhsExpand(rhs)
+        printBuffer.add "assign #{toSignal lhsName} = #{rhsInfo.code};"
+        widthCheck(lhs,rhsInfo,lineno)
 
   printBuffer.blank('//event declare') unless _.isEmpty(inst.__trigMap)
   for name in Object.keys(inst.__trigMap)
@@ -392,7 +427,7 @@ code_gen= (inst)=>
     printBuffer.blank()
 
   printBuffer.blank('//register update logic') if inst.__alwaysList.length>0
-  for [assignList,updateWires,lineno] in inst.__alwaysList when assignList? and assignList.length>0
+  for [assignList,lineno] in inst.__alwaysList when assignList? and assignList.length>0
     if lineno? and lineno>=0
       if config.noAlwaysComb
         printBuffer.add 'always @* begin'+"#{lineComment(lineno)}"
@@ -403,11 +438,16 @@ code_gen= (inst)=>
         printBuffer.add 'always @* begin'
       else
         printBuffer.add 'always_comb begin'
-    for i in _.uniqBy(updateWires,(n)=>n.name)
-      if i.type=='reg'
-        printBuffer.add "  #{global.getPrefix()}_"+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
-      if i.type=='wire'
-        printBuffer.add '  '+i.inst.getName()+'='+getValue(i.inst.getPending())+';'
+    updateEls=[]
+    for statement in assignList
+      stateType=statement[0]
+      if stateType=='assign'
+        updateEls.push statement[1]
+    for i in _.uniqBy(updateEls,(n)=>n.hier)
+      if i.constructor?.name is 'Reg'
+        printBuffer.add "  #{global.getPrefix()}_"+i.getName()+'='+getValue(i.getPending())+';'
+      else
+        printBuffer.add '  '+i.getName()+'='+getValue(i.getPending())+';'
     if assignList
       for statement in assignList
         statementGen(printBuffer,statement)

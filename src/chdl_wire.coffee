@@ -36,7 +36,6 @@ class Wire extends CircuitEl
     @virtual=false
     @share={
       assignList:[]
-      alwaysList:null
       pendingValue:null
     }
     @type=null
@@ -211,7 +210,6 @@ class Wire extends CircuitEl
         throw new Error("This wire have been static assigned #{@elName}")
       rhs = assignFunc()
       cell.__regAssignList.push ["assign",this,rhs,lineno]
-      cell.__updateWires.push({type:'wire',name:@hier,inst:this})
     else
       if @staticWire==false or @staticAssign
         throw new Error("This wire have been assigned again #{@elName}")
