@@ -434,6 +434,26 @@ expandOp=(tokens)->
       out.push(i)
   return out
 
+rescanTokens=(tokens,index)->
+  i=index
+  str='n(=>$('
+  waitToken='newline'
+  while token = tokens[i]
+    if not token.generated
+      str+=token[1]
+    if waitToken=='newline' and token.newLine
+      break
+    i+=1
+
+  i+=1
+  while token = tokens[i]
+    if token[0]=='CALL_END' and token.generated
+      i+=1
+    else
+      break
+  reTokens= coffee.tokens(str+"))\n")
+  return [i-1,_.tail(reTokens)]
+
 extractLogic = (tokens)->
   i = 0
   logicCallPair=[]
@@ -468,10 +488,26 @@ extractLogic = (tokens)->
         ['PROPERTY', '_assign', {range:[]}]
       ]
       if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
-        [dummy,callEnd]=findCallSlice(tokens,i)
         [dummy,stopIndex]=findAssignBound(tokens,i+2)
-        tokens.splice callEnd, 1
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}]
+        [lineEndPost,newTokens]=rescanTokens(tokens,stopIndex+2)
+        tokens.splice stopIndex+1, (lineEndPost-stopIndex)
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}],newTokens...
+        #sss=''
+        #_.map(tokens,(yyy)->
+        #  sss+=yyy[1]+' '
+        #)
+        #console.log sss
+      else
+        [dummy,callEnd]=findCallSlice(tokens,i)
+        if tokens[callEnd+1][1]=='='
+          [lineEndPost,newTokens]=rescanTokens(tokens,callEnd+2)
+          tokens.splice callEnd+1, (lineEndPost-callEnd)
+          tokens.splice callEnd+1, 0, newTokens...
+          #sss=''
+          #_.map(tokens,(yyy)->
+          #  sss+=yyy[1]+' '
+          #)
+          #console.log sss
 
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
@@ -575,10 +611,16 @@ extractLogic = (tokens)->
           ['PROPERTY', '_assign', {range:[]}]
         ]
       if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
-        [dummy,callEnd]=findCallSlice(tokens,i)
         [dummy,stopIndex]=findAssignBound(tokens,i+2)
-        tokens.splice callEnd, 1
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}]
+        [lineEndPost,newTokens]=rescanTokens(tokens,stopIndex+2)
+        tokens.splice stopIndex+1, (lineEndPost-stopIndex)
+        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}],newTokens...
+      else
+        [dummy,callEnd]=findCallSlice(tokens,i)
+        if tokens[callEnd+1][1]=='='
+          [lineEndPost,newTokens]=rescanTokens(tokens,callEnd+2)
+          tokens.splice callEnd+1, (lineEndPost-callEnd)
+          tokens.splice callEnd+1, 0, newTokens...
 
       [callStart,callEnd]=findCallSlice(tokens,i)
       tokens.splice(callEnd,0,
