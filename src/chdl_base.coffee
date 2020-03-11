@@ -82,6 +82,7 @@ rhsExpand=(expandItem)->
     return {
       code: sharpToDot(expandItem.e.str)+expandItem.append
       w: expandItem.e.wstr
+      overbit: expandItem.get_over_bit()
     }
   else if _.isArray(expandItem)
     str=''
@@ -111,13 +112,14 @@ rhsExpand=(expandItem)->
 checkAssignWidth=(lhs,rhsInfo,lineno)->
   return if lint?.widthCheckLevel==0
   return if rhsInfo.w.match(/^"/)
-  #console.log rhsInfo.code,rhsInfo.w
   rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
+  lhsWidth=lhs.getWidth()+rhsInfo.overbit
+  #console.log rhsInfo.code,rhsInfo.w,rhsWidth,lhs.getWidth()
   if lint.widthCheckLevel==1
-    if lhs.getWidth()<rhsWidth
+    if lhsWidth<rhsWidth
       log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
   else if lint.widthCheckLevel==2
-    if lhs.getWidth()!=rhsWidth
+    if lhsWidth!=rhsWidth
       log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
 
 

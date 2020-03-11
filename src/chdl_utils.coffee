@@ -228,14 +228,20 @@ module.exports.getValue=(i)=>
 
 module.exports._expr= (s,lineno=null) ->
   append=''
+  overBit=0
   if lineno? and lineno>=0
     append=' /* '+lineno+' */ '
   if s.constructor?.name == 'Expr'            # return simple expression
-    return {
+    ret={
       __type : 'expr'
       e: s
       append: append
+      get_over_bit: -> overBit
+      allow_over_bit: (n)->
+        overBit=n
+        return ret
     }
+    return ret
   else if _.isArray(s) # return condition array
     return s
 
