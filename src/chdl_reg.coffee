@@ -213,6 +213,14 @@ class Reg extends CircuitEl
       reg.share=@share
       return packEl('reg',reg)
 
+  ext: (n)=>
+    reg= Reg.create(@width+n)
+    reg.link(@cell,@hier)
+    reg.setLsb(@msb)
+    reg.setMsb(@lsb)
+    reg.share=@share
+    return packEl('reg',reg)
+
   refName: =>
     if @lsb>=0
       if @width==1

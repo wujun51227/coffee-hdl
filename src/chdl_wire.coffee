@@ -7,12 +7,6 @@ Expr    = require('chdl_expr')
 global= require 'chdl_global'
 
 class Wire extends CircuitEl
-  width: 0
-
-  @bind: (channel_name)->
-    wire=new Wire(0)
-    wire.setBindChannel(channel_name)
-    return wire
 
   setBindChannel: (c)-> @bindChannel=c
   isBinded: -> @bindChannel?
@@ -164,6 +158,14 @@ class Wire extends CircuitEl
       wire.setMsb(n)
       wire.share=@share
       return packEl('wire',wire)
+
+  ext: (n)=>
+    wire= Wire.create(@width+n)
+    wire.link(@cell,@hier)
+    wire.setLsb(@msb)
+    wire.setMsb(@lsb)
+    wire.share=@share
+    return packEl('wire',wire)
 
   refName: =>
     oomr=''

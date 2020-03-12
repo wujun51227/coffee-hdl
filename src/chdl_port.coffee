@@ -115,6 +115,14 @@ class Port extends Wire
         wire.share=@share
         return packEl('wire',wire)
 
+  ext: (n)=>
+    wire= Wire.create(@width+n)
+    wire.link(@cell,@hier)
+    wire.setLsb(@msb)
+    wire.setMsb(@lsb)
+    wire.share=@share
+    return packEl('wire',wire)
+
   assign: (assignFunc,lineno)=>
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width

@@ -82,7 +82,6 @@ rhsExpand=(expandItem)->
     return {
       code: sharpToDot(expandItem.e.str)+expandItem.append
       w: expandItem.e.wstr
-      overbit: expandItem.get_over_bit()
     }
   else if _.isArray(expandItem)
     str=''
@@ -113,7 +112,7 @@ checkAssignWidth=(lhs,rhsInfo,lineno)->
   return if lint?.widthCheckLevel==0
   return if rhsInfo.w.match(/^"/)
   rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
-  lhsWidth=lhs.getWidth()+rhsInfo.overbit
+  lhsWidth=lhs.getWidth()
   #console.log rhsInfo.code,rhsInfo.w,rhsWidth,lhs.getWidth()
   if lint.widthCheckLevel==1
     if lhsWidth<rhsWidth
