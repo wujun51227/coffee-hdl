@@ -464,7 +464,7 @@ class Reg extends CircuitEl
     list=[]
     for i in [0...@width]
       list.push @bit(i)
-    tempWire.assign((=> cat(list)))
+    tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
 
   select: (cb)=>
@@ -474,7 +474,7 @@ class Reg extends CircuitEl
       if cb(index)
         list.push @bit(index)
     tempWire=@cell._localWire(list.length,'select')
-    tempWire.assign((=> cat(list)))
+    tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
 
 module.exports=Reg
