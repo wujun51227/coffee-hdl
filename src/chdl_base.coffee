@@ -122,7 +122,7 @@ checkAssignWidth=(lhs,rhsInfo,lineno)->
       if lhsWidth!=rhsWidth
         log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
   catch e
-    console.log 'Parse error:',lineno,lhs.hier
+    console.log 'Parse error:',lineno,lhs.hier,instEnv.get().getModuleName()
     console.log e
 
 
@@ -549,6 +549,7 @@ instEnv= do ->
     register: (i)-> inst=i
     hasChannel: (name)-> inst.__channels[name]?
     infer: ()-> inst.__assignWidth
+    get: -> inst
   }
 
 module.exports.hex = Vnumber.hex
