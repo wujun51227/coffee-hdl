@@ -111,15 +111,19 @@ rhsExpand=(expandItem)->
 checkAssignWidth=(lhs,rhsInfo,lineno)->
   return if lint?.widthCheckLevel==0
   return if rhsInfo.w.match(/^"/)
-  rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
-  lhsWidth=lhs.getWidth()
-  #console.log rhsInfo.code,rhsInfo.w,rhsWidth,lhs.getWidth()
-  if lint.widthCheckLevel==1
-    if lhsWidth<rhsWidth
-      log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
-  else if lint.widthCheckLevel==2
-    if lhsWidth!=rhsWidth
-      log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
+  try
+    rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
+    lhsWidth=lhs.getWidth()
+    #console.log rhsInfo.code,rhsInfo.w,rhsWidth,lhs.getWidth()
+    if lint.widthCheckLevel==1
+      if lhsWidth<rhsWidth
+        log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
+    else if lint.widthCheckLevel==2
+      if lhsWidth!=rhsWidth
+        log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
+  catch e
+    console.log 'Parse error:',lineno,lhs.hier
+    console.log e
 
 
 statementGen=(buffer,statement)->

@@ -26,27 +26,6 @@ printTokens=(tokens)->
       printOut+=token[1]+' '
   console.log printOut
 
-getArgs= (tokens)->
-  cnt=0
-  ret=[]
-  bin=[]
-  for token in tokens
-    if cnt==0 and token[0]==','
-      ret.push bin
-      bin=[]
-    else if token[0]=='CALL_START'
-      bin.push token
-      cnt++
-    else if token[0]=='CALL_END'
-      bin.push token
-      cnt--
-    else
-      bin.push token
-  if bin.length>0
-    ret.push bin
-  #console.log '>>get args',ret
-  return ret
-
 findCallSlice=(tokens,index)->
   i=index
   cnt=0
@@ -62,21 +41,6 @@ findCallSlice=(tokens,index)->
         return [start,i]
     i++
   return [start,-1]
-
-findBreak=(tokens,index)->
-  i=index
-  cnt=0
-  while token = tokens[i]
-    if token[0]=='TERMINATOR'
-      return i
-    else if token[0]=='INDENT'
-      cnt+=1
-    else if token[0]=='OUTDENT'
-      cnt-=1
-      if cnt==-1
-        return i
-    i+=1
-  return -1
 
 findCallBound=(tokens,index)->
   i=index
@@ -132,35 +96,6 @@ findPropertyBound=(tokens,index)->
   else
     return [start,i-1]
 
-findAssignBound=(tokens,index)->
-  i=index
-  start=index
-  first=true
-  while token = tokens[i]
-    if first and token[0]=='IDENTIFIER'
-      i+=1
-      first=false
-      continue
-    if first and token[0]=='@'
-      i+=2
-      first=false
-      continue
-    if token[0]=='.' and tokens[i+1][0]=='PROPERTY'
-      i+=2
-      continue
-    else if token[0]=='CALL_START'
-      [dummy,stop_index]=findCallBound(tokens,i)
-      i=stop_index+1
-    else if token[0]=='INDEX_START'
-      [dummy,stop_index]=findIndexBound(tokens,i)
-      i=stop_index+1
-    else
-      break
-  if i==start
-    return [start,-1]
-  else
-    return [start,i-1]
-
 findIndentSlice=(tokens,index)->
   i=index
   cnt=0
@@ -178,41 +113,7 @@ findIndentSlice=(tokens,index)->
   return [start,-1]
 
 findAssignBlock= (tokens,callEnd)->
-  if tokens[callEnd+1][0] is '='
-    if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1] is '$'
-      [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
-      tokens.splice(exprCallEnd,0,
-        ['CALL_END',')',{range:[]}]
-      )
-      tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{range:[]}]
-        ['=>','=>',{range:[]}]
-      )
-      return 2
-    else if tokens[callEnd+2][0] is 'IDENTIFIER' and tokens[callEnd+2][1].match(/^\$/)
-      [dummy,exprCallEnd]=findCallSlice(tokens,callEnd+2)
-      tokens.splice(exprCallEnd,0,
-        ['CALL_END',')',{range:[]}]
-      )
-      tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{range:[]}]
-        ['=>','=>',{range:[]}]
-      )
-      return 2
-    else
-      termEnd=findBreak(tokens,callEnd)
-      tokens.splice(termEnd,0,
-        ['CALL_END',')',{range:[]}]
-        ['CALL_END',')',{range:[]}]
-      )
-      tokens.splice(callEnd+1,1,
-        ['CALL_START','(',{range:[]}]
-        ['=>','=>',{range:[]}]
-        ['IDENTIFIER','$',{range:[]}]
-        ['CALL_START','(',{range:[]}]
-      )
-      return 5
-  else if tokens[callEnd+1][0] is 'INDENT'
+  if tokens[callEnd+1][0] is 'INDENT'
     [dummy,indentout]=findIndentSlice(tokens,callEnd+1)
     tokens.splice(indentout+1,0,
       ['CALL_END',')',{range:[]}]
@@ -268,8 +169,6 @@ findCondBlock= (tokens,callEnd)->
     return 3
   else
     return 0
-
-
 
 scanToken= (tokens,index)->
   ret=[]
@@ -423,6 +322,34 @@ tokenIsElse=(tokens,index)->
 tokenIsEndIf=(tokens,index)->
   return tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='$endif'
 
+compileExpr=(tokens,i)->
+  lineno=tokens[i][2].first_line-4
+  list =[['IDENTIFIER', '_expr', {range:[]}]]
+  [callStart,callEnd]=findCallSlice(tokens,i)
+  if callStart>0 and callEnd>0
+    extractSlice=tokens.slice(callStart+1,callEnd)
+    extractSlice=expandOp(extractSlice)
+    exprExpand(extractSlice)
+    list.push tokens[callStart]
+    #list.push extractSlice...
+    skip=0
+    for i,index in extractSlice
+      if skip>0
+        skip-=1
+      else
+        if i[0] is 'IDENTIFIER' and i[1]=='$'
+          [dummy,nextCall]=findCallSlice(extractSlice,index)
+          skip=nextCall-index
+          list.push compileExpr(extractSlice,index)...
+        else
+          list.push i
+    list.push [',',',',{range:[]}]
+    list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+    list.push tokens[callEnd]
+    return list
+  else
+    throw new Error("Can not find call start/end")
+
 expandOp=(tokens)->
   out=[]
   for i,index in tokens
@@ -434,25 +361,43 @@ expandOp=(tokens)->
       out.push(i)
   return out
 
-rescanTokens=(tokens,index)->
-  i=index
-  str='n(=>$('
-  waitToken='newline'
-  while token = tokens[i]
-    if not token.generated
-      str+=token[1]
-    if waitToken=='newline' and token.newLine
-      break
-    i+=1
+patchCode=(text)->
+  tokens = coffee.tokens text
+  findEqual=(tokens,index)->
+    while token=tokens[index]
+      if token[0]=='='
+        return token
+      if token.newLine
+        return null
+      index+=1
+    return null
 
-  i+=1
-  while token = tokens[i]
-    if token[0]=='CALL_END' and token.generated
-      i+=1
+  patchList=[]
+  for i,index in tokens
+    if i[0]=='IDENTIFIER' and (i[1]=='assign' or i[1]=='Net')
+      lineNum=i[2].first_line
+      callPos=i[2].last_column
+      if tokens[index+1]?[0]=='CALL_START'
+        equalToken=findEqual(tokens,index)
+        if equalToken?
+          if tokens[index+1].generated
+            patchList.push([lineNum,callPos,equalToken[2].first_column])
+          else
+            patchList.push([lineNum,null,equalToken[2].first_column])
+        #else
+        #  patchList.push([lineNum,callPos,null])
+  lineList=text.split(/\n/)
+  for i in patchList
+    line = lineList[i[0]]
+    charList=[line...]
+    if i[1]?
+      charList.splice(i[2],1,' ) => $ ')
+      charList.splice(i[1]+1,0,'(')
     else
-      break
-  reTokens= coffee.tokens(str+"))\n")
-  return [i-1,_.tail(reTokens)]
+      charList.splice(i[2],1,' => $ ')
+    lineList[i[0]]=charList.join('')
+  return lineList.join('\n')
+
 
 extractLogic = (tokens)->
   i = 0
@@ -465,56 +410,23 @@ extractLogic = (tokens)->
       lineno=-1
     else
       lineno=token[2].first_line-4
-    #console.log '>>>>>',token[0],token[1]
     if token[0] is 'IDENTIFIER' and token[1]=='$'
-      list =[['IDENTIFIER', '_expr', {range:[]}]]
       [callStart,callEnd]=findCallSlice(tokens,i)
-      if callStart>0 and callEnd>0
-        extractSlice=tokens.slice(callStart+1,callEnd)
-        extractSlice=expandOp(extractSlice)
-        exprExpand(extractSlice)
-        list.push tokens[callStart]
-        list.push extractSlice...
-        list.push [',',',',{range:[]}]
-        list.push ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
-        list.push tokens[callEnd]
-        tokens.splice i, callEnd-i+1, list...
-        i+=list.length
-      else
-        throw new Error("Syntax error at #{lineno}")
+      list=compileExpr(tokens,i)
+      tokens.splice i, callEnd-i+1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='assign'
       list =[
         ['@', '@', {range:[]}]
         ['PROPERTY', '_assign', {range:[]}]
       ]
-      if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
-        [dummy,stopIndex]=findAssignBound(tokens,i+2)
-        [lineEndPost,newTokens]=rescanTokens(tokens,stopIndex+2)
-        tokens.splice stopIndex+1, (lineEndPost-stopIndex)
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}],newTokens...
-        #sss=''
-        #_.map(tokens,(yyy)->
-        #  sss+=yyy[1]+' '
-        #)
-        #console.log sss
-      else
-        [dummy,callEnd]=findCallSlice(tokens,i)
-        if tokens[callEnd+1][1]=='='
-          [lineEndPost,newTokens]=rescanTokens(tokens,callEnd+2)
-          tokens.splice callEnd+1, (lineEndPost-callEnd)
-          tokens.splice callEnd+1, 0, newTokens...
-          #sss=''
-          #_.map(tokens,(yyy)->
-          #  sss+=yyy[1]+' '
-          #)
-          #console.log sss
 
       [callStart,callEnd]=findCallSlice(tokens,i)
+      patchLength=findAssignBlock(tokens,callEnd)
       tokens.splice(callEnd,0,
         [',',',',{range:[]}],
         ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
       )
-      patchLength=findAssignBlock(tokens,callEnd+2)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='input'
@@ -530,13 +442,6 @@ extractLogic = (tokens)->
         ['IDENTIFIER', 'chdl_base', {range:[]}]
         [ '.',     '.',  {range:[]} ]
         ['PROPERTY', 'Module', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='AutoBind'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_autoBind', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -578,8 +483,8 @@ extractLogic = (tokens)->
     #  i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Net'
       netName = tokens[i+2][1]
+      [dummy,callEnd]=findCallSlice(tokens,i+1)
       if tokens[i+3][0]==','
-        [dummy,callEnd]=findCallSlice(tokens,i+1)
         widthArgs=tokens[i+4...callEnd]
         list =[
           ['IDENTIFIER',netName,{range:[]}]
@@ -594,6 +499,11 @@ extractLogic = (tokens)->
           [ 'TERMINATOR',   '\n',    {range:[]} ]
           ['@', '@', {range:[]}]
           ['PROPERTY', '_assign', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          ['IDENTIFIER',netName,{range:[]}]
+          [',',',',{range:[]}],
+          ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
         ]
       else
         list =[
@@ -609,26 +519,14 @@ extractLogic = (tokens)->
           [ 'TERMINATOR',   '\n',    {range:[]} ]
           ['@', '@', {range:[]}]
           ['PROPERTY', '_assign', {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          ['IDENTIFIER',netName,{range:[]}]
+          [',',',',{range:[]}],
+          ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
         ]
-      if tokens[i+1][0]=='CALL_START' and tokens[i+1].generated # no () to assign signal
-        [dummy,stopIndex]=findAssignBound(tokens,i+2)
-        [lineEndPost,newTokens]=rescanTokens(tokens,stopIndex+2)
-        tokens.splice stopIndex+1, (lineEndPost-stopIndex)
-        tokens.splice stopIndex+1, 0, ['CALL_END',')',{range:[]}],newTokens...
-      else
-        [dummy,callEnd]=findCallSlice(tokens,i)
-        if tokens[callEnd+1][1]=='='
-          [lineEndPost,newTokens]=rescanTokens(tokens,callEnd+2)
-          tokens.splice callEnd+1, (lineEndPost-callEnd)
-          tokens.splice callEnd+1, 0, newTokens...
-
-      [callStart,callEnd]=findCallSlice(tokens,i)
-      tokens.splice(callEnd,0,
-        [',',',',{range:[]}],
-        ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
-      )
-      patchLength=findAssignBlock(tokens,callEnd+2)
-      tokens.splice i, 1, list...
+      patchLength=findAssignBlock(tokens,callEnd)
+      tokens.splice i, callEnd-i+1, list...
       i+=list.length+patchLength
     else if token[0] is 'IDENTIFIER' and token[1]=='local_reg'
       throw new Error('local_reg is deprecated,use reg')
@@ -1114,6 +1012,8 @@ transToJs= (fullFileName,text,debug=false) ->
       if md5Sign==signStr.substr(6,32)
         return require("#{fullFileName}.js")
   log "Genarate #{fullFileName}.js"
+  text=patchCode(text)
+  #console.log text
   head = "chdl_base = require 'chdl_base'\n"
   head +="{_expr,printBuffer}=require 'chdl_utils'\n"
   head +="{cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_operator'\n"

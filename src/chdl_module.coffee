@@ -660,7 +660,7 @@ class Module
 
     return [out,assignList]
 
-  _autoBind: (inst)->
+  mold: (inst)->
     ret={}
     bindTable={}
     channelName=_id(global.getPrefix()+'__channel')

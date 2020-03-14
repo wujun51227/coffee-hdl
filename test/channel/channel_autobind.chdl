@@ -16,7 +16,7 @@ class cell2 extends Module
       u0: new cell3()
     )
 
-    @ch=AutoBind(@u0)
+    @ch=@mold(@u0)
 
   build: ->
 
@@ -45,7 +45,7 @@ class ChannelAutoBind extends Module
 
     Mixin importLib('verilog_helpers.chdl')
 
-    @ch1=AutoBind(@u0_cell1)
+    @ch1=@mold(@u0_cell1)
 
     Probe(
       ch2: 'u0_cell2.ch.bundle'

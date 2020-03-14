@@ -13,22 +13,24 @@ class ReduceTest extends Module
     v2=vreg(8).init(2)
     v3=vreg(8).init(3)
     v4=vreg(8).init(4)
-    assign(@dout1) = $reduce([v1,v2,v3,v4],(a,b,first,last)=>
+    assign(@dout1)
+      $reduce([v1,v2,v3,v4],(a,b,first,last)=>
         if first
           $ b
         else
           $ a + b * 2
       )
 
-    assign(@dout2) = $reduceRight([[$(v1==2),2],[$(v2>1),v3],v4],(sum,a,first,last)=>
-      if first
-        $ a
-      else
-        $if(a[0])
-          $ a[1]
-        $else
-          $ sum
-    )
+    assign(@dout2)
+      $reduceRight([[$(v1==2),2],[$(v2>1),v3],v4],(sum,a,first,last)=>
+        if first
+          $ a
+        else
+          $if(a[0])
+            $ a[1]
+          $else
+            $ sum
+      )
 
     initial
       $sequence()

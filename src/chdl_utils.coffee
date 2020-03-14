@@ -239,6 +239,8 @@ module.exports._expr= (s,lineno=null) ->
     return ret
   else if _.isArray(s) # return condition array
     return s
+  else if _.isPlainObject(s) # return signal packet
+    return s
 
 rhsTraceExpand= (target,slice,expandItem,bin=[])=>
   if _.isString(expandItem) or _.isNumber(expandItem)

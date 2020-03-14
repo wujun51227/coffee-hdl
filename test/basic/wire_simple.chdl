@@ -71,7 +71,7 @@ class WireSimple extends Module
     always
       @w4.pending(17)
       $if(3<2)
-        assign(@w4) = $ @din + 1
+        assign(@w4) = @din + 1
       #$else
       #  assign(@w4) = $ @din - 1
 

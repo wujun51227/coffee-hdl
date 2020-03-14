@@ -30,7 +30,7 @@ class PortSimple extends Module
       assign @dout_arr[i] = @din_arr[i]
 
     tmp= $ @compose[1].enable
-    assign(@compose[0].dout) = $ @compose[1].din+ tmp
+    assign(@compose[0].dout) = @compose[1].din+ tmp
 
 class tb extends Module
   constructor: ->

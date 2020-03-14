@@ -36,7 +36,7 @@ module.exports={
         assign(dst.net) = $join(list,(sum,i)=>$(sum+i))
       else if dst.dir=='output'
         for src,index in inChannelList
-          assign(src.getWire(dst.path)) = $ dst.net
+          assign(src.getWire(dst.path)) = dst.net
 
   mirrorPort:(i)->
     iterator=new RecursiveIterator(i)
@@ -145,7 +145,7 @@ module.exports={
       if state.node.constructor.name=='Function'
         if state.node.__type=='wire' or state.node.__type=='reg' or state.node.__type=='port'
           inWire=_.get(i,state.path)
-          assign(state.node) => func(inWire)
+          assign(state.node) = func(inWire)
       item = iterator.next()
 
   $bundleJoin:(o,list,func)->
@@ -225,8 +225,8 @@ module.exports={
     width=sigIn.getWidth()
     d1 = reg(width,'sync').clock(clock).reset(reset)
     d2 = reg(width,'sync').clock(clock).reset(reset)
-    assign(d1) = $ sigIn
-    assign(d2) = $ d1
+    assign(d1) = sigIn
+    assign(d2) = d1
     return $ d2
 
   $tripleSync: (sigIn,clock='',reset='')->
@@ -234,9 +234,9 @@ module.exports={
     d1 = reg(width,'sync').clock(clock).reset(reset)
     d2 = reg(width,'sync').clock(clock).reset(reset)
     d3 = reg(width,'sync').clock(clock).reset(reset)
-    assign(d1) = $ sigIn
-    assign(d2) = $ d1
-    assign(d3) = $ d2
+    assign(d1) = sigIn
+    assign(d2) = d1
+    assign(d3) = d2
     return $ d3
 
   $bundleAssign:(from,to)->
@@ -270,7 +270,7 @@ module.exports={
     len=array.length
     for i in [0...len]
       $if(i==select)
-        assign(array[i]) = $ din
+        assign(array[i]) = din
       $endif
 
   $arrayDecode: (array,select,width=null)->
@@ -335,13 +335,13 @@ module.exports={
     out = wire(1,'hold')
     latch = reg(1,'hold').clock(clock).reset(reset)
     latch_clear = reg(1,'clear').clock(clock).reset(reset)
-    assign(out) = $ (sig | latch)&(!latch_clear)
+    assign(out) = (sig | latch)&(!latch_clear)
     assign latch_clear = clear
     always
       $if(clear)
-        assign(latch) = $ 0
+        assign(latch) = 0
       $elseif(sig==1)
-        assign(latch) = $ 1
+        assign(latch) = 1
       $endif
     return  $ out
 
@@ -349,13 +349,13 @@ module.exports={
     out = wire(1,'hold')
     latch = reg(1,'hold').init(1).clock(clock).reset(reset)
     latch_clear = reg(1,'clear').clock(clock).reset(reset)
-    assign(out) = $ (sig & latch) | latch_clear
+    assign(out) = (sig & latch) | latch_clear
     assign latch_clear = clear
     always
       $if(clear)
-        assign(latch) = $ 1
+        assign(latch) = 1
       $elseif(sig==0)
-        assign(latch) = $ 0
+        assign(latch) = 0
       $endif
     return  $ out
 
@@ -369,7 +369,7 @@ module.exports={
 
     always
       $if(enable)
-        assign(latch) = $ sig
+        assign(latch) = sig
       $endif
     return  $ out
 
