@@ -11,6 +11,7 @@ Channel = require('chdl_channel')
 Module  = require('chdl_module')
 Vnumber  = require('chdl_number')
 Verilog  = require('verilog')
+{table} = require 'table'
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
 {getValue,packEl,simBuffer,printBuffer,toSignal,toFlatten} = require('chdl_utils')
@@ -24,13 +25,8 @@ globalModuleCache={}
 config={
   autoClock: false
   tree: false
-  info: false
-  noLineno: false
   noAlwaysComb: false
-  waveFormat: 'vcd'
 }
-
-lint=null
 
 getCellList= (inst)->
   p = Object.getPrototypeOf(inst)
@@ -40,7 +36,6 @@ getCellList= (inst)->
   return _.sortBy(list,['name'])
 
 cell_build = (inst) =>
-  inst._setConfig(config)
   inst._elaboration()
   for i in getCellList(inst)
     i.inst._link(i.name)
@@ -79,6 +74,7 @@ sharpToDot = (s)->  s.replace(/#/g,'.')
 
 rhsExpand=(expandItem)->
   if expandItem?.__type == 'expr'
+    cntExpr()
     return {
       code: sharpToDot(expandItem.e.str)+expandItem.append
       w: expandItem.e.wstr
@@ -86,6 +82,7 @@ rhsExpand=(expandItem)->
   else if _.isArray(expandItem)
     str=''
     w=''
+    cntCond(expandItem.length)
     for item,index in expandItem
       anno= do->
         if item.lineno>=0
@@ -109,16 +106,16 @@ rhsExpand=(expandItem)->
     }
 
 checkAssignWidth=(lhs,rhsInfo,lineno)->
-  return if lint?.widthCheckLevel==0
+  return if getLint('widthCheckLevel')==0
   return if rhsInfo.w.match(/^"/)
   try
     rhsWidth=Number(Verilog.parser.parse(rhsInfo.w))
     lhsWidth=lhs.getWidth()
     #console.log rhsInfo.code,rhsInfo.w,rhsWidth,lhs.getWidth()
-    if lint.widthCheckLevel==1
+    if getLint('widthCheckLevel')==1
       if lhsWidth<rhsWidth
         log "Error: width overflow at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
-    else if lint.widthCheckLevel==2
+    else if getLint('widthCheckLevel')==2
       if lhsWidth!=rhsWidth
         log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
   catch e
@@ -165,11 +162,13 @@ statementGen=(buffer,statement)->
   else if stateType=='if'
     cond=statement[1]
     lineno=statement[2]
+    cntCond(1)
     if lineno? and lineno>=0
       buffer.add "  if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
       buffer.add "  if(#{toSignal cond.str}) begin"
   else if stateType=='elseif'
+    cntCond(1)
     cond=statement[1]
     lineno=statement[2]
     if lineno? and lineno>=0
@@ -177,6 +176,7 @@ statementGen=(buffer,statement)->
     else
       buffer.add "  else if(#{toSignal cond.str}) begin"
   else if stateType=='else'
+    cntCond(1)
     lineno=statement[1]
     if lineno? and lineno>=0
       buffer.add "  else begin #{lineComment(lineno)}"
@@ -250,7 +250,7 @@ buildSim= (buildName,inst)=>
   }
 ###
 
-code_gen= (inst)=>
+code_gen= (inst,allInst)=>
   buildName = do ->
     if inst.__specify
       if inst.__uniq
@@ -271,15 +271,15 @@ code_gen= (inst)=>
     moduleCache[buildName]=true
 
   for i in getCellList(inst)
-    code_gen(i.inst)
+    code_gen(i.inst,allInst)
 
   instEnv.register(inst)
+  allInst.push(inst)
 
   for [name,item] in toFlatten(inst.__channels)
     if item.probeChannel==null
       _.set(inst,name,item.Port)
 
-  lint = inst.__lint
   inst.build()
   if global.getSim()
     log(("Build sim "+buildName).green)
@@ -529,9 +529,22 @@ toVerilog=(inst)->
       inst._setDefaultReset(global.getPrefix()+'__resetn')
       inst._addPort(global.getPrefix()+'__resetn','input',1)
   cell_build(inst)
-  code_gen(inst)
+  instList=[]
+  code_gen(inst,instList)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
+  if global.getInfo()
+    condCnt=0
+    transferCnt=0
+    tableList=[]
+    tableList.push(['Module','Condition','Transfer'])
+    for i in instList
+      condCnt+=i.__lint._cnt.cond
+      transferCnt+=i.__lint._cnt.transfer
+      tableList.push([i.getModuleName(),i.__lint._cnt.cond,i.__lint._cnt.transfer])
+    tableList.push(['----------','-----','-----'])
+    tableList.push(['Summary',condCnt,transferCnt])
+    console.log(table(tableList,{singleLine:true,columnDefault: {width:30}}))
 
 input=(width=1)->packEl('port',Port.in(width))
 
@@ -547,10 +560,24 @@ instEnv= do ->
   inst=null
   return {
     register: (i)-> inst=i
-    hasChannel: (name)-> inst.__channels[name]?
     infer: ()-> inst.__assignWidth
     get: -> inst
   }
+
+cntCond=(num)->
+  if global.getInfo()
+    instEnv.get().__lint._cnt.cond+=num
+
+cntExpr= ->
+  if global.getInfo()
+    instEnv.get().__lint._cnt.transfer+=1
+
+getLint= (key)->
+  if instEnv.get().__lint[key]?
+    return instEnv.get().__lint[key]
+  else
+    return null
+
 
 module.exports.hex = Vnumber.hex
 module.exports.dec = Vnumber.dec
@@ -565,11 +592,8 @@ module.exports.output      = output
 module.exports.bind        = bind
 module.exports.channel     = channel
 module.exports.vec         = vec
-module.exports.channel_wire = instEnv.getWire
-module.exports.channel_exist = instEnv.hasChannel
 module.exports.infer        = instEnv.infer
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
-module.exports.getConfig  = (v)-> config[v]
 module.exports.resetBase   = ->
   moduleCache={}
   globalModuleCache={}

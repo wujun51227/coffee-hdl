@@ -10,6 +10,8 @@ Path = require 'path'
 
 reloadList=[]
 
+headOver=5
+
 debugExpr=''
 
 printTokens=(tokens)->
@@ -323,7 +325,7 @@ tokenIsEndIf=(tokens,index)->
   return tokens[index][0]=='IDENTIFIER' and tokens[index][1]=='$endif'
 
 compileExpr=(tokens,i)->
-  lineno=tokens[i][2].first_line-4
+  lineno=tokens[i][2].first_line-headOver
   list =[['IDENTIFIER', '_expr', {range:[]}]]
   [callStart,callEnd]=findCallSlice(tokens,i)
   if callStart>0 and callEnd>0
@@ -406,10 +408,10 @@ extractLogic = (tokens)->
   startPos=-1
   endPos=-1
   while token = tokens[i]
-    if chdl_base.getConfig('noLineno')
+    if global.getNoLineno()
       lineno=-1
     else
-      lineno=token[2].first_line-4
+      lineno=token[2].first_line-headOver
     if token[0] is 'IDENTIFIER' and token[1]=='$'
       [callStart,callEnd]=findCallSlice(tokens,i)
       list=compileExpr(tokens,i)
@@ -1001,7 +1003,6 @@ buildCode= (fullFileName,text,debug=false,param=null) ->
   chdl_base.toVerilog(new design(param))
 
 buildLib= (fullFileName,text,debug=false,param=null) ->
-  chdl_base.configBase({noLineno:true})
   transToJs(fullFileName,text,debug)
 
 transToJs= (fullFileName,text,debug=false) ->
@@ -1015,7 +1016,7 @@ transToJs= (fullFileName,text,debug=false) ->
   text=patchCode(text)
   #console.log text
   head = "chdl_base = require 'chdl_base'\n"
-  head +="{_expr,printBuffer}=require 'chdl_utils'\n"
+  head +="{_expr}=require 'chdl_utils'\n"
   head +="{cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_operator'\n"
   head += "{infer,cell,hex,oct,bin,dec}= require 'chdl_base'\n"
   head += "{_importLib}= require 'chdl_transpiler_engine'\n"

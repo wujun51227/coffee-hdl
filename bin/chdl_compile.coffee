@@ -78,20 +78,22 @@ module.exports=#{moduleName}
 cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
-  info: program.info ? false
-  noLineno: program.no_lineno ? false
   noAlwaysComb: program.no_always_comb ? false
-  waveFormat: do ->
-    if program.fsdb
-      'fsdb'
-    else
-      'vcd'
 }
+
+if program.fsdb
+  global.setFsdbFormat()
+
+if program.noLineno
+  global.setNoLineno()
+
+if program.info
+  global.setInfo()
 
 if program.prefix?
   global.setPrefix(program.prefix)
 
-if program.force?
+if program.force
   global.setForce()
 
 if program.iverilog

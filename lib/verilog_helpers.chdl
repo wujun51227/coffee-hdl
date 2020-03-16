@@ -1,11 +1,12 @@
 assert_module = GlobalModule(importLib('chdl_assert.chdl.js'))
+global  = require('chdl_global')
 
 module.exports={
   dump_wave: (fileName)->
     initial
       $sequence()
       .init ()=>
-        if chdl_base.getConfig('waveFormat')=='fsdb'
+        if global.getWaveFormat()=='fsdb'
           @verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
           @verilog("$fsdbDumpvars;")
         else

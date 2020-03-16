@@ -39,8 +39,6 @@ class Module
 
   __instName: ''
 
-  __config:{}
-
   _cellmap: (v) ->
     for name,inst of v
       @__cells.push({name:name,inst:inst})
@@ -55,8 +53,6 @@ class Module
       return item.inst
     else
       return null
-
-  _setConfig: (v) -> @__config=v
 
   _reg: (obj) ->
     for k,v of obj
@@ -170,6 +166,10 @@ class Module
 
     @__lint ={
       widthCheckLevel: 1
+      _cnt:{
+        cond: 0
+        transfer: 0
+      }
     }
     @__alwaysList     =  []
     @__foreverList     =  []
@@ -424,7 +424,7 @@ class Module
       @_channelExpand(i.type,i.elName,i.bindChannel)
 
   _elaboration: ->
-    if @__config.info
+    if global.getInfo()
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
     list.push(['---------','-----','-----'])
@@ -433,13 +433,13 @@ class Module
         @__postProcess.push {type:'port',elName:port.getName(),bindChannel:port.bindChannel}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
-    if list.length>2 and @__config.info
+    if list.length>2 and global.getInfo()
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     list=    [['register name','width']]
     list.push(['-------------','-----'])
     for [name,reg] in toFlatten(@__regs)
       list.push([toSignal(name),reg.getWidth()])
-    if list.length>2 and @__config.info
+    if list.length>2 and global.getInfo()
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,channel] in toFlatten(@__channels)
       if channel.probeChannel?  # probe dont have elName
