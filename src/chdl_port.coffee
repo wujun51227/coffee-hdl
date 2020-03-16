@@ -42,6 +42,7 @@ class Port extends Wire
     @isRegConfig={}
     @bindChannel=null
     @bindSignal=null
+    @bindClock=null
 
     @isClock=false
     @isReset=false
@@ -71,6 +72,10 @@ class Port extends Wire
 
   asReset: =>
     @isReset=true
+    return packEl('port',this)
+
+  domain: (clockName)=>
+    @bindClock=clockName
     return packEl('port',this)
 
   toList: =>
@@ -128,21 +133,38 @@ class Port extends Wire
     @cell.__assignWidth=@width
     if @cell.__assignEnv=='always'
       if !@isReg
-        @staticWire=false
-        if @staticAssign
-          throw new Error("This wire have been static assigned")
         rhs = assignFunc()
         @cell.__regAssignList.push ["assign",this,rhs,-1]
+        if @lsb==-1
+          for i in _.range(@width)
+            if @share.assignBits[i]
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=0
+        else
+          for i in [@lsb..@msb]
+            if @share.assignBits[i]
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=0
       else
         @shadowReg.assign(assignFunc,lineno)
     else
-      if @staticWire==false or @staticAssign
-        throw new Error("This wire have been assigned again")
       rhs = assignFunc()
       assignItem=["assign",this,rhs,lineno]
       @cell.__wireAssignList.push assignItem
-      @share.assignList.push [@lsb,@msb,assignItem[2]]
-      @staticAssign=true
+      if @lsb==-1
+        for i in _.range(@width)
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
+      else
+        for i in [@lsb..@msb]
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
     @cell.__assignWaiting=false
 
   asReg: (config={})=>

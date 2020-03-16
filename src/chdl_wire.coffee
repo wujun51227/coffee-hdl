@@ -25,19 +25,15 @@ class Wire extends CircuitEl
     @local=false
     @clockName=null
     @resetName=null
-    @staticWire=true
-    @staticAssign=false
     @virtual=false
     @share={
-      assignList:[]
+      assignBits:{}
       pendingValue:null
     }
     @type=null
 
   setType: (t)=> @type=t
   getType: => @type
-
-  unsetStaticWire: => @staticWire=false
 
   attach:(clock,reset)=>
     if _.isString(clock)
@@ -196,7 +192,7 @@ class Wire extends CircuitEl
     for i in list
       i.assign(=>_expr(@pack()))
 
-  isAssigned: => @staticWire==false or @staticAssign
+  isAssigned: => not _.isEmpty(@share.assignBits)
 
   assign: (assignFunc,lineno=-1,self_cell=null)=>
     if self_cell!=null
@@ -207,19 +203,36 @@ class Wire extends CircuitEl
     cell.__assignWaiting=true
     cell.__assignWidth=@width
     if cell.__assignEnv=='always'
-      @staticWire=false
-      if @staticAssign
-        throw new Error("This wire have been static assigned #{@elName}")
       rhs = assignFunc()
       cell.__regAssignList.push ["assign",this,rhs,lineno]
+      if @lsb==-1
+        for i in _.range(@width)
+          if @share.assignBits[i]
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=0
+      else
+        for i in [@lsb..@msb]
+          if @share.assignBits[i]
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=0
     else
-      if @staticWire==false or @staticAssign
-        throw new Error("This wire have been assigned again #{@elName}")
       rhs = assignFunc()
       assignItem=["assign",this,rhs,lineno]
       cell.__wireAssignList.push assignItem
-      @share.assignList.push [@lsb,@msb,assignItem[2]]
-      @staticAssign=true
+      if @lsb==-1
+        for i in _.range(@width)
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
+      else
+        for i in [@lsb..@msb]
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
     cell.__assignWaiting=false
 
   verilogDeclare: ->
@@ -279,6 +292,8 @@ class Wire extends CircuitEl
   getState: (name)=>
     item = _.find(@states,(i)=> i.label==name)
     return Expr.start().next(item)
+
+  traceDomain: =>
 
   reverse: ()=>
     tempWire=@cell._localWire(@width,'reverse')

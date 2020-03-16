@@ -1,0 +1,16 @@
+class RegAssignFail extends Module
+  constructor: ->
+    super()
+
+    Reg(
+      data: reg(10)
+      enable: reg()
+    )
+
+  build: ->
+    assign(@data(0:3)) = 1
+    always_if(@enable)
+      assign(@data(5:9)) = 1
+
+      
+module.exports=RegAssignFail

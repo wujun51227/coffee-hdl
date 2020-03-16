@@ -1,0 +1,16 @@
+class AssignFail extends Module
+  constructor: ->
+    super()
+
+    Port(
+      din: input(10)
+      dout: output(10)
+    )
+
+
+  build: ->
+    assign(@dout(0:3)) = 1
+    assign(@dout(3:5)) = 1
+
+      
+module.exports=AssignFail

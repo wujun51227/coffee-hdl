@@ -27,9 +27,8 @@ class Reg extends CircuitEl
     @clearValue=null
     @fieldMap={}
     @local=false
-    @staticAssign=false
     @share={
-      assignList:[]
+      assignBits:{}
       pendingValue:null
     }
 
@@ -239,6 +238,18 @@ class Reg extends CircuitEl
 
   @create: (width=1)-> new Reg(width)
 
+  isAssigned: =>
+    cnt0=0
+    cnt1=0
+    for key in Object.keys(@share.assignBits)
+      if @share.assignBits[key]==0
+        cnt0+=1
+      if @share.assignBits[key]==1
+        cnt1+=1
+    if cnt0>0 and cnt1>0
+      throw new Error("Find mixed use static and procedure assign to reg '#{@hier}'")
+    return cnt1>0
+
   verilogDeclare: ->
     list=[]
     if @states?
@@ -246,16 +257,16 @@ class Reg extends CircuitEl
         list.push i.verilogDeclare(true)
     if @width==1
       list.push "reg "+@elName+";"
-      if @staticAssign
+      if @isAssigned()
         list.push "wire "+@getDwire().refName()+";"
       else
-        list.push "reg "+@getDwire().refName()+";"
+        list.push "logic "+@getDwire().refName()+";"
     else if @width>1
       list.push "reg ["+(@width-1)+":0] "+@elName+";"
-      if @staticAssign
+      if @isAssigned()
         list.push "wire ["+(@width-1)+":0] "+@getDwire().refName()+";"
       else
-        list.push "reg ["+(@width-1)+":0] "+@getDwire().refName()+";"
+        list.push "logic ["+(@width-1)+":0] "+@getDwire().refName()+";"
 
     return list.join("\n")
 
@@ -337,16 +348,34 @@ class Reg extends CircuitEl
     @cell.__assignWaiting=true
     @cell.__assignWidth=@width
     if @cell.__assignEnv=='always'
-      if @staticAssign
-        throw new Error("This wire have been static assigned")
       @cell.__regAssignList.push ['assign',this,assignFunc(),lineno]
+      if @lsb==-1
+        for i in _.range(@width)
+          if @share.assignBits[i]
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=0
+      else
+        for i in [@lsb..@msb]
+          if @share.assignBits[i]
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=0
     else
-      if @staticAssign
-        throw new Error("This wire have been static assigned")
       assignItem=["assign",this,assignFunc(),lineno]
       @cell.__wireAssignList.push assignItem
-      @share.assignList.push [@lsb,@msb,assignItem[2]]
-      @staticAssign=true
+      if @lsb==-1
+        for i in _.range(@width)
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
+      else
+        for i in [@lsb..@msb]
+          if @share.assignBits[i]?
+            throw new Error("This wire have been assigned again #{@elName}")
+          else
+            @share.assignBits[i]=1
     @cell.__assignWaiting=false
 
   stateIsValid: (name)->
