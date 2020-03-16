@@ -242,23 +242,6 @@ module.exports._expr= (s,lineno=null) ->
   else if _.isPlainObject(s) # return signal packet
     return s
 
-rhsTraceExpand= (target,slice,expandItem,bin=[])=>
-  if _.isString(expandItem) or _.isNumber(expandItem)
-    bin.push {type:'transfer',target:target,slice:slice,e:expandItem}
-  else if _.isArray(expandItem)
-    for item,index in expandItem
-      nextBin=[]
-      if item.cond?
-        bin.push {type:'cond',e:item.cond,action:nextBin}
-      else
-        bin.push {type:'cond',e:null,     action:nextBin}
-        bin.push {type:'condend'}
-      if _.isArray(item.value)
-        rhsTraceExpand(target,slice,item.value,nextBin)
-      else
-        nextBin.push {type:'transfer',slice:slice,e:item.value}
-  return bin
-
 ifToCond=(block,index,bin) =>
   while index<block.length
     i=block[index]
@@ -280,8 +263,6 @@ ifToCond=(block,index,bin) =>
       bin.push({type:'condend'})
     index+=1
   return index
-
-module.exports.rhsTraceExpand= rhsTraceExpand
 
 module.exports.toEventList=(initSegmentList,list=[])=>
   for initSegment in initSegmentList

@@ -1,6 +1,6 @@
 CircuitEl=require 'chdl_el'
 _ = require 'lodash'
-{rhsTraceExpand,_expr,packEl,toNumber}=require 'chdl_utils'
+{_expr,packEl,toNumber}=require 'chdl_utils'
 {cat} = require 'chdl_operator'
 Vnumber = require 'chdl_number'
 Expr    = require('chdl_expr')
