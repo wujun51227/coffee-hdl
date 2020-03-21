@@ -33,24 +33,21 @@ configBase({lib:true})
 
 processFile= (fileName) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
-  fs.readFile fileName, 'utf-8', (error, text) ->
-    if error
-      log.error error
-      return
-    try
-      buildLib(path.resolve(fileName),text,debug)
-      log "================================="
-      log " Build library #{fileName}"
-      log "================================="
-    catch e
-      log.error e
-      if (e instanceof TypeError) or (e instanceof ReferenceError)
-        lines=e.stack.toString().split(/\s+at\s+/)
-        if lines.length>1
-          m=lines[1].match(/\((.*)\)/)
-          if m?
-            [jsfile,lineno]=m[1].split(/:/)
-            log.error 'Error at "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"'
+  text = fs.readFileSync(fileName, 'utf-8')
+  try
+    buildLib(path.resolve(fileName),text,debug)
+    log "================================="
+    log " Build library #{fileName}"
+    log "================================="
+  catch e
+    log.error e
+    if (e instanceof TypeError) or (e instanceof ReferenceError)
+      lines=e.stack.toString().split(/\s+at\s+/)
+      if lines.length>1
+        m=lines[1].match(/\((.*)\)/)
+        if m?
+          [jsfile,lineno]=m[1].split(/:/)
+          log.error 'Error at "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"'
 
 if program.args.length==0
   log 'No file specified'
