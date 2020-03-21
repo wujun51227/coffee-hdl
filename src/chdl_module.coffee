@@ -481,14 +481,6 @@ class Module
       @__assignEnv = null
       @__regAssignList=[]
 
-  _passAlways: (lineno,block)=>
-    @__assignEnv = 'always'
-    @__regAssignList=[]
-    block()
-    @__alwaysList.push([@__regAssignList,lineno])
-    @__assignEnv = null
-    @__regAssignList=[]
-
   eval: =>
     for evalFunc in @__alwaysList
       evalFunc()
