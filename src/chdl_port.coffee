@@ -101,7 +101,7 @@ class Port extends Wire
         wire.share=@share
         return packEl('wire',wire)
 
-  slice: (n,m)->
+  slice: (n,m)=>
     if @isReg
       @shadowReg.slice(n,m)
     else

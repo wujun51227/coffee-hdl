@@ -190,9 +190,9 @@ module.exports={
         assign(prefetched) = 0
       $else
         assign(empty_flag) = !next_level
-        $if(cat(pop,read)==2\b01)
+        $if(cat(pop,read)==2'b01')
           assign(prefetched) = 1
-        $elseif(cat(pop,read)==2\b10)
+        $elseif(cat(pop,read)==2'b10')
           assign(prefetched) = 0
 
     Net(rdata,width) = $arrayDecode(rff_data,raddr)
@@ -277,9 +277,9 @@ module.exports={
     Net(wr_addr,addrWidth) = cat( w_or , w_code.fromLsb(addrWidth-1))
 
     always
-      $if(cat(pop,read)==2\b01)
+      $if(cat(pop,read)==2'b01')
         assign(prefetched) = 1
-      $elseif(cat(pop,read)==2\b10)
+      $elseif(cat(pop,read)==2'b10')
         assign(prefetched) = 0
 
     assign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr)

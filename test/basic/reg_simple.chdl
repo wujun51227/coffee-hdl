@@ -131,9 +131,9 @@ class RegSimple extends Module
         $if(0)
           $ @aa.bb.cc+1
         $else
-          $ 32\h123
+          $ 32'h123'
       $else
-        $ 32\h456
+        $ 32'h456'
 
 
 class tb extends Module

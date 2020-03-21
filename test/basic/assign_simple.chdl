@@ -60,12 +60,12 @@ class AssignSimple extends Module
           $if(@din[2]>1)
             $ hex(5,0x1a)
           $else
-            $ 5\h15
+            $ 5'h15'
 
     assign(@dout[12])
       $if(@din[1]>0)
         $if(@din[2]>1)
-          $ 5\h1a
+          $ 5'h1a'
         $else
           $ 0
       $else
@@ -103,9 +103,9 @@ class tb extends Module
         @assert_eq(@dout[2],3)
         @assert_eq(@dout[3],4)
         @assert_eq(@dout[4],5)
-        @assert_eq(@dout[5],5\b00011)
+        @assert_eq(@dout[5],5'b00011')
         @assert_eq(@dout[6],3)
-        @assert_eq(@dout[7],5\b01010)
+        @assert_eq(@dout[7],5'b01010')
         @assert_eq(@dout[8],3)
         @assert_eq(@dout[9],0x15)
         @assert_eq(@dout[10],0x1a)

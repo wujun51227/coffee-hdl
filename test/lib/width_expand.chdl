@@ -56,7 +56,7 @@ class widthExpandTb extends Module
       .delay(5) =>
         @assert_1(@ready,'ready set test')
         @display('dout is %x',$(@dout))
-        @assert_eq(@dout,64\h0002000300000007,'expand test')
+        @assert_eq(@dout,64'h0002000300000007','expand test')
       .posedge(@tx_clk) =>
       .delay(5) =>
         @assert_1(@ready,'ready set test')
@@ -92,7 +92,7 @@ class widthExpandTb extends Module
       .delay(5) =>
         @assert_1(@ready,'ready set test')
         @display('dout is %x',$(@dout))
-        @assert_eq(@dout,64\h0001000400060005,'expand test')
+        @assert_eq(@dout,64'h0001000400060005','expand test')
       .posedge(@tx_clk) =>
         assign @din=0x7
         assign @push=1

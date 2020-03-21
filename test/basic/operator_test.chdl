@@ -23,19 +23,19 @@ class OperatorTest extends Module
     aaa = has1(@sel)
     assign(@out2) = aaa + 1
 
-    assign(@out3) = has1(32\h10)
+    assign(@out3) = has1(32'h10')
 
-    Net out5 = all1(32\hff)
-    Net out6 = all1(8\hff)
+    Net out5 = all1(32'hff')
+    Net out6 = all1(8'hff')
 
-    Net out7 = all0(32\h10)
-    Net out8 = all0(8\h0)
+    Net out7 = all0(32'h10')
+    Net out8 = all0(8'h0')
 
-    Net out9 = has0(32\hff)
-    Net out10 = has0(8\hff)
+    Net out9 = has0(32'hff')
+    Net out10 = has0(8'hff')
 
-    Net out11 = hasOdd1(8\h7f)
-    Net out12 = hasEven1(8\hf)
+    Net out11 = hasOdd1(8'h7f')
+    Net out12 = hasEven1(8'hf')
 
     v1=vreg(2).init(0b11)
     v2=vreg(4).init(0b1100)
@@ -47,14 +47,14 @@ class OperatorTest extends Module
     initial
       $sequence()
         .delay(100) =>
-          assign @sel = 8\h0
+          assign @sel = 8'h0'
         .delay(100) =>
           @assert_eq(@out0,101,'test local calc')
           @assert_eq(@out1,1,'test has1')
           @assert_eq(@out2,1,'test has1')
           @assert_eq(@out3,1,'test has1')
         .delay(100) =>
-          assign @sel = 8\h10
+          assign @sel = 8'h10'
         .delay(100) =>
           @assert_eq(@out1,2,'test has1')
           @assert_eq(@out2,2,'test has1')

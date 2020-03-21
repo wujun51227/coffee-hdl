@@ -43,13 +43,13 @@ class DataStruct extends Module
     assign @out[6] = oct(12,123)
     assign @out[7] = dec(12,123)
     assign @out[8] = bin(12,12)
-    assign @out[9] = 12\h123
-    assign @out[10]= 38\hffff55aa
+    assign @out[9] = 12'h123'
+    assign @out[10]= 38'hffff55aa'
     assign @out[11]
       $if(0) => $ 100
       $else        => $ hex(200)
 
-    assign @out[12] = hex(16,32\h111)
+    assign @out[12] = hex(16,32'h111')
     assign @out[13] = 0o37777777777
     assign @out[14] = 0x1234455aabbccddn
     assign @out[15] = hex(64,0x1122333444555666n)

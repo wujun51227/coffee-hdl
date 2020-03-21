@@ -178,7 +178,7 @@ scanToken= (tokens,index)->
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
-  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[0-9]/) and tokens[index+1]?[0]!='\\'
+  isDec= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^[0-9]/)
   getIndex=false
   if tokens[index][0]=='{'
     i=index
@@ -1018,7 +1018,7 @@ transToJs= (fullFileName,text,debug=false) ->
   head = "chdl_base = require 'chdl_base'\n"
   head +="{_expr}=require 'chdl_utils'\n"
   head +="{cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_operator'\n"
-  head += "{infer,cell,hex,oct,bin,dec}= require 'chdl_base'\n"
+  head += "{infer,hex,oct,bin,dec}= require 'chdl_base'\n"
   head += "{_importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text
@@ -1095,19 +1095,24 @@ expandNum=(tokens)->
   for i,index in tokens
     if skip>0
       skip-=1
-    else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
+    else if i[0]=='NUMBER' and tokens[index+1]?[0]=='STRING' and tokens[index+1]?[1].match(/^"[hdob][0-9a-fA-F_]+"/)
+      chars=[tokens[index+1][1]...]
+      chars=_.initial(chars)
+      chars=_.tail(chars)
+      head=chars[0]
+      chars=_.tail(chars)
       numFormat='hex'
       prefix=''
-      if tokens[index+2][1][0]=='h'
+      if head=='h'
         numFormat='hex'
         prefix='0x'
-      else if tokens[index+2][1][0]=='o'
+      else if head=='o'
         numFormat='oct'
         prefix='0o'
-      else if tokens[index+2][1][0]=='b'
+      else if head=='b'
         numFormat='bin'
         prefix='0b'
-      else if tokens[index+2][1][0]=='d'
+      else if head=='d'
         numFormat='dec'
       newTokens=[
         [
@@ -1132,45 +1137,7 @@ expandNum=(tokens)->
         ],
         [
           "STRING",
-          "'"+prefix+tokens[index+2][1][1...]+"'",
-          {range:[]}
-        ],
-        [
-          "CALL_END",
-          ")",
-          {range:[]}
-        ]
-      ]
-      out.push newTokens...
-      skip=2
-    else if tokens[index][0]=='\\' and tokens[index+1]?[1].match(/^[hdob]/)
-      numFormat='hex'
-      prefix=''
-      if tokens[index+1][1][0]=='h'
-        numFormat='hex'
-        prefix='0x'
-      else if tokens[index+1][1][0]=='o'
-        numFormat='oct'
-        prefix='0o'
-      else if tokens[index+1][1][0]=='b'
-        numFormat='bin'
-        prefix='0b'
-      else if tokens[index+1][1][0]=='d'
-        numFormat='dec'
-      newTokens=[
-        [
-          "IDENTIFIER",
-          "#{numFormat}",
-          {range:[]}
-        ],
-        [
-          "CALL_START",
-          "(",
-          {range:[]}
-        ],
-        [
-          "STRING",
-          "'"+prefix+tokens[index+1][1][1...]+"'",
+          "'"+prefix+chars.join('')+"'",
           {range:[]}
         ],
         [
@@ -1181,6 +1148,54 @@ expandNum=(tokens)->
       ]
       out.push newTokens...
       skip=1
+    #else if i[0]=='NUMBER' and tokens[index+1]?[0]=='\\' and tokens[index+2]?[1].match(/^[hdob]/)
+    #  numFormat='hex'
+    #  prefix=''
+    #  if tokens[index+2][1][0]=='h'
+    #    numFormat='hex'
+    #    prefix='0x'
+    #  else if tokens[index+2][1][0]=='o'
+    #    numFormat='oct'
+    #    prefix='0o'
+    #  else if tokens[index+2][1][0]=='b'
+    #    numFormat='bin'
+    #    prefix='0b'
+    #  else if tokens[index+2][1][0]=='d'
+    #    numFormat='dec'
+    #  newTokens=[
+    #    [
+    #      "IDENTIFIER",
+    #      "#{numFormat}",
+    #      {range:[]}
+    #    ],
+    #    [
+    #      "CALL_START",
+    #      "(",
+    #      {range:[]}
+    #    ],
+    #    [
+    #      "NUMBER",
+    #      "#{tokens[index][1]}",
+    #      {range:[]}
+    #    ],
+    #    [
+    #      ",",
+    #      ",",
+    #      {range:[]}
+    #    ],
+    #    [
+    #      "STRING",
+    #      "'"+prefix+tokens[index+2][1][1...]+"'",
+    #      {range:[]}
+    #    ],
+    #    [
+    #      "CALL_END",
+    #      ")",
+    #      {range:[]}
+    #    ]
+    #  ]
+    #  out.push newTokens...
+    #  skip=2
     else
       out.push(i)
   return out

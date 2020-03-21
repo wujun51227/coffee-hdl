@@ -139,7 +139,7 @@ class Wire extends CircuitEl
     else
       throw new Error("Slice width #{n} can not great than #{@width}")
 
-  slice: (n,m)->
+  slice: (n,m)=>
     if n.constructor.name=='Expr'
       wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
       wire.link(@cell,@hier)

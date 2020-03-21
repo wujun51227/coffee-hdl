@@ -65,7 +65,7 @@ class WireSimple extends Module
     assign(@dout[3].fromLsb(2)) = @w3.fromLsb(2)
 
     assign(@result.field('carry')) = 1
-    assign(@result.field('sum')) = 4\b1001
+    assign(@result.field('sum')) = 4'b1001'
     assign(@dout[4]) =  @result
 
     always
