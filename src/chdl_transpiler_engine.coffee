@@ -174,7 +174,8 @@ findCondBlock= (tokens,callEnd)->
 
 scanToken= (tokens,index)->
   ret=[]
-  nativeItem = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
+  nativeItem1 = tokens[index][0]=='@' and tokens[index+1]?[0]=='PROPERTY'
+  nativeItem2 = tokens[index][0]=='THIS' and tokens[index+1]?[0]=='.' and tokens[index+2]?[0]=='PROPERTY'
   isHex = tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0x/)
   isOct= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0o/)
   isBin= tokens[index][0]=='NUMBER' and tokens[index][1].match(/^0b/)
@@ -267,12 +268,24 @@ scanToken= (tokens,index)->
     ]
     ret.push newTokens...
     return [1,ret]
-  else if nativeItem
+  else if nativeItem1
     start_index=index
     [dummy,stop_index]=findPropertyBound(tokens,index+2)
     if stop_index==-1
       list=tokens.slice(start_index,start_index+2)
       return [2,list]
+    else
+      list=tokens.slice(start_index,stop_index+1)
+      return [
+        list.length
+        list
+      ]
+  else if nativeItem2
+    start_index=index
+    [dummy,stop_index]=findPropertyBound(tokens,index+3)
+    if stop_index==-1
+      list=tokens.slice(start_index,start_index+3)
+      return [3,list]
     else
       list=tokens.slice(start_index,stop_index+1)
       return [
