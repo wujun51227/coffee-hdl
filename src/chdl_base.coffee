@@ -26,6 +26,7 @@ config={
   autoClock: false
   tree: false
   noAlwaysComb: false
+  lint: false
 }
 
 getCellList= (inst)->
@@ -106,6 +107,7 @@ rhsExpand=(expandItem)->
     }
 
 checkAssignWidth=(lhs,rhsInfo,lineno)->
+  return if config.lint==false
   return if getLint('widthCheckLevel')==0
   return if rhsInfo.w.match(/^"/)
   try

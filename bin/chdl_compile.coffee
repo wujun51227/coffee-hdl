@@ -42,6 +42,7 @@ program
   .option('--buildsim')
   .option('--nolineno')
   .option('--force')
+  .option('--lint')
   .option('--debug')
   .parse(process.argv)
 
@@ -79,6 +80,7 @@ cfg={
   autoClock: program.autoClock ? false
   tree: program.tree ? false
   noAlwaysComb: program.no_always_comb ? false
+  lint: program.lint ? false
 }
 
 if program.fsdb
