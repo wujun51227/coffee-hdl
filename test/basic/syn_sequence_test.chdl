@@ -21,6 +21,8 @@ class SynSequenceTest extends Module
     v2 = vreg().init(1)
     v3 = vreg(2)
 
+    seqStatus=wire(8)
+
     always
       $sequence('test_seq')
       .init ()=>
@@ -40,17 +42,19 @@ class SynSequenceTest extends Module
           assign(@aa) =8
         $else
           assign(@aa) =9
-      .end()
+      .end(seqStatus)
 
     initial
       $sequence()
       .delay(1001) =>
         @assert_eq(@aa,1,'test init')
+        @assert_eq(seqStatus,0,'test seqStatus')
         assign v1 = 1
       .posedge($clock()) =>   # sample v1 goto next state update aa data point
         assign v1 = 0
       .posedge($clock()) =>   # update to aa q point
       .delay(5) =>
+        @assert_eq(seqStatus,1,'test seqStatus')
         @assert_eq(@aa,2,'test posedge')
       .posedge($clock()) =>
         @assert_eq(@aa,2)
@@ -82,6 +86,7 @@ class SynSequenceTest extends Module
         assign v3 = 2
       .posedge($clock()) =>
         assign v1 = 0
+        @assert_eq(seqStatus,4,'test seqStatus')
       .posedge($clock()) =>
       .delay(5) =>
         @assert_eq(@aa,9,'test last state')

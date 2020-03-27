@@ -942,7 +942,7 @@ class Module
             @__assignEnv=null
             @__regAssignList=[]
           return @_sequence(name,bin,clock,reset)
-      next: (num=null,signal=null,stepName=null)=>
+      next: (num=null,stepName=null)=>
         return (func)=>
           if @__initialMode
             throw new Error("next not supported in initial")
@@ -962,15 +962,18 @@ class Module
             @__assignEnv=null
             @__regAssignList=[]
             return @_sequence(name,bin,clock,reset)
-      end: ()=>
+      end: (stateSig=null)=>
         if bin[0].type!='idle'
           bin.unshift({type:'idle',id:'idle',list:[],next:null,func:null})
         if @__initialMode
           saveData={name:name,bin:bin,stateReg:null,nextState:null}
           @__sequenceBlock.push saveData
+          return saveData
         else
           bitWidth=Math.floor(Math.log2(bin.length))+1
           stateReg=@_localReg(bitWidth,name).clock(clock).reset(reset)
+          if stateSig?
+            stateSig.assign(->_expr(Expr.start().next(stateReg)))
           lastStateReg=@_localReg(bitWidth,name+'_last').clock(clock).reset(reset)
           nextState=@_localWire(bitWidth,name+'_next')
           stateNameList=[]
@@ -990,7 +993,7 @@ class Module
           @__sequenceBlock.push retData
           @_seqState(stateReg,nextState,lastStateReg,bin)
 
-        return retData
+          return retData
     }
     return ret
 
