@@ -6,7 +6,7 @@ _ = require 'lodash'
 log = require 'fancy-log'
 colors = require 'colors'
 {simBuffer,printBuffer}=require 'chdl_utils'
-{buildCode,setPaths}=require 'chdl_transpiler_engine'
+{headOver,buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 global  = require('chdl_global')
 mkdirp= require 'mkdirp'
@@ -164,13 +164,22 @@ processFile= (fileName,outDir) ->
 
     catch e
       log.error e
+      if (e instanceof SyntaxError)
+        lineNum=e.location.first_line-headOver
+        log.error (path.basename(fileName)+' '+lineNum+':Error "'+fs.readFileSync(fileName,'utf8').split(/\n/)[lineNum-1].trim()+'"').red
       if (e instanceof TypeError) or (e instanceof ReferenceError)
         lines=e.stack.toString().split(/\s+at\s+/)
         if lines.length>1
           m=lines[1].match(/\((.*)\)/)
           if m?
             [jsfile,lineno]=m[1].split(/:/)
-            log.error 'Error at "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"'
+            log.error (path.basename(jsfile)+' '+lineno+':Error "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"').red
+          else
+            m=lines[1].match(/(.*):(.*):/)
+            if m?
+              jsfile=m[1]
+              lineno=m[2]
+              log.error (path.basename(jsfile)+' '+lineno+':Error "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"').red
 
 
 fileName = program.args[0]
