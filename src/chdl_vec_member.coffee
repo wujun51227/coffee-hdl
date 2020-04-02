@@ -1,4 +1,5 @@
 CircuitEl = require 'chdl_el'
+{toSignal} = require('chdl_utils')
 
 class VecMember extends CircuitEl
 

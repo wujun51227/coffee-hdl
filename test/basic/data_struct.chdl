@@ -4,7 +4,8 @@ class DataStruct extends Module
   constructor: ->
     super()
     Port(
-      addr: input(16)
+      layer:
+        addr: input(16)
       out: @createArray(20,()=>output(64))
       arr: [
         [
@@ -64,7 +65,7 @@ class DataStruct extends Module
     always
       @m1.mem.set(0x1, $ 0x111)
       @m1.mem.set(0x200, $ 0x222)
-      assign(@out[18]) => $ @m1.mem.get(0x1)+ @m1.mem.get(@addr)
+      assign(@out[18]) => $ @m1.mem.get(0x1)+ @m1.mem.get(@layer.addr)
 
 class tb extends Module
   constructor: ->
@@ -76,7 +77,7 @@ class tb extends Module
 
     Channel(
       dout: channel()
-      addr: channel()
+      layer: channel()
       arr: channel()
       obj: channel()
       )
@@ -86,7 +87,7 @@ class tb extends Module
       out: @dout
       arr: @arr
       obj: @obj
-      addr: @addr
+      layer: @layer
     )
 
   build: ->
@@ -98,7 +99,7 @@ class tb extends Module
         assign @obj['l1'].k1  = 0x55aa
         assign @obj['l1']['l2'].k1 = 0xaa55
         assign _.get(@obj,['l1','l2','k2']) = 0x8765
-        assign @addr= 0x200
+        assign @layer.addr= 0x200
       .delay(10) =>
         @assert_eq(@dout[0],0)
         @assert_eq(@dout[1],hex(0x123123123123n))

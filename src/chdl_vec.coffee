@@ -1,5 +1,6 @@
 CircuitEl = require 'chdl_el'
 VecMember = require 'chdl_vec_member'
+{getValue} = require 'chdl_utils'
 _ = require 'lodash'
 
 class Vec extends CircuitEl
@@ -11,27 +12,11 @@ class Vec extends CircuitEl
     @__type='vec'
 
   set: (n,expr)=>
-    addr=0
-    if n.constructor?.name=='Expr'
-      addr=Number(n.str)
-    else if _.isNumber(n)
-      addr=n
-    else if _.isFunction(n)
-      addr=n().hier
-    else
-      addr=n.hier
+    addr=getValue(n)
     @cell.__regAssignList.push ["assign",VecMember.create(this,addr),expr,-1]
 
   get: (n)->
-    addr=0
-    if n.constructor?.name=='Expr'
-      addr=Number(n.str)
-    else if _.isNumber(n)
-      addr=n
-    else if _.isFunction(n)
-      addr=n().hier
-    else
-      addr=n.hier
+    addr=getValue(n)
     return VecMember.create(this,addr)
     
   @create: (width,depth)-> new Vec(width,depth)
