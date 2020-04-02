@@ -203,7 +203,7 @@ statementGen=(buffer,statement)->
     item = statement[1]
     buffer.add "  while(#{item.active}) begin"
     buffer.add "    @(posedge #{item.signal});"
-    buffer.add "    if(#{item.expr}) begin"
+    buffer.add "    if(#{item.expr.e.str}) begin"
     buffer.add "      #{item.active} = 0;"
     buffer.add "    end;"
     buffer.add "  end;"
