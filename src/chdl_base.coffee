@@ -207,6 +207,8 @@ statementGen=(buffer,statement)->
     buffer.add "      #{item.active} = 0;"
     buffer.add "    end;"
     buffer.add "  end;"
+    for i in item.list
+      statementGen(buffer,i)
   else if stateType=='posedge'
     item = statement[1]
     buffer.add "  @(posedge #{item.signal});"
