@@ -439,30 +439,6 @@ class Reg extends CircuitEl
     item = _.find(@states,(i)=> i.label==name)
     return Expr.start().next(item)
 
-  stateSwitch: (obj)=>
-    @cell.__regAssignList.push ['assign',this,_expr(@pack()),-1]
-    for src,list of obj
-      @cell.__regAssignList.push ["if",@isState(src),-1]
-      for item,index in list
-        dst = item.value()
-        if index==0
-          if item.cond?
-            @cell.__regAssignList.push ["if",item.cond,-1]
-            @cell.__regAssignList.push ["assign",this, _expr(@getState(dst)),-1]
-            @cell.__regAssignList.push ["end",-1]
-          else
-            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
-        else
-          if item.cond?
-            @cell.__regAssignList.push ["elseif",item.cond,-1]
-            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
-            @cell.__regAssignList.push ["end",-1]
-          else
-            @cell.__regAssignList.push ["else",-1]
-            @cell.__regAssignList.push ["assign",this,_expr(@getState(dst)),-1]
-            @cell.__regAssignList.push ["end",-1]
-      @cell.__regAssignList.push ["end",-1]
-
   getWidth: => @width
 
   enable: (s,value=1)=>

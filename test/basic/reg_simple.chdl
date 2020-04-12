@@ -70,18 +70,16 @@ class RegSimple extends Module
     always
       @ff12.setState('write')
 
-    always =>
-      @ff13.stateSwitch(
-        'idle': [
-          $cond(@clear==1) => 'write'
-        ]
-        'write': [
-          $cond(@clear==1) => 'pending'
-        ]
-        'pending': [
-          $cond(@clear==0) => 'idle'
-        ]
-      )
+     $stateSwitch(@ff13) =>
+       'idle': [
+         $cond(@clear==1) => $ @ff13.getState('write')
+       ]
+       'write': [
+         $cond(@clear==1) => $ @ff13.getState('pending')
+       ]
+       'pending': [
+         $cond(@clear==0) => $ @ff13.getState('idle')
+       ]
 
     assign @reg_out[12] = @ff12.isState('write')
     assign @reg_out[13] = @ff13.isState('pending')

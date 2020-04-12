@@ -512,4 +512,14 @@ module.exports={
               i.func(i.next)
             else
               i.func(i.active,i.next)
+
+  $stateSwitch: (stateReg)->
+    return (func)=>
+      obj=func()
+      always
+        for src,list of obj
+          if _.last(list).cond!=null
+            list.push($cond() => $ stateReg)
+          $if(stateReg.isState(src))
+            assign stateReg = $order(list)
 }
