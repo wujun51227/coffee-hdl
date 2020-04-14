@@ -284,6 +284,11 @@ code_gen= (inst,allInst)=>
     if item.probeChannel==null
       _.set(inst,name,item.Port)
 
+  for moldChannel in inst.__moldChannels
+    for key in Object.keys(moldChannel)
+      ch = moldChannel[key]
+      moldChannel[key]=ch.Port
+
   inst.build()
   if global.getSim()
     log(("Build sim "+buildName).green)

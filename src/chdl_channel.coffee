@@ -5,7 +5,7 @@ _ = require 'lodash'
 
 class Channel extends CircuitEl
 
-  constructor: (path)->
+  constructor: (path=null)->
     super()
     @bindPortPath=null
     @Port={}

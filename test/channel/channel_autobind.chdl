@@ -54,9 +54,13 @@ class ChannelAutoBind extends Module
   build: ->
     $channelPortHub(@ch2,@ch1.bundle)
 
+    mold_out = vreg(16)
+
     initial
       $sequence()
       .delay(200) =>
+        assign mold_out = @ch1.bundle.data
+        @assert_eq(mold_out,0x1234,'test autobind')
         @assert_report('channel autobind')
         @sim_finish()
       .end()

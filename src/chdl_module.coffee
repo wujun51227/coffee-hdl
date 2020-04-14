@@ -179,6 +179,7 @@ class Module
     @__local_regs      =  []
     @__vecs           =  {}
     @__channels       =  {}
+    @__moldChannels   =  []
     @__ports          =  {}
     @__wireAssignList =  []
     @__initialList=[]
@@ -653,17 +654,17 @@ class Module
     return [out,assignList]
 
   mold: (inst)->
-    ret={}
-    bindTable={}
     channelName=_id(global.getPrefix()+'__channel')
+    bindTable={}
+    channels={}
     for i in Object.keys(inst.__ports)
-      ret[i]=Channel.create()
-      bindTable[i]=ret[i]
-    bindObj={}
-    bindObj[channelName] = ret
-    @_channel(bindObj)
+      ch=Channel.create(null)
+      bindTable[i]=ch
+      channels[channelName+'__'+i] = ch
+    @_channel(channels)
     inst.bind(bindTable)
-    return ret
+    @__moldChannels.push(bindTable)
+    return bindTable
     
   bind: (obj)->
     for port,channel of obj when _.get(@__ports,port)?
