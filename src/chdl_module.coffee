@@ -98,7 +98,12 @@ class Module
 
   _probe: (obj) ->
     for k,v of obj
-      @__channels[k]=Channel.create(v)
+      item=_.get(this,v)
+      if item.__type=='channel'
+        @__channels[k]=Channel.create(v)
+      else
+        for [name,inst] in toFlatten(item,'channel')
+          _.set(@__channels,k+'.'+name,Channel.create(v+'.'+name))
       #if this[k]?
       #  throw new Error('Channel name conflicted '+k)
       #else
@@ -444,7 +449,7 @@ class Module
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,channel] in toFlatten(@__channels)
       if channel.probeChannel?  # probe dont have elName
-        @__postProcess.push {type:'channel',elName:name,bindChannel:channel.probeChannel}
+        @__postProcess.push {type:'channel',elName:toSignal(name),bindChannel:channel.probeChannel}
 
     for i in @__bindChannels
       #log 'elaboration bind',this.constructor.name,i.portName
