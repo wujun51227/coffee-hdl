@@ -8,7 +8,7 @@ class slave_cell extends Module
     )
 
   build: ->
-    assign @slave.ready = ~@slave.ready
+    assign @slave.ready = ~@slave.valid
 
 
 module.exports=slave_cell

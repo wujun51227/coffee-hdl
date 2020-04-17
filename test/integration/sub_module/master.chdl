@@ -16,6 +16,7 @@ class master_cell extends Module
       $sequence()
       .init =>
         assign v = 0
+      .delay(1000) =>
       .delay(100) =>
         assign v = 1
       .delay(100) =>
@@ -30,13 +31,13 @@ class master_cell extends Module
       $sequence()
       .delay(10) =>
         @assert_1(@master.ready,'check 1')
-      .delay(110) =>
+      .delay(1110) =>
         @assert_0(@master.ready,'check 0')
-      .delay(210) =>
+      .delay(1210) =>
         @assert_1(@master.ready,'check 1')
-      .delay(310) =>
+      .delay(1310) =>
         @assert_0(@master.ready,'check 0')
-      .delay(410) =>
+      .delay(1410) =>
         @assert_1(@master.ready,'check 1')
       .end()
 

@@ -11,6 +11,7 @@ class RegSimple extends Module
           cc: output(9).asReg({noReset:true})
       en:
         notupdateEnable: input()
+      initEnable: input()
       reg_out: [
         output(5)
         output(8)
@@ -116,7 +117,7 @@ class RegSimple extends Module
 
     always
       @aa.bb.cc.pending(0)
-      $if(1)
+      $if(@initEnable)
         assign(@aa.bb.cc(0)) = 1
         assign(@aa.bb.cc(8:1)) = 100
 
@@ -147,6 +148,7 @@ class tb extends Module
       b_ch: channel()
       c_ch: channel()
       en_ch: channel()
+      init_ch:channel()
       )
 
     Reg(
@@ -160,6 +162,7 @@ class tb extends Module
       aa:    @b_ch
       reg_out: @c_ch
       en:    @en_ch
+      initEnable: @init_ch
     )
 
     @setDefaultClock('clk')
@@ -175,6 +178,8 @@ class tb extends Module
         assign @a_ch= 1
         assign @en_ch.notupdateEnable = 1 #no enable
       .delay(1000) =>
+        assign @init_ch = 1
+      .delay(1000) =>
         @assert_eq(@c_ch[0],23,'test init value')
         @assert_eq(@c_ch[1],0xff,'test fromMsb')
         @assert_ne(@c_ch[2],0,'test no reset')
@@ -189,7 +194,6 @@ class tb extends Module
         @assert_eq(@c_ch[11],22,'test register map')
         @assert_1(@c_ch[12],'test state set/is')
         @assert_1(@c_ch[13],'test state switch')
-
         @assert_eq(@b_ch.bb.cc,201,'test output use as reg')
       .delay(100) =>
         @assert_report()

@@ -68,9 +68,10 @@ class WireSimple extends Module
     assign(@result.field('sum')) = 4'b1001'
     assign(@dout[4]) =  @result
 
+    Net x = 0
     always
       @w4.pending(17)
-      $if(3<2)
+      $if(3<x)
         assign(@w4) = @din + 1
       #$else
       #  assign(@w4) = $ @din - 1

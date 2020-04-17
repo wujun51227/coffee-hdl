@@ -184,7 +184,6 @@ class Module
     @__local_regs      =  []
     @__vecs           =  {}
     @__channels       =  {}
-    @__moldChannels   =  []
     @__ports          =  {}
     @__wireAssignList =  []
     @__initialList=[]
@@ -209,6 +208,7 @@ class Module
     @__specify=false
     @__specifyModuleName=null
     @__pinAssign=[]
+    @__delayBindList=[]
     @_mixin require('chdl_primitive_lib.chdl.js')
 
   _setGlobal: ->
@@ -430,6 +430,8 @@ class Module
       @_channelExpand(i.type,i.elName,i.bindChannel)
 
   _elaboration: ->
+    for {inst,table} in @__delayBindList
+      inst.bind(table)
     if global.getInfo()
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
@@ -659,16 +661,11 @@ class Module
     return [out,assignList]
 
   mold: (inst)->
-    channelName=_id(global.getPrefix()+'__channel')
     bindTable={}
-    channels={}
     for i in Object.keys(inst.__ports)
       ch=Channel.create(null)
       bindTable[i]=ch
-      channels[channelName+'__'+i] = ch
-    @_channel(channels)
-    inst.bind(bindTable)
-    @__moldChannels.push(bindTable)
+    @__delayBindList.push({inst:inst,table:bindTable})
     return bindTable
     
   bind: (obj)->

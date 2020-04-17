@@ -23,7 +23,8 @@ class cell2 extends Module
 
     Channel(
       ch1: channel()
-      ch2: channel()
+      xxx:
+        ch2: channel()
     )
 
     @u0_cell1.bind(
@@ -31,12 +32,8 @@ class cell2 extends Module
     )
 
     @u1_cell1.bind(
-      bundle: @ch2
+      bundle: @xxx.ch2
     )
-
-    @xxx={
-      yyy: @ch1
-    }
 
   build: ->
 
@@ -50,12 +47,10 @@ class ChannelProbe extends Module
     Port(
       cell2_port: bind('u0_cell2.ch1')
       dout: output(16)
-      probe_sig: output(16)
     )
 
     Probe(
-      cell2_probe: 'u0_cell2.ch2'
-      xxx_probe: 'u0_cell2.xxx'
+      cell2_probe: 'u0_cell2.xxx'
     )
 
     Channel(
@@ -70,9 +65,8 @@ class ChannelProbe extends Module
 
   build: ->
     assign @cell1_ch.din = 0x2222
-    assign @cell2_probe.din   = 0x3333
-    assign(@dout) = @cell2_port.din+@cell1_select+@cell1_ch.dout(3:0)+@cell2_probe.dout
-    assign @probe_sig = @xxx_probe.yyy.dout
+    assign @cell2_probe.ch2.din   = 0x3333
+    assign(@dout) = @cell2_port.din+@cell1_select+@cell1_ch.dout(3:0)+@cell2_probe.ch2.dout
 
 class tb extends Module
   dut: new ChannelProbe()
@@ -83,13 +77,11 @@ class tb extends Module
     Channel(
       ch1: channel()
       ch2: channel()
-      ch3: channel()
       )
 
     @dut.bind(
       cell2_port: @ch1
       dout: @ch2
-      probe_sig: @ch3
       )
 
   build: ->
@@ -100,7 +92,6 @@ class tb extends Module
       .delay(100) =>
         @assert_eq(@ch1.dout,0x1111,'test connection')
         @assert_eq(@ch2,0x4457,'test connection')
-        @assert_eq(@ch3,0x1111,'test connection')
         @assert_report('channel probe')
         @sim_finish()
       .end()

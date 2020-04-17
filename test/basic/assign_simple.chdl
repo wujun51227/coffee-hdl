@@ -31,6 +31,7 @@ class AssignSimple extends Module
       $ @din[4]+1
 
     assign(@dout[5](2:0)) = @din[5].select((i)=>i%2==0)
+    assign(@dout[5](4:3)) = 2'b0'
 
     assign(@dout[6]) = @din[1] + @din[2]
 

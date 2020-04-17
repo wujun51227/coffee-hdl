@@ -280,14 +280,14 @@ code_gen= (inst,allInst)=>
   instEnv.register(inst)
   allInst.push(inst)
 
+  channelWireList=[]
+  for [name,channel] in toFlatten(inst.__channels)
+    code=channel.verilogDeclare()
+    channelWireList.push(code) if code!=''
+
   for [name,item] in toFlatten(inst.__channels)
     if item.probeChannel==null
       _.set(inst,name,item.Port)
-
-  for moldChannel in inst.__moldChannels
-    for key in Object.keys(moldChannel)
-      ch = moldChannel[key]
-      moldChannel[key]=ch.Port
 
   inst.build()
   if global.getSim()
@@ -310,9 +310,8 @@ code_gen= (inst,allInst)=>
     printBuffer.add i[1].portDeclare()+";"
   )
   printBuffer.blank('//channel declare')
-  for [name,channel] in toFlatten(inst.__channels)
-    code=channel.verilogDeclare()
-    printBuffer.add(code) if code!=''
+  for i in channelWireList
+    printBuffer.add(i)
   printBuffer.blank('//wire declare')
   for [name,wire] in toFlatten(inst.__wires)
     if wire.constructor.name=='Wire'
