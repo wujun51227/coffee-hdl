@@ -129,13 +129,19 @@ class Wire extends CircuitEl
 
   fromMsb: (n)=>
     if(n<=@width)
-      @slice(@width-1,@width-n)
+      if @lsb==-1
+        @slice(@width-1,@width-n)
+      else
+        @slice(@msb,@msb-n+1)
     else
       throw new Error("Slice width #{n} can not great than #{@width}")
 
   fromLsb: (n)=>
     if(n<=@width)
-      @slice(n-1,0)
+      if @lsb==-1
+        @slice(n-1,0)
+      else
+        @slice(@lsb+n-1,@lsb)
     else
       throw new Error("Slice width #{n} can not great than #{@width}")
 

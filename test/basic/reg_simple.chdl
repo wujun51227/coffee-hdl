@@ -27,6 +27,7 @@ class RegSimple extends Module
         output(9)
         output()
         output()
+        output(8)
       ]
     )
 
@@ -50,6 +51,7 @@ class RegSimple extends Module
         b:reg(9).init(22).highReset()
       ff12: reg(5)
       ff13: reg(5)
+      ff14: reg(32)
     )
 
   doSync: (sigIn)->
@@ -134,6 +136,10 @@ class RegSimple extends Module
       $else
         $ 32'h456'
 
+    assign @ff14 = 32'h12345678'
+
+    assign @reg_out[14]=@ff14.fromMsb(16).fromLsb(8)
+
 
 class tb extends Module
   constructor: ->
@@ -195,6 +201,7 @@ class tb extends Module
         @assert_1(@c_ch[12],'test state set/is')
         @assert_1(@c_ch[13],'test state switch')
         @assert_eq(@b_ch.bb.cc,201,'test output use as reg')
+        @assert_eq(@c_ch[14],0x34,'test fromMsb fromLsb')
       .delay(100) =>
         @assert_report()
         @sim_finish()
