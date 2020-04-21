@@ -53,6 +53,25 @@ module.exports={
       item = iterator.next()
     return out
 
+  $stubPort:(i)->
+    iterator=new RecursiveIterator(i)
+    item=iterator.next()
+    out={}
+    while !item.done
+      state = item.value
+      if state.node.constructor.name=='Function' and state.node.__type=='wire'
+        width=state.node.getWidth()
+        if state.node.getType()=='input'
+          drive=vreg(width,state.node.getName())
+          assign(state.node) = drive
+          _.set(out,state.path,drive)
+        else if state.node.getType()=='output'
+          load = wire(width,state.node.getName())
+          _.set(out,state.path,load)
+          assign(load) = state.node
+      item = iterator.next()
+    return out
+
   $portHub:(list...)->
     clone_list=list[...]
     i=0
