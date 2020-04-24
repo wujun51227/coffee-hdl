@@ -389,7 +389,7 @@ patchCode=(text)->
 
   patchList=[]
   for i,index in tokens
-    if i[0]=='IDENTIFIER' and (i[1]=='assign' or i[1]=='Net')
+    if i[0]=='IDENTIFIER' and (i[1]=='assign' or i[1]=='Net' or i[1]=='Dff')
       lineNum=i[2].first_line
       callPos=i[2].last_column
       if tokens[index+1]?[0]=='CALL_START'
@@ -496,7 +496,12 @@ extractLogic = (tokens)->
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Net'
+    else if token[0] is 'IDENTIFIER' and (token[1]=='Net' or token[1]=='Dff')
+      sigType = do ->
+        if token[1]=='Net'
+          '_localWire'
+        else if token[1]=='Dff'
+          '_localReg'
       netName = tokens[i+2][1]
       [dummy,callEnd]=findCallSlice(tokens,i+1)
       if tokens[i+3][0]==','
@@ -505,7 +510,7 @@ extractLogic = (tokens)->
           ['IDENTIFIER',netName,{range:[]}]
           ['=','=',{range:[]}]
           ['@', '@', {range:[]}]
-          ['PROPERTY', '_localWire', {range:[]}]
+          ['PROPERTY', sigType, {range:[]}]
           [ 'CALL_START',  '(',     {range:[]} ]
           widthArgs...
           [',',',',{range:[]}]
@@ -525,7 +530,7 @@ extractLogic = (tokens)->
           ['IDENTIFIER',netName,{range:[]}]
           ['=','=',{range:[]}]
           ['@', '@', {range:[]}]
-          ['PROPERTY', '_localWire', {range:[]}]
+          ['PROPERTY', sigType, {range:[]}]
           [ 'CALL_START',  '(',     {range:[]} ]
           [ 'NUMBER',  '1',     {range:[]} ]
           [',',',',{range:[]}]

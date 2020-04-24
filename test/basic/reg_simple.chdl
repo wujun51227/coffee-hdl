@@ -51,7 +51,6 @@ class RegSimple extends Module
         b:reg(9).init(22).highReset()
       ff12: reg(5)
       ff13: reg(5)
-      ff14: reg(32)
     )
 
   doSync: (sigIn)->
@@ -136,9 +135,9 @@ class RegSimple extends Module
       $else
         $ 32'h456'
 
-    assign @ff14 = 32'h12345678'
+    Dff(ff14,32) = 32'h12345678'
 
-    assign @reg_out[14]=@ff14.fromMsb(16).fromLsb(8)
+    assign @reg_out[14]=ff14.fromMsb(16).fromLsb(8)
 
 
 class tb extends Module
