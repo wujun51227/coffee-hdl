@@ -138,6 +138,8 @@ statementGen=(buffer,statement)->
       lhsName=lhs.refName()
     else if lhs.constructor?.name is 'Port'
       lhsName=lhs.refName()
+      if lhs.isReg
+        lhsName=lhs.shadowReg.getDwire().refName()
     else if lhs.constructor?.name is 'VecMember'
       lhsName=lhs.refName()
     else
@@ -361,6 +363,8 @@ code_gen= (inst,allInst)=>
         lhsName=lhs.refName()
       else if lhs.constructor?.name is 'Port'
         lhsName=lhs.refName()
+        if lhs.isReg
+          lhsName=lhs.shadowReg.getDwire().refName()
       else
         throw new Error('Unknown lhs type')
       if lineno? and lineno>=0

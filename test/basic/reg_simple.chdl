@@ -9,6 +9,7 @@ class RegSimple extends Module
       aa:
         bb:
           cc: output(9).asReg({noReset:true})
+      dd: output(9).asReg()
       en:
         notupdateEnable: input()
       initEnable: input()
@@ -124,6 +125,8 @@ class RegSimple extends Module
 
     assign(@ff4) = @aa.bb.cc
 
+    assign(@dd) = 100
+
     assign(@ff8) =>
       $if(@ff6)
         $ @aa.bb.cc
@@ -154,6 +157,7 @@ class tb extends Module
       c_ch: channel()
       en_ch: channel()
       init_ch:channel()
+      d_ch:channel()
       )
 
     Reg(
@@ -167,6 +171,7 @@ class tb extends Module
       aa:    @b_ch
       reg_out: @c_ch
       en:    @en_ch
+      dd:    @d_ch
       initEnable: @init_ch
     )
 
@@ -201,6 +206,7 @@ class tb extends Module
         @assert_1(@c_ch[13],'test state switch')
         @assert_eq(@b_ch.bb.cc,201,'test output use as reg')
         @assert_eq(@c_ch[14],0x34,'test fromMsb fromLsb')
+        @assert_eq(@d_ch,100,'test port asReg')
       .delay(100) =>
         @assert_report()
         @sim_finish()
