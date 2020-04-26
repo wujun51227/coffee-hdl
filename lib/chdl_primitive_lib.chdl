@@ -285,18 +285,25 @@ module.exports={
     $else
       $ code_word ^ hex(width,1)
 
-  $arrayMuxSet: (array,select,din)->
+  $arrayMuxSet: (array,select,din,field=null)->
     len=array.length
     for i in [0...len]
       $if(i==select)
-        assign(array[i]) = din
+        if field?
+          item = _.get(array[i],field)
+          assign(item) = din
+        else
+          assign(array[i]) = din
       $endif
 
-  $arrayDecode: (array,select,width=null)->
+  $arrayDecode: (array,select,width=null,field=null)->
     len=array.length
     list=[]
     for i in [0...len]
-      list.push($cond(i==select) =>array[i])
+      if field?
+        list.push($cond(i==select) => $ _.get(array[i],field))
+      else
+        list.push($cond(i==select) => $ array[i])
     $balance(list,width)
 
   $rise: (sig,clock='',reset='')->
