@@ -41,7 +41,7 @@ class Reg extends CircuitEl
   isVirtual: => false
 
   init: (v)=>
-    @resetValue=v
+    @resetValue=v ? 0
     return packEl('reg',this)
 
   clock:(clock)=>

@@ -385,9 +385,9 @@ module.exports={
       $endif
     return  $ out
 
-  $holdData: (sig,enable,clock='',reset='')->
+  $holdData: (sig,enable,initValue=null,clock='',reset='')->
     out = wire(sig.getWidth(),'hold')
-    latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset)
+    latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset).init(initValue)
     assign(out)
       $if(enable) => $ sig
       $else => $ latch
