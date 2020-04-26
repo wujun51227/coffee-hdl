@@ -8,7 +8,7 @@ module.exports={
     #return (type(width) for i in [0...number])
 
   createArray: (number,func)->
-    return (func() for i in _.range(number))
+    return (func(i) for i in _.range(number))
 
   createChannelArray: (number)->
     throw new Error('createSigArray is deprecated, use createArray(number,func)')
