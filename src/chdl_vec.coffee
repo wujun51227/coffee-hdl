@@ -23,6 +23,8 @@ class Vec extends CircuitEl
 
   getWidth:()=> @width
 
+  getDepth:()=> @depth
+
   verilogDeclare: ()->
     return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"];"
 
