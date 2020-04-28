@@ -326,7 +326,7 @@ code_gen= (inst,allInst)=>
     unless port.isReg
       printBuffer.add port.verilogDeclare()
   printBuffer.blank('//register declare')
-  for [name,reg] in toFlatten(inst.__vecs)
+  for [name,reg] in toFlatten(inst.__local_vecs)
     printBuffer.add reg.verilogDeclare()
     printBuffer.blank()
   printBuffer.blank('//register init and update')
@@ -564,8 +564,6 @@ output=(width=1)->packEl('port',Port.out(width))
 
 bind= (name)-> Port.bind(name)
 
-vec= (width,depth)-> Vec.create(width,depth)
-
 channel= (path=null)-> Channel.create(path)
 
 instEnv= do ->
@@ -603,7 +601,6 @@ module.exports.input       = input
 module.exports.output      = output
 module.exports.bind        = bind
 module.exports.channel     = channel
-module.exports.vec         = vec
 module.exports.infer        = instEnv.infer
 module.exports.configBase =(cfg)-> config=Object.assign(config,cfg)
 module.exports.resetBase   = ->

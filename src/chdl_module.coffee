@@ -1,5 +1,6 @@
 Port    = require 'chdl_port'
 Expr    = require 'chdl_expr'
+Vec     = require 'chdl_vec'
 Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
@@ -181,6 +182,7 @@ class Module
     @__regs           =  {}
     @__wires          =  {}
     @__local_wires      =  []
+    @__local_vecs      =  []
     @__local_regs      =  []
     @__vecs           =  {}
     @__channels       =  {}
@@ -738,6 +740,15 @@ class Module
         v.elName=toSignal(global.getPrefix()+'___'+option.label)
     v.hier=v.elName
     return v
+
+  _localVec: (width=32,depth=32,name='t')->
+    pWire=Vec.create(Number(width),Number(depth))
+    pWire.cell=this
+    pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
+    pWire.hier=pWire.elName
+    ret = packEl('vec',pWire)
+    @__local_vecs.push(ret)
+    return ret
 
   _localWire: (width=1,name='t')->
     pWire=Wire.create(Number(width))

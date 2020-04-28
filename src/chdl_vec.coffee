@@ -15,7 +15,7 @@ class Vec extends CircuitEl
     addr=getValue(n)
     @cell.__regAssignList.push ["assign",VecMember.create(this,addr),expr,-1]
 
-  get: (n)->
+  get: (n)=>
     addr=getValue(n)
     return VecMember.create(this,addr)
     

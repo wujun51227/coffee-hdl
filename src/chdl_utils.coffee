@@ -60,6 +60,10 @@ toFlatten = (data,target=null,root='') ->
       checkTarget()
       result.push [prop, cur()]
       return
+    else if cur.__type=='vec'
+      checkTarget()
+      result.push [prop, cur()]
+      return
     else if cur.__type=='expr'
       checkTarget()
       result.push [prop, cur]

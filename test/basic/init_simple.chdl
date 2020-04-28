@@ -1,6 +1,7 @@
 class InitSimple extends Module
   constructor: ->
     super()
+    Mixin importLib('chdl_testbench_lib.chdl')
     Mixin importLib('verilog_helpers.chdl')
 
     Reg(
@@ -70,6 +71,34 @@ class InitSimple extends Module
       .delay(100) =>
         @assert_report()
         @sim_finish()
+      .end()
+
+    fifo = @tb_fifo_gen(32,4)
+    initial
+      $sequence()
+      .delay(105) =>
+        fifo.push(1)
+        fifo.push(2)
+        fifo.push(3)
+        fifo.push(4)
+      .delay(1) =>
+        Net(front,32) = fifo.$front()
+        Net(tail,32) = fifo.$tail()
+        Net full = fifo.$isFull()
+        Net(size,32) = fifo.$getSize()
+        Net(rsp,32) = fifo.$getRsp()
+        @display('>>>>>front %d',$(front))
+        @display('>>>>>tail %d',$(tail))
+        @display('>>>>>full %d',$(full))
+        @display('>>>>>size %d',$(size))
+        @display('>>>>>rsp %d',$(rsp))
+        @assert_eq(front,1,'test event')
+        @assert_eq(tail,4,'test event')
+        @assert_eq(full,1,'test event')
+        @assert_eq(size,4,'test event')
+      .delay(105) =>
+        fifo.pop()
+        @display("get data %d",fifo.$front())
       .end()
       
 module.exports=InitSimple

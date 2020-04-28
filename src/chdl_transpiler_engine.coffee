@@ -602,9 +602,8 @@ extractLogic = (tokens)->
       i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='vec'
       list =[
-        ['IDENTIFIER', 'chdl_base', {range:[]}]
-        [ '.',     '.',  {range:[]} ]
-        ['PROPERTY', 'vec', {range:[]}]
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_localVec', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
