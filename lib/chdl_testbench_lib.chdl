@@ -7,17 +7,15 @@ module.exports={
     wsp=vreg(32)
     rsp=vreg(32)
     size=vreg(32)
-    Net(tail_sp,32)
-      $if(wsp==0) => $ {depth-1}
-      $else => $ wsp - 1
+    tail_sp=vreg(32)
     return {
-      $getRsp: =>
-        $ rsp
-
       $front: =>
         $ bin.get(rsp)
 
       $tail: =>
+        assign tail_sp
+          $if(wsp==0) => $ {depth-1}
+          $else => $ wsp - 1
         $ bin.get(tail_sp)
 
       $isEmpty: =>
@@ -30,19 +28,17 @@ module.exports={
         $ size
 
       pop: =>
-        $if(rsp==bin.getDepth()-1)
+        $if(rsp==(bin.getDepth()-1))
           assign rsp= 0
         $else
           assign rsp = rsp + 1
         assign size=size-1
 
       push: (data)=>
-        $if(wsp==bin.getDepth()-1)
-          @display("write to %d",$(wsp))
+        $if(wsp==bin.getDepth())
           bin.set(0,$(data))
           assign wsp = 0
         $else
-          @display("write to %d",$(wsp))
           bin.set(wsp,$(data))
           assign wsp = wsp + 1
         assign size=size+1

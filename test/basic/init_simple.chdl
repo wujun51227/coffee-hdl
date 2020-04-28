@@ -13,6 +13,8 @@ class InitSimple extends Module
     v1= vreg()
     v2= vreg()
     v3= vreg()
+    @dump_wave('test')
+
     forever
       $sequence()
       .delay(10) =>
@@ -81,24 +83,18 @@ class InitSimple extends Module
         fifo.push(2)
         fifo.push(3)
         fifo.push(4)
-      .delay(1) =>
         Net(front,32) = fifo.$front()
         Net(tail,32) = fifo.$tail()
         Net full = fifo.$isFull()
         Net(size,32) = fifo.$getSize()
-        Net(rsp,32) = fifo.$getRsp()
-        @display('>>>>>front %d',$(front))
-        @display('>>>>>tail %d',$(tail))
-        @display('>>>>>full %d',$(full))
-        @display('>>>>>size %d',$(size))
-        @display('>>>>>rsp %d',$(rsp))
-        @assert_eq(front,1,'test event')
-        @assert_eq(tail,4,'test event')
-        @assert_eq(full,1,'test event')
-        @assert_eq(size,4,'test event')
+        @assert_eq(front,1,'test tb fifo')
+        @assert_eq(tail,4,'test tb fifo')
+        @assert_eq(full,1,'test tb fifo')
+        @assert_eq(size,4,'test tb fifo')
       .delay(105) =>
         fifo.pop()
-        @display("get data %d",fifo.$front())
+        Net(front,32) = fifo.$front()
+        @assert_eq(front,2,'test tb fifo')
       .end()
       
 module.exports=InitSimple
