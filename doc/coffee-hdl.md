@@ -142,7 +142,7 @@ endmodule
 ##  数值字面量
 coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面不支持X态和Z态,只有0和1两种状态,数值字面量一般带有宽度信息.
 
-在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,或者使用[width]\\[h|o|d|b]value字面量表达,如果使用coffeescript基本整数类型,则自动转换成verilog数字字面量.示例代码如下(test/data_type/const_data.chdl)
+在coffee-hdl中,用电路表达的数据类型沿用verilog的表达形式,用全局函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字,或者使用[width]'[h|o|d|b]value'字面量表达,如果使用coffeescript基本整数类型,则自动转换成verilog数字字面量.示例代码如下(test/data_type/const_data.chdl)
 
 		hex(12,0x123) // 12'h123
 		hex(0x123)    // 'h123
@@ -151,8 +151,8 @@ coffee-hdl数值字面量指保存在wire或者reg的bit值,在coffee-hdl里面�
 		oct(12, 123)  // 7'o173
 		0x123         // 'h123
 		0b1100        // 'b1100
-		12\h123      // 12'h123
-		32\hffff55aa  //32'hffff55aa
+		12'h123'      // 12'h123
+		32'hffff55aa'  //32'hffff55aa
 
 
 
@@ -324,7 +324,7 @@ constructor: ->
     
 build:->
   assign @result.field('carry') = 1
-  assign @result.field('sum') = 32\h12345678
+  assign @result.field('sum') = 32'h12345678'
 ```
 生成代码
 ```verilog
@@ -491,6 +491,9 @@ end
 加强的语义会产生相应的verilog代码,或者在生成verilog代码的时候作相应的检查
 
 
+**reg的另外一种申明**
+
+reg声明还有前缀表达形式Dff variable_name/Dff(variable_name,width), Dff形式的申明可以在后面直接加等号或者语句块赋值
 
 ## 函数抽象
 
@@ -503,7 +506,7 @@ coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包�
 add: (v1,v2) -> $ @in3+v1+v2
 mul: (v1,v2) -> $ v1*v2
 build: ->
-  assign @out = @add(@mul(10\h123,@in1),@in2)
+  assign @out = @add(@mul(10'h123',@in1),@in2)
 ```
 
 生成代码
@@ -589,12 +592,12 @@ _ff1 = ff1_write
 always
   @ff1.stateSwitch(
     'write': [
-      $cond(@stall==1) => 'pending'
-      $cond(@stall==1) => 'idle'
+      $cond(@stall==1) => $ @ff1.getState('pending')
+      $cond(@stall==0) => $ @ff1.getState('idle')
     ]
     'pending': [
-      $cond(@readEnable==1) => 'read'
-      $cond() => 'idle'
+      $cond(@readEnable==1) => $ @ff1.getState('read')
+      $cond() => $ @ff1.getState('idle')
       ]
   )
 ```
@@ -606,7 +609,7 @@ always_comb begin
     if(stall==1) begin
       _ff1 = ff1__pending;
     end
-    else if(stall==1) begin
+    else if(stall==0) begin
       _ff1 = ff1__idle;
     end
   end
@@ -645,10 +648,10 @@ Port(
   some_port: bind('channel_name')
 )
 ```
-把channel作为wire使用时候，直接存取channel的Port成员下的路径
+把channel作为wire使用时候，直接存取channel成员下的路径
 
 ```coffeescript
-assign @dout = $ @cell1_ch.Port.din(3:0)+@cell2_probe.din
+assign @dout = $ @cell1_ch.din(3:0)+@cell2_probe.din
 ```
 
 生成代码
@@ -695,7 +698,7 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
         $if(trans)
           assign @cs = 0
         $elseif(next)
-          assign @addr_out = 16\hffff
+          assign @addr_out = 16'hffff'
       .wait($(@finish==1)) =>
         assign @addr = @addr+4
       .end()
@@ -951,6 +954,7 @@ class top extends Module
 * Probe()
 * Wire()
 * Net()
+* Dff()
 * Channel()
 * Mem()
 * Reg()
