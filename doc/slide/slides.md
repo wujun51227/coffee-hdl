@@ -2,7 +2,7 @@ class: center, middle, inverse
 
 # coffee-hdl Brief Introduction
 
-	伍骏 2019-12-21
+	伍骏 2020-4-30 v0.2
 ---
 
 name: agenda
@@ -20,9 +20,8 @@ name: agenda
 9. [Channel](#channel)
 10. [Assembly](#assembly)
 11. [Expand and Library](#lib)
-12. [Practice](#project)
-13. [Deficiency](#deficiency)
-14. [Keywords and Helpers](#keyword)
+12. [Deficiency](#deficiency)
+13. [Keywords and Helpers](#keyword)
 
 ---
 name: stack
@@ -49,7 +48,6 @@ chdl_compile.coffee -a assign_simple.chdl
 [13:38:18] Build cell AssignSimple ( AssignSimple )
 [13:38:18] generate code ./AssignSimple.sv
 </pre>
-
 ---
 
 name: target
@@ -256,7 +254,7 @@ name: syntax
 
 	* 使用函数hex/oct/bin/dec(width,value)生成verilog中的字面量数字
 
-	* 使用[width]\\[hodb][value]字面量表达,如果使用coffeescript基本整数类型,自动转换为'd[value]
+	* 使用[width]'\[hodb\]\[value\]'字面量表达,如果使用coffeescript基本整数类型,自动转换为'd[value]
 
 ```
 		hex(12,0x123) // 12'h123
@@ -265,8 +263,8 @@ name: syntax
 		oct(12, 123)  // 7'o173
 		0x123         // 'h123
 		0b1100        // 'b1100
-		12\h123       // 12'h123
-		32\hffff55aa  // 32'hffff55aa
+		12'h123'       // 12'h123
+		32'hffff55aa'  // 32'hffff55aa
 		100           // 'd100
 ```
 
@@ -400,6 +398,12 @@ end
 ]
 
 ---
+
+**reg的另外一种申明**
+
+reg声明还有前缀表达形式Dff variable_name/Dff(variable_name,width), Dff形式的申明可以在后面直接加等号或者语句块赋值
+
+---
 ### Resource - Wire
 Wire  - 指定宽度
 ```coffeescript
@@ -421,7 +425,7 @@ constructor: ->
     
 build:->
   assign @result.field('carry') = 1
-  assign @result.field('sum') = 32\h12345678
+  assign @result.field('sum') = 32'h12345678'
 ```
 生成代码
 ```verilog
@@ -518,8 +522,8 @@ class: middle
 ```coffeescript
 build: ->
   data=100
-  assign out1 = {data+1} +5\h1f
-  assign out2 = cat(data,5\h1f)
+  assign out1 = {data+1} +5'h1f'
+  assign out2 = cat(data,5'h1f')
   assign out3(5:3) =  data(0,3)
   assign out4 = expand(5,data(9:7))
 ```
@@ -715,7 +719,7 @@ coffee-hdl支持函数抽象表达以增强代码复用,用于产生电路的函
 add: (v1,v2) -> $ @in3+v1+v2
 mul: (v1,v2) -> $ (v1*v2)
 build: ->
-  assign(@out) = @add(@mul(10\h123,@in1),@in2)
+  assign(@out) = @add(@mul(10'h123',@in1),@in2)
 ```
 
 生成代码
@@ -824,15 +828,15 @@ _ff1 = ff1_write
 always
   @ff1.stateSwitch(
     'idle': [
-      $cond(@start==1) => 'write'
+      $cond(@start==1) => $ @ff1.getState('write')
     ]
     'write': [
-      $cond(@stall==1) => 'pending'
-      $cond(@error==1) => 'idle'
+      $cond(@stall==1) => $ @ff1.getState('pending')
+      $cond(@error==1) => $ @ff1.getState('idle')
     ]
     'pending': [
-      $cond(@start==1) => 'write'
-      $cond() => 'idle'
+      $cond(@start==1) => $ @ff1.getState('write')
+      $cond() => $ @ff1.getState('idle')
       ]
   )
 ```
@@ -937,7 +941,7 @@ class: middle
         $if(trans)
           assign @cs = 0
         $elseif(next)
-          assign @addr_out = 16\hffff
+          assign @addr_out = 16'hffff'
       .wait($(@finish==1)) =>
         assign @addr = @addr+4
       .end()
@@ -974,10 +978,10 @@ Port(
 class: middle
 
 
-使用的时候，直接存取channel的Port成员下的路径
+使用的时候，直接存取channel的成员下的路径
 
 ```coffeescript
-assign(@dout) = $ @cell1_ch.Port.din(3:0)+@cell2_probe.din
+assign(@dout) = $ @cell1_ch.din(3:0)+@cell2_probe.din
 ```
 
 生成代码
@@ -1129,111 +1133,8 @@ name: lib
 
 ---
 
-name: project
+name: deficiency
 
-## Practice
-
-* nne50 part
-
-* sram wrapper generator
-
----
-### 1. nne50 part
-
-Acc Controller **源码5413行,生成verilog 30175行**
-<div class="mermaid">
-   graph TD
-    subgraph PE
-    A(MAC array)
-    B(Element Wise)
-    C(Pooling)
-    end
-    subgraph ACC Controller
-    		D(Controller)
-    		F(Local Sram Bank x12)
-    		D --> F
-	end
-    E(Lut Controller)
-    A --> D
-    B --> D
-    C --> D
-    F --> E
-</div>
-
----
-class: middle
-Buffer to Axi port channel mux **源码2717行,生成verilog 25265行**
-<div class="mermaid">
-   graph TD
-    A(buffer write x12)  --> F
-    subgraph Channel Mux
-    F(Controller and Arbiter -- param.chdl)
-    end
-    F --> B(AXI 1)
-    F --> C(AXI 2)
-    F --> D(AXI 3)
-    E(buffer read x15) --> F
-</div>
-
-
-
----
-
-#### Example
-高可复用函数: 在一个数组中寻找最小/最大数字对应的下标
-```coffeescript
-$pick_index:(array,sort_type='Min')->
-    width = array[0].getWidth()
-    len = array.length
-    local_wire_width = Math.floor(Math.log2(len-1))+1
-    local_w = []
-    for i in [0...len]
-      local_w.push(wire(local_wire_width))
-
-    for i,index in array
-      if index==0
-        assign(local_w[index]) = $ 0
-      else
-        last = $ ($arrayDecode(array[0...index],local_w[index-1],width))
-        if sort_type=='Min'
-          assign(local_w[index]) = $min_select(i,last,index,local_w[index-1])
-        else if sort_type == 'Max'
-          assign(local_w[index]) = $max_select(i,last,index,local_w[index-1])
-        else
-          throw new Error('not a type')
-    $ local_w[len-1]
-```
-```coffeescript
-    Wire(
-      w: @createArray(4,=>wire(10))
-    )
-  build: ->
-    Net(out,2) = $pick_index(@w)
-```
-生成代码
-```verilog
-//assign logic
-assign __t_5 /* 36 */ = 'd0 /* 36 */ ;
-assign __t_6 /* 40 */ = (w__1<(({10{0==__t_5}}&(w__0))) /* 38 */  /* 3 */ )?(1 /* 5 */ ):__t_5 /* 10 */  /* 8 */ ;
-assign __t_7 /* 40 */ = (w__2<(({10{0==__t_6}}&(w__0))|({10{1==__t_6}}&(w__1))) /* 38 */  /* 3 */ )?(2 /* 5 */ ):__t_6 /* 10 */  /* 8 */ ;
-assign __t_8 /* 40 */ = (w__3<(({10{0==__t_7}}&(w__0))|({10{1==__t_7}}&(w__1))|({10{2==__t_7}}&(w__2))) /* 38 */  /* 3 */ )?(3 /* 5 */ ):__t_7 /* 10 */  /* 8 */ ;
-assign __out_4 /* 2 */ = __t_8 /* 45 */ ;
-```
-
-
-
----
-### 2. sram wrapper generator
-
-   根据UI选择wrapper尺寸类型以及vendor memory布局产生json配置文件,自动生成sram wrapper verilog 代码
-
-   <div class="mermaid">
-   graph TD
-    A(UI) -- 用户配置 --> B(json) 
-    C(编译sram wrapper生成器)  --> D(运行js代码) --> E(verilog代码)
-    B --> D
-   </div>
----
 ## Deficiency
 
 * 宿主语言不是静态类型语言,无法作强制类型检查,重构困难
@@ -1249,9 +1150,9 @@ name: keyword
 ## Keywords and Helpers
 
 ### Helpers
-@verilog(string): 字符串输出到生成代码,示例代码
+@display(template_string,args...): 生成verilog $display代码,示例代码
 ```coffeescript
-@verilog('$display("data is %d",ff1);')
+@display("data is %d",$(ff1))
 ```
 
 会在生成的verilog代码中插入 $display("data is %d",ff1);
@@ -1291,6 +1192,7 @@ name: keyword
 * **Probe**()
 * **Wire**()
 * **Net**()
+* **Dff()**
 * **Channel**()
 * **Mem**()
 * **Reg**()
