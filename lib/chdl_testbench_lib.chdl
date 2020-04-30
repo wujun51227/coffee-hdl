@@ -1,22 +1,21 @@
 _ = require 'lodash'
 
 module.exports={
-  tb_fifo_gen: (width,depth)->
-    bin=vec(width,depth)
-    bin.cell=this
-    wsp=vreg(32)
-    rsp=vreg(32)
-    size=vreg(32)
-    tail_sp=vreg(32)
+  tb_fifo_gen: (width,depth,name)->
+    fifo_bin=vec(width,depth)
+    wsp=vreg(32,name+'_wsp')
+    rsp=vreg(32,name+'_rsp')
+    size=vreg(32,name+'_fifo_size')
+    tail_sp=vreg(32,name+'_tail_point')
     return {
       $front: =>
-        $ bin.get(rsp)
+        $ fifo_bin.get(rsp)
 
       $tail: =>
         assign tail_sp
           $if(wsp==0) => $ {depth-1}
           $else => $ wsp - 1
-        $ bin.get(tail_sp)
+        $ fifo_bin.get(tail_sp)
 
       $isEmpty: =>
         $ size==0
@@ -28,18 +27,18 @@ module.exports={
         $ size
 
       pop: =>
-        $if(rsp==(bin.getDepth()-1))
+        $if(rsp==(fifo_bin.getDepth()-1))
           assign rsp= 0
         $else
           assign rsp = rsp + 1
         assign size=size-1
 
       push: (data)=>
-        $if(wsp==bin.getDepth())
-          bin.set(0,$(data))
+        $if(wsp==fifo_bin.getDepth())
+          fifo_bin.set(0,$(data))
           assign wsp = 0
         $else
-          bin.set(wsp,$(data))
+          fifo_bin.set(wsp,$(data))
           assign wsp = wsp + 1
         assign size=size+1
     }
