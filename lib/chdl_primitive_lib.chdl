@@ -219,6 +219,12 @@ module.exports={
         $endif
     )
 
+  $inc: (sig,value=1)->
+    assign sig = sig + value
+
+  $dec: (sig,value=1)->
+    assign sig = sig - value
+
   $join: (list,func)->
     return $reduce(list,(sum,item,first,last)=>
       if first
