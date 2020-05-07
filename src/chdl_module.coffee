@@ -36,7 +36,8 @@ class Module
   _mixinas: (obj) ->
     ret={}
     for fname in _.functions obj
-      ret[fname] = (args...)=>obj[fname].call(this,args...)
+      do (fname)=>
+        ret[fname] = (args...)=>obj[fname].call(this,args...)
     return ret
 
   __instName: ''
