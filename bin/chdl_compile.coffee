@@ -151,7 +151,7 @@ processFile= (fileName,outDir) ->
         log "[ncverilog #{args.join(' ')}]"
         spawn('ncverilog',args,{stdio:['pipe',1,2]})
       if program.vcs
-        args=['-full64','-R','-debug_access+all','-sverilog',flist...]
+        args=['-full64','-R','-debug_access+all','-sverilog','-l','sim.log',flist...]
         log "[vcs #{args.join(' ')}]"
         spawn('vcs',args,{stdio:['pipe',1,2]})
       if program.iverilog
