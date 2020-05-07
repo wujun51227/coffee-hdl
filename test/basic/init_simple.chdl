@@ -1,7 +1,7 @@
 class InitSimple extends Module
   constructor: ->
     super()
-    Mixin importLib('chdl_testbench_lib.chdl')
+    @tb= MixinAs importLib('chdl_testbench_lib.chdl')
     Mixin importLib('verilog_helpers.chdl')
 
     Reg(
@@ -75,7 +75,7 @@ class InitSimple extends Module
         @sim_finish()
       .end()
 
-    fifo = @tb_fifo_gen(32,4)
+    fifo = @tb.tb_fifo_gen(32,4)
     initial
       $sequence()
       .delay(105) =>

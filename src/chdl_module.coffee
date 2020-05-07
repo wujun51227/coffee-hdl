@@ -33,10 +33,11 @@ class Module
         @[fname] = obj[fname]
     obj.init.call(this) if obj.init?
 
-  _mixinas: (name,obj) ->
-    @[name]={}
+  _mixinas: (obj) ->
+    ret={}
     for fname in _.functions obj
-      @[name][fname] = (args...)=>obj[fname].call(this,args...)
+      ret[fname] = (args...)=>obj[fname].call(this,args...)
+    return ret
 
   __instName: ''
 

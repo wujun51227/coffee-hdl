@@ -713,13 +713,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    #else if token[0] is 'IDENTIFIER' and token[1]=='MixinAs'
-    #  list =[
-    #    ['@', '@', {range:[]}]
-    #    ['PROPERTY', '_mixinas', {range:[]}]
-    #  ]
-    #  tokens.splice i, 1, list...
-    #  i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='MixinAs'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_mixinas', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
       list =[
         ['@', '@', {range:[]}]
