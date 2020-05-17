@@ -65,6 +65,13 @@ class chdl_assert extends Module
           @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should < #{value}\",$time);")
           assign self.assert_fail_flag = 1
 
+  fail_gen: ()->
+    self=this
+    return (message='')->
+      assign self.assert_message = self.sToString(message)
+      @display("#{self.message_prefix} assert fail %0t: %0s",$({'$time'}),$(self.assert_message))
+      assign self.assert_fail_flag = 1
+
   build: ->
 
 module.exports=chdl_assert

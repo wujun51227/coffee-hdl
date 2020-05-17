@@ -223,34 +223,36 @@ class Wire extends CircuitEl
     if cell.__assignEnv=='always'
       rhs = assignFunc()
       cell.__regAssignList.push ["assign",this,rhs,lineno]
-      if @lsb==-1
-        for i in _.range(@width)
-          if @share.assignBits[i]
-            throw new Error("This wire have been assigned again #{@elName}")
-          else
-            @share.assignBits[i]=0
-      else
-        for i in [@lsb..@msb]
-          if @share.assignBits[i]
-            throw new Error("This wire have been assigned again #{@elName}")
-          else
-            @share.assignBits[i]=0
+      if !@virtual
+        if @lsb==-1
+          for i in _.range(@width)
+            if @share.assignBits[i]
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=0
+        else
+          for i in [@lsb..@msb]
+            if @share.assignBits[i]
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=0
     else
       rhs = assignFunc()
       assignItem=["assign",this,rhs,lineno]
       cell.__wireAssignList.push assignItem
-      if @lsb==-1
-        for i in _.range(@width)
-          if @share.assignBits[i]?
-            throw new Error("This wire have been assigned again #{@elName}")
-          else
-            @share.assignBits[i]=1
-      else
-        for i in [@lsb..@msb]
-          if @share.assignBits[i]?
-            throw new Error("This wire have been assigned again #{@elName}")
-          else
-            @share.assignBits[i]=1
+      if !@virtual
+        if @lsb==-1
+          for i in _.range(@width)
+            if @share.assignBits[i]?
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=1
+        else
+          for i in [@lsb..@msb]
+            if @share.assignBits[i]?
+              throw new Error("This wire have been assigned again #{@elName}")
+            else
+              @share.assignBits[i]=1
     cell.__assignWaiting=false
 
   verilogDeclare: ->

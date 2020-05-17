@@ -159,7 +159,7 @@ processFile= (fileName,outDir) ->
         log "[iverilog #{args.join(' ')}]".yellow
         handler=spawn('iverilog',args,{stdio:['pipe',1,2]})
         handler.on('exit',->
-          handler=spawn(outDir+'/sim_ivl',{stdio:['pipe',1,2]})
+          handler=spawn('vvp',['-livl.log',outDir+'/sim_ivl'],{stdio:['pipe',1,2]})
         )
 
     catch e
