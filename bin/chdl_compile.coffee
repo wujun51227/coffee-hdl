@@ -34,6 +34,7 @@ program
   .option('-n, --new <module name>')
   .option('--flist <file list name>')
   .option('--fsdb')
+  .option('--nowave')
   .option('--no_always_comb')
   .option('--ncsim')
   .option('--vcs')
@@ -85,6 +86,9 @@ cfg={
 
 if program.fsdb
   global.setFsdbFormat()
+
+if program.nowave
+  global.setNoWave()
 
 if program.noLineno
   global.setNoLineno()

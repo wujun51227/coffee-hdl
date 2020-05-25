@@ -9,7 +9,7 @@ module.exports={
         if global.getWaveFormat()=='fsdb'
           @verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
           @verilog("$fsdbDumpvars;")
-        else
+        else if global.getWaveFormat()=='vcd'
           @verilog("$dumpfile(\"#{fileName}.vcd\");")
           @verilog("$dumpvars;")
       .end()

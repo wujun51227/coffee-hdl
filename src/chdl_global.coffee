@@ -33,3 +33,5 @@ module.exports.getNoLineno= -> noLineno
 module.exports.setFsdbFormat = -> waveFormat='fsdb'
 
 module.exports.getWaveFormat = -> waveFormat
+
+module.exports.setNoWave= -> waveFormat=null
