@@ -216,6 +216,8 @@ module.exports.getValue=(i)=>
     return i
   if _.isNumber(i)
     return i
+  if i.__type=='expr'
+    return i.e.str
   if i.constructor?.name=='Expr'
     return i.str
   if i.constructor?.name=='Port'
