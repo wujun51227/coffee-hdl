@@ -146,10 +146,14 @@ statementGen=(buffer,statement)->
       throw new Error("Unknown lhs type")
     if lineno? and lineno>=0
       rhsInfo=rhsExpand(rhs)
+      if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
+        throw new Error("assign to #{lhsName} code is null at #{lineno}".red)
       buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
       checkAssignWidth(lhs,rhsInfo,lineno)
     else
       rhsInfo=rhsExpand(rhs)
+      if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
+        throw new Error("assign to #{lhsName} code is null".red)
       buffer.add "  #{toSignal lhsName} = #{rhsInfo.code};"
       checkAssignWidth(lhs,rhsInfo,lineno)
   else if stateType=='end'
@@ -369,10 +373,14 @@ code_gen= (inst,allInst)=>
         throw new Error('Unknown lhs type')
       if lineno? and lineno>=0
         rhsInfo=rhsExpand(rhs)
+        if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
+          throw new Error("assign to #{lhsName} is null at #{lineno}".red)
         printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
         checkAssignWidth(lhs,rhsInfo,lineno)
       else
         rhsInfo=rhsExpand(rhs)
+        if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
+          throw new Error("assign to #{lhsName} is null".red)
         printBuffer.add "assign #{toSignal lhsName} = #{rhsInfo.code};"
         checkAssignWidth(lhs,rhsInfo,lineno)
 

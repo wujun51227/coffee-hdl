@@ -11,6 +11,7 @@ global  = require('chdl_global')
 _ = require 'lodash'
 log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
+colors   = require 'colors'
 
 localCnt=0
 
@@ -1062,7 +1063,7 @@ class Module
           if signal?
             signal.assign(block,lineno,self)
           else
-            throw new Error("Assign to signal is undefined at line: #{lineno}")
+            throw new Error("Assign to signal is undefined at line: #{lineno}".red)
         else
           signal.assign((->block),lineno,self)
 
