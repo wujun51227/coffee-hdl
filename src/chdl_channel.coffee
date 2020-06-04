@@ -11,12 +11,19 @@ class Channel extends CircuitEl
     @Port={}
     @portList= []
     @__type='channel'
+    @monitor=false
     if path!=null
       @probeChannel=path
     else
       @probeChannel=null
 
   @create: (path)-> new Channel(path)
+
+  setMonitor: ->
+    @monitor=true
+    return this
+
+  isMonitor: -> @monitor
 
   #getWidth: ->
   #  ret=0

@@ -481,6 +481,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='Monitor'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_monitor', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='Wire'
       list =[
         ['@', '@', {range:[]}]

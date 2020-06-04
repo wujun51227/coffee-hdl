@@ -116,6 +116,15 @@ class Module
       #else
       #  this[k]=@__channels[k]
 
+  _monitor: (obj) ->
+    for k,v of obj
+      item=_.get(this,v)
+      if item.__type=='channel'
+        @__channels[k]=Channel.create(v).setMonitor()
+      else
+        for [name,inst] in toFlatten(item,'channel')
+          _.set(@__channels,k+'.'+name,Channel.create(v+'.'+name).setMonitor())
+
   _port: (obj) ->
     for k,v of obj
       @__ports[k]=v
@@ -350,9 +359,6 @@ class Module
   _channelExpand:(channelType,localName,channelInfo)->
     localport=null
     nodeList=[]
-    #if channelType=='hub'
-    #  nodeList=_.toPath(localName)
-    #else
     for [name,port] in toFlatten(@__ports)
       if toSignal(name)==localName
         localport=port
@@ -370,7 +376,6 @@ class Module
     if localport?
       type=localport.constructor.name
       if localport?.width==0
-        #@__removeNode(nodeList) if channelType!='hub'
         @_removeNode(nodeList)
 
     if _.isString(channelInfo)
@@ -379,9 +384,14 @@ class Module
     else
       channel=channelInfo
       channelName=channelInfo.getName()
+    isMonitor = channelType=='monitor'
     for obj in channel.portList
       bindPort=obj.port
-      dir=bindPort.type
+      dir=do ->
+        if isMonitor
+          'output'
+        else
+          bindPort.type
       width=bindPort.width
       @_dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
       if dir=='output' or dir=='input'
@@ -457,7 +467,10 @@ class Module
       console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,channel] in toFlatten(@__channels)
       if channel.probeChannel?  # probe dont have elName
-        @__postProcess.push {type:'channel',elName:toSignal(name),bindChannel:channel.probeChannel}
+        if channel.isMonitor()
+          @__postProcess.push {type:'monitor',elName:toSignal(name),bindChannel:channel.probeChannel}
+        else
+          @__postProcess.push {type:'channel',elName:toSignal(name),bindChannel:channel.probeChannel}
 
     for i in @__bindChannels
       #log 'elaboration bind',this.constructor.name,i.portName

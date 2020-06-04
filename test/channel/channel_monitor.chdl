@@ -1,0 +1,73 @@
+#########################################################3
+# Design
+#########################################################3
+class cella extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: input(16)
+        dout: output(16)
+    )
+
+  build: ->
+    assign @bundle.dout = @bundle.din
+
+class cellb extends Module
+  constructor: ->
+    super()
+    Port(
+      bundle:
+        din: output(16)
+        dout: input(16)
+    )
+
+  build: ->
+    assign @bundle.din= 0x1234
+
+class cell2 extends Module
+  u0: new cella()
+  u1: new cellb()
+  constructor: ->
+    super()
+
+    Channel(
+      ch1: @mold(@u0)
+      ch2: @mold(@u1)
+    )
+
+  build: ->
+    $channelPortHub(@ch1.bundle,@ch2.bundle)
+
+
+class ChannelProbe extends Module
+  u0_cell2: new cell2()
+
+  constructor: ->
+    super()
+
+  build: ->
+
+class tb extends Module
+  dut: new ChannelProbe()
+
+  constructor: ->
+    super()
+    Mixin importLib('verilog_helpers.chdl')
+
+    Monitor(
+      ch1: 'dut.u0_cell2.ch1.bundle'
+    )
+
+  build: ->
+    initial
+      $sequence()
+      .delay(200) =>
+        @assert_eq(@ch1.din,0x1234,'test probe')
+        @assert_eq(@ch1.dout,0x1234,'test probe')
+        @assert_report('channel probe')
+        @sim_finish()
+      .end()
+
+module.exports=tb
+
