@@ -99,6 +99,9 @@ class Module
         for [name,inst] in toFlatten(v,'channel')
           inst.link(this,toHier(k,name))
         this[k]=v
+    for {inst,table} in @__delayBindList
+      inst.bind(table)
+    @__delayBindList=[]
 
   _probe: (obj) ->
     for k,v of obj
@@ -435,8 +438,6 @@ class Module
       @_channelExpand(i.type,i.elName,i.bindChannel)
 
   _elaboration: ->
-    for {inst,table} in @__delayBindList
-      inst.bind(table)
     if global.getInfo()
       console.log('Name:',@__instName,@constructor.name)
     list=    [['Port name','dir'  ,'width']]
@@ -497,15 +498,6 @@ class Module
   eval: =>
     for evalFunc in @__alwaysList
       evalFunc()
-
-  #_hub: (arg)->
-  #  for hubName,list of arg
-  #    #@_addWire(hubName,0) unless this[hubName]?
-  #    for channelPath in list
-  #      #console.log '>>>>add hub',hubName,channelPath
-  #      @__postProcess.push {type:'hub',elName:hubName,bindChannel:channelPath}
-
-  #logic: (expressFunc)=> expressFunc().str
 
   build: ->
 
