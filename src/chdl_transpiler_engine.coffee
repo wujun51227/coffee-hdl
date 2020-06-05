@@ -1024,7 +1024,7 @@ cleanCache= ->
 buildCode= (fullFileName,text,debug=false,param=null) ->
   cleanCache()
   design=transToJs(fullFileName,text,debug)
-  chdl_base.toVerilog(new design(param))
+  return chdl_base.toVerilog(new design(param))
 
 buildLib= (fullFileName,text,debug=false,param=null) ->
   transToJs(fullFileName,text,debug)

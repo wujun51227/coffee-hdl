@@ -565,6 +565,7 @@ toVerilog=(inst)->
     tableList.push(['----------','-----','-----'])
     tableList.push(['Summary',condCnt,transferCnt])
     console.log(table(tableList,{singleLine:true,columnDefault: {width:30}}))
+  return inst
 
 input=(width=1)->packEl('port',Port.in(width))
 
