@@ -21,6 +21,7 @@ _id=(name)=>
   return ret
 
 sharpToDot = (s)->  s.replace(/#/g,'.')
+bracketToDot = (s)->  s.replace(/\[/g,'.').replace(/\]/g,'.')
 
 class Module
   @create: (args...)-> new this(args...)
@@ -311,7 +312,7 @@ class Module
       else
         throw new Error('unkown dir '+dir)
     if this[name]?
-      console.trace()
+      #console.trace()
       console.log "Port #{name} has been defined"
       return null
     else
@@ -395,7 +396,7 @@ class Module
       width=bindPort.width
       @_dragPort(this,dir,width,_.toPath(channelName),obj.node.join('.'))
       if dir=='output' or dir=='input'
-        wireName=toSignal([channelName,obj.node...].join('.'))
+        wireName=toSignal([_.toPath(channelName)...,obj.node...].join('.'))
         wire=@_addWire(wireName,width)
         newPath=[nodeList...,obj.node...].join('.')
         if type=='Port'
@@ -713,7 +714,7 @@ class Module
                 netEl.setType(v.getType())
                 channel.Port=netEl
             else
-              for k,v of channelInst.Port
+              for [k,v] in toFlatten(channelInst.Port,'wire')
                 net=Wire.create(v.getWidth())
                 if name
                   net.link(channel.cell,toHier(channel.hier,name+'.'+k))
