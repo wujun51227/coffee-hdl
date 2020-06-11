@@ -114,6 +114,11 @@ class Wire extends CircuitEl
     return list
 
   bit: (n)->
+    if @width==1 and n==0
+      if @lsb==-1 or @lsb==0
+        return packEl('wire',this)
+      else
+        throw new Error("bit select error")
     wire= Wire.create(1)
     wire.link(@cell,@hier)
     if n.constructor.name=='Expr'

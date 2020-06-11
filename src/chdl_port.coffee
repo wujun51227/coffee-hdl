@@ -85,6 +85,11 @@ class Port extends Wire
     return list
 
   bit: (n)->
+    if @width==1 and n==0
+      if @lsb==-1 or @lsb==0
+        return packEl('port',this)
+      else
+        throw new Error("bit select error")
     if @isReg
       @shadowReg.bit(n)
     else

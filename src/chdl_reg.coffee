@@ -171,6 +171,11 @@ class Reg extends CircuitEl
     return list
 
   bit: (n)->
+    if @width==1 and n==0
+      if @lsb==-1 or @lsb==0
+        return packEl('reg',this)
+      else
+        throw new Error("bit select error")
     reg= Reg.create(1)
     reg.link(@cell,@hier)
     if n.constructor?.name=='Expr'
