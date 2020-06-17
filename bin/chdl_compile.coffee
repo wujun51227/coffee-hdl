@@ -44,6 +44,7 @@ program
   .option('--nolineno')
   .option('--force')
   .option('--lint')
+  .option('--obfuscate')
   .option('--debug')
   .parse(process.argv)
 
@@ -83,6 +84,9 @@ cfg={
   noAlwaysComb: program.no_always_comb ? false
   lint: program.lint ? false
 }
+
+if program.obfuscate
+  global.setObfuscate()
 
 if program.fsdb
   global.setFsdbFormat()

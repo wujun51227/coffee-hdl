@@ -29,6 +29,34 @@ config={
   lint: false
 }
 
+arr=[
+  'abcdefghijklmnopqrstuvwxyz'...
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'...
+]
+
+dict=[arr...]
+
+obscure_map={}
+
+do =>
+  dict.sort(()=>
+    return 0.5 - Math.random()
+  )
+  for i,index in arr
+    obscure_map[i]=dict[index]
+
+blur=(s)=>
+  if global.getObfuscate()
+    out=[]
+    for i in [s...]
+      if obscure_map[i]?
+        out.push obscure_map[i]
+      else
+        out.push i
+    return out.join('')
+  else
+    return s
+
 getCellList= (inst)->
   p = Object.getPrototypeOf(inst)
   list=({name:k,inst:v} for k,v of p when typeof(v)=='object' and v instanceof Module)
@@ -270,6 +298,7 @@ code_gen= (inst,allInst)=>
         inst.__specifyModuleName
     else
       get_module_build_name(inst)
+  buildName=blur(buildName)
   inst._overrideModuleName(buildName)
   log ('Build cell '+inst._getPath()+' ( '+buildName+' )').green
   if moduleCache[buildName]?
@@ -487,7 +516,7 @@ code_gen= (inst,allInst)=>
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
-    printBuffer.add i.inst.getModuleName()+paramDeclare+i.name+'('
+    printBuffer.add blur(i.inst.getModuleName())+paramDeclare+blur(i.name)+'('
     if (not i.inst.__isCombModule)
       if i.inst.__defaultClock
         clockPort=i.inst.__ports[i.inst.__defaultClock]
