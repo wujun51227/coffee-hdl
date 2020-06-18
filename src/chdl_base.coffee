@@ -288,7 +288,7 @@ buildSim= (buildName,inst)=>
   }
 ###
 
-code_gen= (inst,allInst)=>
+code_gen= (inst,allInst,first=false)=>
   buildName = do ->
     if inst.__specify
       if inst.__uniq
@@ -298,7 +298,9 @@ code_gen= (inst,allInst)=>
         inst.__specifyModuleName
     else
       get_module_build_name(inst)
-  buildName=blur(buildName)
+  if first==false
+    if not global.getUntouchModules().includes(buildName)
+      buildName=blur(buildName)
   inst._overrideModuleName(buildName)
   log ('Build cell '+inst._getPath()+' ( '+buildName+' )').green
   if moduleCache[buildName]?
@@ -516,7 +518,7 @@ code_gen= (inst,allInst)=>
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
-    printBuffer.add blur(i.inst.getModuleName())+paramDeclare+blur(i.name)+'('
+    printBuffer.add i.inst.getModuleName()+paramDeclare+blur(i.name)+'('
     if (not i.inst.__isCombModule)
       if i.inst.__defaultClock
         clockPort=i.inst.__ports[i.inst.__defaultClock]
@@ -579,7 +581,7 @@ toVerilog=(inst)->
       inst._addPort(global.getPrefix()+'__resetn','input',1)
   cell_build(inst)
   instList=[]
-  code_gen(inst,instList)
+  code_gen(inst,instList,true)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   if global.getInfo()

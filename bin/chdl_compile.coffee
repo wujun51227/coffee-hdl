@@ -45,6 +45,7 @@ program
   .option('--force')
   .option('--lint')
   .option('--obfuscate')
+  .option('--untouch_modules <module names>')
   .option('--debug')
   .parse(process.argv)
 
@@ -87,6 +88,9 @@ cfg={
 
 if program.obfuscate
   global.setObfuscate()
+
+if program.untouch_modules
+  global.setUntouchModules(program.untouch_modules.split(/,/))
 
 if program.fsdb
   global.setFsdbFormat()
