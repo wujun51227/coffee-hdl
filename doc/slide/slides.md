@@ -2,7 +2,7 @@ class: center, middle, inverse
 
 # coffee-hdl Brief Introduction
 
-	伍骏 2020-4-30 v0.2
+	伍骏 2020-6-18 v0.3
 ---
 
 name: agenda
@@ -28,7 +28,22 @@ name: stack
 
 ## Tech Stack
 * coffee-hdl是以coffeescript为宿主语言的用于生成verilog代码的dsl
-* coffeescript是一种可以转换成javascript文件的编程语言,特点是语法简单,表达能力强,和javascript库可以无缝互操作。运行环境需要安装v8以上的node.js环境和2.4版本以上的coffeescript编译器。
+
+* coffeescript是一种可以转换成javascript文件的编程语言,特点是语法简单,表达能力强,和javascript库可以无缝互操作。运行环境需要安装v10或者以上的node.js环境和2.5版本以上的coffeescript编译器。
+
+* nodejs 安装
+
+  从 https://npm.taobao.org/mirrors/node/latest-v10.x/ 下载相应操作系统压缩包并展开
+
+  把展开路径的bin目录添加到可执行路径环境变量
+
+* git clone https://e.coding.net/thriller/carbonite.git
+
+  cd coffee-hdl
+  npm install
+  source sourceme.sh
+
+  ./setup.sh
 
 ```shell
 chdl_compile.coffee -a assign_simple.chdl
@@ -48,6 +63,36 @@ chdl_compile.coffee -a assign_simple.chdl
 [13:38:18] Build cell AssignSimple ( AssignSimple )
 [13:38:18] generate code ./AssignSimple.sv
 </pre>
+
+---
+
+### compile arguments
+
+```
+Usage: chdl_compile.coffee [options] source_file
+
+Options:
+  -V, --version                     //output the version number
+  -o, --output <dir name>           //generate code destination directory
+  -w, --watch                       //watch source code, auto recompile
+  -p, --param_file <file name>      //read config from this file as top module parameter 
+  -	a, --autoClock                   //automatic generate clock to top module 
+  -t, --tree                        //display design hierarchy tree
+  -i, --info                        //display port/wire/reg resource
+  -n, --new <module name>           //generate module template
+  --flist <file list name>          //generate files list
+  --fsdb                            //use fsdb as dump wave format
+  --nowave                          //ignore dumpwave function
+  --no_always_comb                  //dont use always_comb
+  --ncsim                           //use irun as simulator
+  --vcs                             //use vcs as simulator
+  --iverilog                        //use iverilog as simulator
+  --prefix <prefix to auto signal>  //add prefix to genetate signal
+  --force                           //force recompile all chdl file,default mode is dirty detect
+  --lint                            //do lint when compile                            
+  -h, --help                        output usage information
+```
+
 ---
 
 name: target
@@ -60,11 +105,27 @@ name: target
 	
 * 相对verilog加强的部分
   * 强调基于函数的复用而不是模块
+  
   * 基于数据结构对硬件资源编程
+  
   * 语义化表达电路结构
+  
   * 方便模块集成和互联
+  
   * 轻量化,容易部署,生成代码可读性良好,易于debug,编译快速
-  * 高层次参数化设计,全动态生成verilog描述,避免第二次元编程
+  
+  * 高层次参数化设计,动态生成 verilog RTL 代码
+
+---
+
+* 另外相对于别的hdl生成语言，还有以下特点
+	* 类似于verilog的基础语法特性
+	* 轻量化,容易部署,融入 Javascript 生态
+	* 生成代码可读性良好,易于 debug
+	* 编译快速
+    
+  
+    
 
 ---
 
@@ -72,10 +133,24 @@ name: module
 
 ##  File and Module
 
-* coffee-hdl模块描述文件以.chdl作为文件后缀名,一个模块一个文件
+* coffee-hdl模块描述文件以.chdl作为文件后缀名,Coffee-HDL 描述文件可以分为两类,
+  模块设计文件和函数库文件
 
-* 例化模块需要先导入模块，使用importDesign(file_name)
+* 例化模块需要先导入模块，例如 module_name=importDesign(“module_file_path”)
+
 * 使用库函数需要导入函数模块, 在构造函数使用Mixin importLib(file_name)
+
+  函数库分为系统库和项目库,系统库只需要给出名字,项目库需要提供
+  路径(绝对路径或者相对路径)。用户可以把自己的常用的库放在特定目录下，通过chdl_lib.coffee编译生成.js文件，然后把此  目录放在CHDL_LIB环境变量当中，这种库可以当作系统库跨项目使用。
+
+  通过 Mixin 方式导入的函数可以当作类成员函数来使用,库
+  函数约定凡是返回硬件电路的函数名都需要使用$前缀,编程人员可以通过函数名清晰的知
+  道该函数会生成电路。
+  
+  编译器缺省会导入自带的 chdl_primitive_lib 函数库,该函数库提供了
+  一些常用电路生成函数。
+  
+---
 
 模块内容一般是三部分组成
 1. 在构造函数内申明port,wire,channel,reg,实例化子模块等资源,并且绑定channel到cell的端口
@@ -221,7 +296,134 @@ class: center middle
 
 逻辑和集成分离,避免glue logic
 
+---
 
+###  尽可能复用函数而不是模块
+
+verilog语言中最小复用代码的单位就是模块，函数复用的限制非常多，例如需要做double sync，需要这么写
+
+```verilog
+reg d1;
+reg d2;
+always @(posedge clock) begin
+	d1 <= din;
+	d2 <= d1;
+end
+assign din_sync = d2;
+```
+
+如果有很多信号需要double sync，一般的做法是把这块逻辑封装在一个module里面，大致是这个样子
+
+``` verilog
+double_sync u0(
+    .din(din),
+    .dout(dout),
+    .clock(clock)
+)
+```
+
+这种逻辑作为模块封装在使用上比较繁琐，而且可扩展性不好
+
+---
+
+在Coffee-hdl的代码里面double sync会封装在一个函数里面，在需要的地方引入并调用这个函数，当生成verilog的时候，会在调用的地方生成所需要的逻辑
+
+```coffeescript
+assign dout = $doubleSync(din)
+```
+
+如果以后din的宽度扩展了，在doubleSync函数内部会自动适应din的宽度，产生同等宽度的输出
+
+---
+### 使用组合,Mixin,避免继承
+
+把可以复用的函数单独封装在一个库文件里面，用exports导出函数
+```coffeescript
+	# add1.chdl
+	 module.exports={
+	 	$add1:(din)->
+	 		$ din+1
+	 }
+```
+使用方可以通过
+```coffeescript
+	Mixin importLib('./add1.chdl')
+```
+直接mixin到当前模块，使用的时候当作模块内部函数使用
+```coffeescript
+	assign a = $add1(b)
+```
+
+---
+
+也可以mixin到一个名字空间，通过名字空间的函数使用
+```coffeescript
+	@func = MixinAs importLib('./add1.chdl')
+```
+使用的时候
+```coffeescript
+	assign a = @func.$add1(b)
+```
+继承类的方式也可以导入第三方函数，但是可能会产生复杂的继承链以及可能隐式的导入成员变量，通过Mixin方式轻量级的导入第三方函数可以避免这些问题
+
+---
+### 推荐链式风格函数调用,避免使用字符串作参数
+
+verilog中如果要申明寄存器的话，一般是这样
+```verilog
+reg ff;
+always @(posedge clk or negedge rstn) begin
+	if(!rstn) begin
+		ff <= 1'b0;
+	end
+	else begin
+		ff <== ff_next;
+	end
+end
+```
+这段代码包含了以下信息，寄存器名字ff,是clk上升沿驱动，通过rstn异步复位，且复位是低电平有效，复位值为0，这些针对ff寄存器的信息散落在代码的很多地方，不利于修改和阅读
+
+---
+
+Coffee-hdl代码使用如下风格描述
+```coffeescript
+	ff=reg(5).init(0).clock('clk').reset('rstn')
+```
+如果以后ff寄存器改为同步复位
+```coffeescript
+	ff=reg(5).init(0).clock('clk').reset('rstn').syncReset()
+```
+如果再改为高电平复位
+```coffeescript
+	ff=reg(5).init(0).clock('clk').reset('rstn').syncReset().highReset()
+```
+所有寄存器属性相关的描述始终在同一行里面体现，有利于代码的维护
+
+---
+
+### 配置和代码分离,避免magic number
+
+推荐把配置信息维护在单独的配置json文档中，代码通过导入配置json生成数字逻辑，比如可以实现一个通用的浮点乘法模块，模块生成需要导入一个数据结构描述浮点位数的划分，通过维护不同的配置文件来生成代码。
+```coffeescript
+	f32_config={
+		sign_bit:31
+		exp_slice:[30,23]
+		factor_slice:[22,0]
+    }
+    f16_config={
+		sign_bit:15
+		exp_slice:[14,10]
+		factor_slice:[9,0]
+    }
+    assign f16_result=@fadd(f16_config,a16,b16)
+    assign f32_result=@fadd(f32_config,a32,b32)
+```
+
+---
+
+### 逻辑和集成分离,避免glue logic
+
+推荐用于做集成的模块只有channel连接，没有多余的逻辑，实现功能的模块只有函数调用，避免导入例化子模块，方便集成和后期的重构
 
 ---
 name: syntax
@@ -1214,11 +1416,10 @@ name: keyword
 
 class: center middle
 
-# Github Link
+# Git Link
 
 
-
-https://github.com/wujun51227/coffee-hdl.git
+https://e.coding.net/thriller/carbonite.git
 
 <img src="./assets/qrcode.png" alt="qrcode" />
 

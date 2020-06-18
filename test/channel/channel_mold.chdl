@@ -1,0 +1,100 @@
+class cell2 extends Module
+  constructor: ->
+    super()
+
+    Port(
+      bundle1:
+        dout: output(32)
+        din: input(32)
+    )
+
+  build: ->
+    assign @bundle1.dout=32'h12345678'
+
+class cell1 extends Module
+  constructor: ->
+    super()
+
+    if 1
+      Port(
+        bundle: bind('ch.bundle1')
+      )
+
+      CellMap(
+        u0_cell2: new cell2()
+      )
+
+      Channel(
+        ch: @mold(@u0_cell2)
+      )
+    else if 0
+      Port(
+        bundle: bind('ch.bundle1')
+      )
+
+      CellMap(
+        u0_cell2: new cell2()
+      )
+
+      Channel(
+        ch:
+          bundle1: channel()
+      )
+
+      @u0_cell2.bind(
+        bundle1: @ch.bundle1
+      )
+
+    else
+      Port(
+        bundle: bind('ch')
+      )
+
+      CellMap(
+        u0_cell2: new cell2()
+      )
+
+      Channel(
+        ch: channel()
+      )
+
+      @u0_cell2.bind(
+        bundle1: @ch
+      )
+
+
+
+  build: ->
+
+
+
+class ChannelAutoBind extends Module
+
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap(
+      u0_cell1: new cell1()
+    )
+
+    Channel(
+      ch1: @mold(@u0_cell1)
+    )
+
+
+  build: ->
+
+    initial
+      $sequence()
+      .delay(200) =>
+        @assert_eq(@ch1.bundle.dout,0x12345678,'test channel mold')
+        @display("%x",$(@ch1.bundle.dout))
+      .delay(200) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+module.exports=ChannelAutoBind
+
