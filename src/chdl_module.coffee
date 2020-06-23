@@ -45,9 +45,14 @@ class Module
   __instName: ''
 
   _cellmap: (v) ->
-    for name,inst of v
-      @__cells.push({name:name,inst:inst})
-      @[name]=inst
+    if _.isArray(v)
+      for item in v
+        @__cells.push({name:item.name,inst:item.inst})
+        @[item.name]=item.inst
+    else if _.isPlainObject(v)
+      for name,inst of v
+        @__cells.push({name:name,inst:inst})
+        @[name]=inst
 
   _getCell: (name)=>
     p=Object.getPrototypeOf(this)
