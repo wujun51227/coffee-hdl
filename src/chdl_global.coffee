@@ -12,6 +12,8 @@ waveFormat='vcd'
 
 obfuscate=false
 
+release=false
+
 untouch_modules=[]
 
 module.exports.setPrefix = (s)-> prefix=s
@@ -48,3 +50,8 @@ module.exports.setUntouchModules=(list) ->
   untouch_modules=list
 
 module.exports.getUntouchModules=(list) -> untouch_modules
+
+module.exports.setRelease= -> release=true
+
+module.exports.getRelease= -> release
+

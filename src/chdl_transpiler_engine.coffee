@@ -10,7 +10,7 @@ Path = require 'path'
 
 reloadList=[]
 
-headOver=5
+headOver=6
 
 debugExpr=''
 
@@ -1021,10 +1021,10 @@ cleanCache= ->
       delete require.cache[i.path]
   reloadList=[]
 
-buildCode= (fullFileName,text,debug=false,param=null) ->
+buildCode= (fullFileName,text,debug=false,param=[]) ->
   cleanCache()
   design=transToJs(fullFileName,text,debug)
-  return chdl_base.toVerilog(new design(param))
+  return chdl_base.toVerilog(new design(param...))
 
 buildLib= (fullFileName,text,debug=false,param=null) ->
   transToJs(fullFileName,text,debug)
@@ -1043,6 +1043,7 @@ transToJs= (fullFileName,text,debug=false) ->
   head +="{_expr}=require 'chdl_utils'\n"
   head +="{cat,expand,all1,all0,has0,has1,hasOdd1,hasEven1}=require 'chdl_operator'\n"
   head += "{infer,hex,oct,bin,dec}= require 'chdl_base'\n"
+  head += "global = require('chdl_global')\n"
   head += "{_importLib}= require 'chdl_transpiler_engine'\n"
   head += "module.paths.push('#{process.cwd()}')\n"
   text = head + text

@@ -42,6 +42,7 @@ program
   .option('--prefix <prefix to auto signal>')
   .option('--buildsim')
   .option('--nolineno')
+  .option('--release')
   .option('--force')
   .option('--lint')
   .option('--obfuscate')
@@ -89,6 +90,9 @@ cfg={
 if program.obfuscate
   global.setObfuscate()
 
+if program.release
+  global.setRelease()
+
 if program.untouch_modules
   global.setUntouchModules(program.untouch_modules.split(/,/))
 
@@ -118,7 +122,7 @@ if program.buildsim
 
 configBase(cfg)
 
-programParam=null
+programParam=[]
 
 if fs.existsSync("./chdl_config.json")
   programParam= require path.resolve("./chdl_config.json")
