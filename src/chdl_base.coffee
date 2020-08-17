@@ -289,6 +289,8 @@ buildSim= (buildName,inst)=>
 ###
 
 code_gen= (inst,allInst,first=false)=>
+  if first
+    inst.notUniq()
   buildName = do ->
     if inst.__specify
       if inst.__uniq

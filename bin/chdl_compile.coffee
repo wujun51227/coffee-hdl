@@ -28,6 +28,7 @@ program
   .option('-o, --output <dir name>')
   .option('-w, --watch')
   .option('-p, --param_file <file name>')
+  .option('--top_param <object string>')
   .option('-a, --autoClock')
   .option('-t, --tree')
   .option('-i, --info')
@@ -132,6 +133,12 @@ if program.param_file?
     programParam= require path.resolve(program.param_file)
   else
     log "Can not find file #{program.param_file}"
+
+if program.top_param?
+  try
+    programParam= JSON.parse('['+program.top_param+']')
+  catch e
+    log.error e
     
 processFile= (fileName,outDir) ->
   setPaths([path.dirname(path.resolve(fileName)),process.env.NODE_PATH.split(/:/)...,module.paths...])
