@@ -307,12 +307,12 @@ class Wire extends CircuitEl
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     item = _.find(@states,(i)=> i.label==name)
-    return @pack().next('==').next(item)
+    return Expr.start().next('(').next(packEl('wire',this)).next('==').next(item).next(')')
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     item = _.find(@states,(i)=> i.label==name)
-    return @pack().next('!=').next(item)
+    return Expr.start().next('(').next('!=').next(item).next(')')
 
   getState: (name)=>
     item = _.find(@states,(i)=> i.label==name)

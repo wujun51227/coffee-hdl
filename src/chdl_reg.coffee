@@ -421,16 +421,16 @@ class Reg extends CircuitEl
   nextStateIs: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     item = _.find(@states,(i)=> i.label==name)
-    Expr.start().next(@getDwire()).next('==').next(item)
+    Expr.start().next('(').next(@getDwire()).next('==').next(item).next(')')
 
   isState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     item = _.find(@states,(i)=> i.label==name)
-    Expr.start().next(packEl('reg',this)).next('==').next(item)
+    Expr.start().next('(').next(packEl('reg',this)).next('==').next(item).next(')')
 
   isNthState: (n)=>
     item=@states[n]
-    Expr.start().next(packEl('reg',this)).next('==').next(item)
+    Expr.start().next('(').next(packEl('reg',this)).next('==').next(item).next(')')
 
   getNthState: (n)=>
     throw new Error("index #{n} is not valid") if n>=@states.length or n<0
@@ -438,19 +438,19 @@ class Reg extends CircuitEl
 
   isLastState: ()=>
     item=_.last(@states)
-    Expr.start().next(packEl('reg',this)).next('==').next(item)
+    Expr.start().next('(').next(packEl('reg',this)).next('==').next(item).next(')')
 
   preSwitch: (prevState,nextState)=>
     throw new Error(prevState+' is not valid') unless @stateIsValid(prevState)
     throw new Error(nextState+' is not valid') unless @stateIsValid(nextState)
     previtem = _.find(@states,(i)=> i.label==prevState)
     nextitem = _.find(@states,(i)=> i.label==nextState)
-    Expr.start().next(packEl('reg',this)).next('==').next(previtem).next('&&').next(@getDwire()).next('==').next(nextitem)
+    Expr.start().next('(').next(packEl('reg',this)).next('==').next(previtem).next('&&').next(@getDwire()).next('==').next(nextitem).next(')')
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)
     item = _.find(@states,(i)=> i.label==name)
-    Expr.start().next(packEl('reg',this)).next('!=').next(item)
+    Expr.start().next('(').next(packEl('reg',this)).next('!=').next(item).next(')')
 
   setState: (name)=>
     throw new Error(name+'is not valid') unless @stateIsValid(name)
