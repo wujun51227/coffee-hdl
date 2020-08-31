@@ -87,16 +87,41 @@ class Reg extends CircuitEl
 
   config: (data)=>
     if data.resetMode?
-      @resetMode= data.resetMode
+      console.log '=========================='
+      console.log 'Deprecated, use syncReset/asyncReset:true'
+      console.log '=========================='
+    if data.resetName?
+      console.log '=========================='
+      console.log 'Deprecated, use reset:name'
+      console.log '=========================='
+    if data.clockName?
+      console.log '=========================='
+      console.log 'Deprecated, use clock:name'
+      console.log '=========================='
+    if data.resetValue?
+      console.log '=========================='
+      console.log 'Deprecated, use init:value'
+      console.log '=========================='
     if data.noReset?
+      console.log '=========================='
+      console.log 'Deprecated, use reset:null'
+      console.log '=========================='
+
+    if data.asyncReset?
+      @resetMode='async'
+    if data.syncReset?
+      @resetMode='sync'
+
+    if data.reset?
+      @resetName= data.reset
+    else if data.reset==null
       @resetMode= null
       @resetName=null
-    if data.resetName?
-      @resetName= data.resetName
-    if data.clockName?
-      @bindClockName= data.clockName
-    if data.resetValue?
-      @resetValue= data.resetValue
+
+    if data.clock?
+      @bindClockName= data.clock
+    if data.init?
+      @resetValue= data.init
     if data.negedge?
       @negClock=data.negedge
 

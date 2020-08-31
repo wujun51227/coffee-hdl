@@ -8,7 +8,7 @@ class RegSimple extends Module
       clear: input()
       aa:
         bb:
-          cc: output(9).asReg({noReset:true})
+          cc: output(9).asReg({reset:null})
       dd: output(9).asReg()
       en:
         notupdateEnable: input()
