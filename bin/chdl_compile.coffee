@@ -28,7 +28,6 @@ program
   .option('-o, --output <dir name>')
   .option('-w, --watch')
   .option('-p, --param_file <file name>')
-  .option('--top_param <object string>')
   .option('-a, --autoClock')
   .option('-t, --tree')
   .option('-i, --info')
@@ -48,6 +47,8 @@ program
   .option('--lint')
   .option('--obfuscate')
   .option('--untouch_modules <module names>')
+  .option('--config <config name>')
+  .option('--param <object string>')
   .option('--debug')
   .parse(process.argv)
 
@@ -126,7 +127,19 @@ configBase(cfg)
 programParam=[]
 
 if fs.existsSync("./chdl_config.json")
-  programParam= require path.resolve("./chdl_config.json")
+  config_obj = require path.resolve("./chdl_config.json")
+  if program.config?
+    if config_obj[program.config]?
+      programParam = config_obj[program.config]
+      log 'Use config name "'+program.config+'" to generate code'
+      log 'Parameter',JSON.stringify(programParam)
+    else
+      log "Can not find config name",program.config
+      process.exit()
+  else if config_obj.default?
+    programParam = config_obj.default
+    log 'Use config name "default" to generate code'
+    log 'Parameter',JSON.stringify(programParam)
 
 if program.param_file?
   if fs.existsSync(path.resolve(program.param_file))
@@ -134,9 +147,9 @@ if program.param_file?
   else
     log "Can not find file #{program.param_file}"
 
-if program.top_param?
+if program.param?
   try
-    programParam= JSON.parse('['+program.top_param+']')
+    programParam= JSON.parse('['+program.param+']')
   catch e
     log.error e
     
