@@ -53,5 +53,5 @@ module.exports.getUntouchModules=(list) -> untouch_modules
 
 module.exports.setRelease= -> release=true
 
-module.exports.getRelease= -> release
+module.exports.isRelease= -> release
 
