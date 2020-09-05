@@ -389,7 +389,7 @@ patchCode=(text)->
 
   patchList=[]
   for i,index in tokens
-    if i[0]=='IDENTIFIER' and (i[1]=='assign' or i[1]=='Net' or i[1]=='Dff')
+    if i[0]=='IDENTIFIER' and (i[1]=='consign' or i[1]=='assign' or i[1]=='Net' or i[1]=='Dff')
       lineNum=i[2].first_line
       callPos=i[2].last_column
       if tokens[index+1]?[0]=='CALL_START'
@@ -434,6 +434,20 @@ extractLogic = (tokens)->
       list =[
         ['@', '@', {range:[]}]
         ['PROPERTY', '_assign', {range:[]}]
+      ]
+
+      [callStart,callEnd]=findCallSlice(tokens,i)
+      patchLength=findAssignBlock(tokens,callEnd)
+      tokens.splice(callEnd,0,
+        [',',',',{range:[]}],
+        ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+      )
+      tokens.splice i, 1, list...
+      i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and token[1]=='consign'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_consign', {range:[]}]
       ]
 
       [callStart,callEnd]=findCallSlice(tokens,i)
@@ -504,6 +518,11 @@ extractLogic = (tokens)->
     #  tokens.splice i, 1, list...
     #  i+=list.length
     else if token[0] is 'IDENTIFIER' and (token[1]=='Net' or token[1]=='Dff')
+      sigAssign= do ->
+        if token[1]=='Net'
+          '_assign'
+        else if token[1]=='Dff'
+          '_consign'
       sigType = do ->
         if token[1]=='Net'
           '_localWire'
@@ -525,7 +544,7 @@ extractLogic = (tokens)->
           [ 'CALL_END',     ')',    {range:[]} ]
           [ 'TERMINATOR',   '\n',    {range:[]} ]
           ['@', '@', {range:[]}]
-          ['PROPERTY', '_assign', {range:[]}]
+          ['PROPERTY', sigAssign, {range:[]}]
           [ 'CALL_START',  '(',     {range:[]} ]
           ['IDENTIFIER',netName,{range:[]}]
           [',',',',{range:[]}],
@@ -545,7 +564,7 @@ extractLogic = (tokens)->
           [ 'CALL_END',     ')',    {range:[]} ]
           [ 'TERMINATOR',   '\n',    {range:[]} ]
           ['@', '@', {range:[]}]
-          ['PROPERTY', '_assign', {range:[]}]
+          ['PROPERTY', sigAssign, {range:[]}]
           [ 'CALL_START',  '(',     {range:[]} ]
           ['IDENTIFIER',netName,{range:[]}]
           [',',',',{range:[]}],

@@ -194,4 +194,6 @@ class Port extends Wire
 
   setShadowReg: (i)=> @shadowReg = i
 
+  isRegType: => @isReg
+
 module.exports=Port

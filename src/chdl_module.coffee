@@ -1046,7 +1046,27 @@ class Module
       list.push(cell.__instName)
       @_getPath(cell.__parentNode,list)
 
+  _consign: (signal,lineno=-1)=>
+    consign_fail=false
+    if signal.__type=='wire'
+      consign_fail=true
+    if signal.__type=='port' and !signal.isRegType()
+      consign_fail=true
+    if consign_fail
+      throw new Error("consign signal #{signal.getName()} is not reg type at line #{lineno}".red)
+    @_do_assign(signal,lineno)
+
   _assign: (signal,lineno=-1)=>
+    assign_warn=false
+    if signal.__type=='reg' and !signal.isVirtual()
+      assign_warn=true
+    if signal.__type=='port' and signal.isRegType()
+      assign_warn=true
+    if assign_warn
+      console.log("Recommend use 'consign' to update reg #{signal.getName()} at line #{lineno}".yellow)
+    @_do_assign(signal,lineno)
+
+  _do_assign: (signal,lineno=-1)=>
     self=this
     if _.isPlainObject(signal) or _.isArray(signal)
       return (block)=>

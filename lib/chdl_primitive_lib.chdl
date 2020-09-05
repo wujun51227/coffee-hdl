@@ -553,5 +553,5 @@ module.exports={
           if _.last(list).cond!=null
             list.push($cond() => $ stateReg)
           $if(stateReg.isState(src))
-            assign stateReg = $order(list)
+            consign stateReg = $order(list)
 }

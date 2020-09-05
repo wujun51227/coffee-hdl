@@ -58,8 +58,8 @@ class RegSimple extends Module
     width=sigIn.getWidth()
     d1 = reg(width,'sync')
     d2 = reg(width,'sync')
-    assign d1 = sigIn
-    assign d2 = d1
+    consign d1 = sigIn
+    consign d2 = d1
     return $ d2
 
   build: ->
@@ -89,28 +89,28 @@ class RegSimple extends Module
 
     assign @reg_out[0] = @ff0
 
-    assign @ff0 = @ff0
+    consign @ff0 = @ff0
 
-    assign @ff1 = 0b111111110
+    consign @ff1 = 0b111111110
     assign(@reg_out[1]) = @ff1.fromMsb(8)
 
     assign(@reg_out[2]) = @ff2
-    assign @ff2 = @ff2
+    consign @ff2 = @ff2
 
-    assign @ff3 = 0
+    consign @ff3 = 0
     assign(@reg_out[3]) = @ff3
 
     assign(@reg_out[4]) = @ff4
 
     assign(@reg_out[5]) = @ff5
-    assign @ff5 = 0x1ff
+    consign @ff5 = 0x1ff
 
     @ff1.drive(@reg_out[6])
 
     assign(@reg_out[7]) = @ff8
 
     assign @reg_out[8] = @ff9
-    assign @ff9 = 123
+    consign @ff9 = 123
 
     assign @reg_out[9] = @doSync(@ff1)
 
@@ -120,14 +120,14 @@ class RegSimple extends Module
     always
       @aa.bb.cc.pending(0)
       $if(@initEnable)
-        assign(@aa.bb.cc(0)) = 1
-        assign(@aa.bb.cc(8:1)) = 100
+        consign(@aa.bb.cc(0)) = 1
+        consign(@aa.bb.cc(8:1)) = 100
 
-    assign(@ff4) = @aa.bb.cc
+    consign(@ff4) = @aa.bb.cc
 
-    assign(@dd) = 100
+    consign(@dd) = 100
 
-    assign(@ff8) =>
+    consign(@ff8) =>
       $if(@ff6)
         $ @aa.bb.cc
       $elseif(@ff7)
