@@ -291,17 +291,12 @@ buildSim= (buildName,inst)=>
 code_gen= (inst,allInst,first=false)=>
   if first
     inst.notUniq()
-  buildName = do ->
-    if inst.__specify
-      if inst.__uniq
-        moduleIndex+=1
-        inst.__specifyModuleName+'__'+moduleIndex
-      else
-        inst.__specifyModuleName
-    else
-      get_module_build_name(inst)
+  buildName = inst._getBuildName()
+  if inst.__uniq
+    moduleIndex += 1
+    buildName = buildName+'__'+moduleIndex
   if first==false
-    if not global.getUntouchModules().includes(buildName)
+    if not global.getUntouchModules().includes(inst.constructor.name)
       buildName=blur(buildName)
   inst._overrideModuleName(buildName)
   log ('Build cell '+inst._getPath()+' ( '+buildName+' )').green

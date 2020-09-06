@@ -1142,5 +1142,11 @@ class Module
           connList.push {port:resetPort.elName,signal:@__defaultReset}
     return cellList
 
+  _getBuildName: ()->
+    baseName=@constructor.name
+    if @__specify
+      baseName=@__specifyModuleName
+
+    return baseName
 
 module.exports=Module
