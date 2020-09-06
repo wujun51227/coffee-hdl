@@ -1,6 +1,7 @@
-_       = require 'lodash'
-log    =  require 'fancy-log'
-colors   = require 'colors'
+_      = require 'lodash'
+log    = require 'fancy-log'
+colors = require 'colors'
+fs     = require 'fs'
 
 Expr    = require('chdl_expr')
 Reg     = require('chdl_reg')
@@ -310,6 +311,9 @@ code_gen= (inst,allInst,first=false)=>
 
   for i in getCellList(inst)
     code_gen(i.inst,allInst)
+
+  if first and inst.dump?
+    fs.writeFileSync(buildName+'.dump.json',JSON.stringify(inst.dump(),null,2),'utf8')
 
   instEnv.register(inst)
   allInst.push(inst)
