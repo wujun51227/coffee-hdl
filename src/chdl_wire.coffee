@@ -63,6 +63,7 @@ class Wire extends CircuitEl
   setLocal: => @local=true
 
   setVirtual: => @virtual=true
+  setWireType: => @virtual=false
   isVirtual: => @virtual
 
   setGlobal: => @local=false
