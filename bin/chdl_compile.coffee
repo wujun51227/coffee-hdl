@@ -49,6 +49,7 @@ program
   .option('--untouch_modules <module names>')
   .option('--config <config name>')
   .option('--param <object string>')
+  .option('--rename <new top name>')
   .option('--debug')
   .parse(process.argv)
 
@@ -121,6 +122,9 @@ if program.iverilog
 
 if program.buildsim
   global.setSim()
+
+if program.rename?
+  global.setTopName(program.rename)
 
 configBase(cfg)
 

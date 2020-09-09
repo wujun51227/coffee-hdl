@@ -293,6 +293,10 @@ code_gen= (inst,allInst,first=false)=>
   if first
     inst.notUniq()
   buildName = inst._getBuildName()
+
+  if first and global.getTopName()?
+    buildName = global.getTopName()
+
   if inst.__uniq
     moduleIndex += 1
     buildName = buildName+'__'+moduleIndex

@@ -16,6 +16,8 @@ release=false
 
 untouch_modules=[]
 
+topName = null
+
 module.exports.setPrefix = (s)-> prefix=s
 
 module.exports.getPrefix = -> prefix
@@ -55,3 +57,6 @@ module.exports.setRelease= -> release=true
 
 module.exports.isRelease= -> release
 
+module.exports.setTopName = (n)-> topName=n
+
+module.exports.getTopName = -> topName
