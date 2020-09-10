@@ -15,7 +15,7 @@ Verilog  = require('verilog')
 {table} = require 'table'
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
-{getValue,packEl,simBuffer,printBuffer,toSignal,toFlatten} = require('chdl_utils')
+{getValue,packEl,simBuffer,printBuffer,dumpBuffer,toSignal,toFlatten} = require('chdl_utils')
 
 moduleIndex=0
 
@@ -317,7 +317,10 @@ code_gen= (inst,allInst,first=false)=>
     code_gen(i.inst,allInst)
 
   if first and inst.dump?
-    fs.writeFileSync(buildName+'.dump.json',JSON.stringify(inst.dump(),null,2),'utf8')
+    dumpBuffer.setName(buildName,null)
+    dumpBuffer.add JSON.stringify(inst.dump(),null,2)
+    dumpBuffer.flush()
+    #fs.writeFileSync(buildName+'.dump.json',JSON.stringify(inst.dump(),null,2),'utf8')
 
   instEnv.register(inst)
   allInst.push(inst)

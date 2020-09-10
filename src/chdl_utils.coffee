@@ -140,14 +140,19 @@ outBufferGen= ->
   list=[]
   name=''
   inst=null
-  dump= -> {
-    name: name
-    list: list
-    info:
-      ports: dumpInfo(inst.__ports)
-      regs: dumpInfo(inst.__regs)
-      wires: dumpInfo(inst.__wires)
-  }
+  dump= ->
+    info = null
+    if inst?
+      info= {
+        ports: dumpInfo(inst.__ports)
+        regs: dumpInfo(inst.__regs)
+        wires: dumpInfo(inst.__wires)
+      }
+    return {
+      name: name
+      list: list
+      info: info
+    }
   return {
     clearBin: ->
       bin.length=0
@@ -189,6 +194,7 @@ outBufferGen= ->
       }
   }
 
+module.exports.dumpBuffer = outBufferGen()
 module.exports.printBuffer = outBufferGen()
 module.exports.simBuffer = outBufferGen()
 

@@ -5,7 +5,7 @@ path = require 'path'
 _ = require 'lodash'
 log = require 'fancy-log'
 colors = require 'colors'
-{simBuffer,printBuffer}=require 'chdl_utils'
+{simBuffer,printBuffer,dumpBuffer}=require 'chdl_utils'
 {headOver,buildCode,setPaths}=require 'chdl_transpiler_engine'
 {configBase,resetBase}=require 'chdl_base'
 global  = require('chdl_global')
@@ -173,6 +173,14 @@ processFile= (fileName,outDir) ->
           else
             i.name
         fs.writeFileSync(fname+'.sim.js', i.list.join("\n"),'utf8')
+      for i,index in dumpBuffer.getBin()
+        code= i.list.join("\n")
+        fname= do ->
+          if outDir?
+            outDir+'/'+i.name
+          else
+            i.name
+        fs.writeFileSync(fname+'.dump.json',code,'utf8')
       for i,index in printBuffer.getBin()
         code= i.list.join("\n")
         fname= do ->
@@ -243,6 +251,7 @@ if program.watch
   watch.on('change',(path)->
     resetBase()
     printBuffer.clearBin()
+    dumpBuffer.clearBin()
     simBuffer.clearBin()
     banner(fileName)
     processFile(fileName,outDir.replace(/\/$/,''))
