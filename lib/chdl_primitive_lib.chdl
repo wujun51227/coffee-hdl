@@ -22,7 +22,6 @@ module.exports={
     assign(selSig)
       $if(select) => $ sig1
       $else => $ sig2
-      $endif
     return $ selSig
     
   $channelMux:(select,outChannel,inChannelList...)->
@@ -216,7 +215,6 @@ module.exports={
           $ item[1]
         $else
           $ sum
-        $endif
     )
 
   $inc: (sig,value=1)->
@@ -259,9 +257,9 @@ module.exports={
     d1 = reg(width,'sync').clock(clock).reset(reset)
     d2 = reg(width,'sync').clock(clock).reset(reset)
     d3 = reg(width,'sync').clock(clock).reset(reset)
-    assign(d1) = sigIn
-    assign(d2) = d1
-    assign(d3) = d2
+    consign(d1) = sigIn
+    consign(d2) = d1
+    consign(d3) = d2
     return $ d3
 
   $bundleAssign:(from,to)->
@@ -300,7 +298,6 @@ module.exports={
           assign(item) = din
         else
           assign(array[i]) = din
-      $endif
 
   $arrayDecode: (array,select,width=null,field=null)->
     len=array.length
@@ -314,26 +311,25 @@ module.exports={
 
   $rise: (sig,clock='',reset='')->
     d1 = reg(1,'r_').clock(clock).reset(reset)
-    assign(d1) = sig
+    consign (d1) = sig
     return $ (sig & (!d1))
 
   $sample: (sig,clock='',reset='')->
     s = reg(sig.getWidth(),'sample_').clock(clock).reset(reset)
-    assign s = sig
+    consign s = sig
     return $ s
 
   $fall: (sig,clock='',reset='')->
     d1 = reg(1,'f_').clock(clock).reset(reset)
-    assign(d1) = sig
+    consign (d1) = sig
     return $ ((!sig) & d1)
 
   $divider: (n,clk='',reset='')->
     width=Math.ceil(Math.log2(n))
     cnt = reg(width,'cnt').clock(clk).reset(reset)
-    assign(cnt)
+    consign(cnt)
       $if(cnt=={n-1}) => $ 0
       $else => $ cnt+1
-      $endif
     return  $ cnt=={n-1}
 
   $delay: (n,sig,clock='',reset='')->
@@ -341,22 +337,20 @@ module.exports={
     list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
     for i in _.range(n)
       if i==0
-        assign(list[0]) = sig
+        consign(list[0]) = sig
       else
-        assign(list[i]) = list[i-1]
+        consign(list[i]) = list[i-1]
     return $ list[n-1]
 
   $count: (n,enable,clear,clock='',reset='')->
     width=Math.ceil(Math.log2(n))
     cnt = reg(width,'cnt').clock(clock).reset(reset)
-    assign(cnt)
+    consign(cnt)
       $if(clear) => $ 0
       $elseif(enable)
         $if(cnt=={n-1}) => $ 0
         $else => $ cnt+1
-        $endif
       $else => $ cnt
-      $endif
     return  $ cnt=={n-1}
 
   $count1: (sig)->
@@ -368,13 +362,12 @@ module.exports={
     latch = reg(1,'hold').clock(clock).reset(reset)
     latch_clear = reg(1,'clear').clock(clock).reset(reset)
     assign(out) = (sig | latch)&(!latch_clear)
-    assign latch_clear = clear
+    consign latch_clear = clear
     always
       $if(clear)
-        assign(latch) = 0
+        consign(latch) = 0
       $elseif(sig==1)
-        assign(latch) = 1
-      $endif
+        consign(latch) = 1
     return  $ out
 
   $hold0: (sig,clear,clock='',reset='')->
@@ -382,13 +375,12 @@ module.exports={
     latch = reg(1,'hold').init(1).clock(clock).reset(reset)
     latch_clear = reg(1,'clear').clock(clock).reset(reset)
     assign(out) = (sig & latch) | latch_clear
-    assign latch_clear = clear
+    consign latch_clear = clear
     always
       $if(clear)
-        assign(latch) = 1
+        consign (latch) = 1
       $elseif(sig==0)
-        assign(latch) = 0
-      $endif
+        consign (latch) = 0
     return  $ out
 
   $holdData: (sig,enable,initValue=null,clock='',reset='')->
@@ -397,12 +389,10 @@ module.exports={
     assign(out)
       $if(enable) => $ sig
       $else => $ latch
-      $endif
 
     always
       $if(enable)
-        assign(latch) = sig
-      $endif
+        consign(latch) = sig
     return  $ out
 
   $oneOf: (sig,list)->
