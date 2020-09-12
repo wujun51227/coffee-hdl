@@ -316,7 +316,7 @@ code_gen= (inst,allInst,first=false)=>
   for i in getCellList(inst)
     code_gen(i.inst,allInst)
 
-  if first and inst.dump?
+  if inst.dump?
     dumpBuffer.setName(buildName,null)
     dumpBuffer.add JSON.stringify(inst.dump(),null,2)
     dumpBuffer.flush()
@@ -570,8 +570,16 @@ getVerilogParameter=(inst)->
       list.push(".#{i.key}(#{i.value})")
     return " #(\n  "+list.join(",\n  ")+"\n) "
 
-module.exports.buildGlobalModule=(globalModule)->
-  inst=new globalModule()
+module.exports.buildCompanyModule=(companyModule,params...)->
+  inst=new companyModule(params...)
+  name=inst.getModuleName() ? inst.constructor.name
+  if not globalModuleCache[name]?
+    globalModuleCache[name]=inst
+    toVerilog(inst)
+  return globalModuleCache[name]
+
+module.exports.buildGlobalModule=(globalModule,params...)->
+  inst=new globalModule(params...)
   inst._setGlobal()
   name=inst.getModuleName() ? inst.constructor.name
   if not globalModuleCache[name]?
