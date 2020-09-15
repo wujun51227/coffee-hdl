@@ -97,14 +97,26 @@ class Module
           inst.link(this,toHier(k,name))
 
   _channel: (obj) ->
-    for k,v of obj
-      @__channels[k]=v
-      if this[k]?
-        throw new Error('Channel name conflicted '+k)
-      else
-        for [name,inst] in toFlatten(v,'channel')
-          inst.link(this,toHier(k,name))
-        this[k]=v
+    if _.isArray(obj)
+      for item in obj
+        k=item.name
+        v=item.inst
+        @__channels[k]=v
+        if this[k]?
+          throw new Error('Channel name conflicted '+k)
+        else
+          for [name,inst] in toFlatten(v,'channel')
+            inst.link(this,toHier(k,name))
+          this[k]=v
+    else
+      for k,v of obj
+        @__channels[k]=v
+        if this[k]?
+          throw new Error('Channel name conflicted '+k)
+        else
+          for [name,inst] in toFlatten(v,'channel')
+            inst.link(this,toHier(k,name))
+          this[k]=v
     for {inst,table} in @__delayBindList
       inst.bind(table)
     @__delayBindList=[]
@@ -215,6 +227,7 @@ class Module
     @__cells      =[]
     @__uniq       = true
     @__global     = false
+    @__company    = false
 
     @__bindChannels=[]
     @__defaultClock=null
@@ -240,6 +253,11 @@ class Module
     @setCombModule()
 
   _isGlobal: -> @__global
+
+  _setCompany: ->
+    @__company=true
+
+  _isCompany: -> @__company
 
   _setParentNode: (node)->
     @__parentNode=node

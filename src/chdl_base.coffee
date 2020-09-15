@@ -294,7 +294,7 @@ code_gen= (inst,allInst,first=false)=>
     inst.notUniq()
   buildName = inst._getBuildName()
 
-  if first and global.getTopName()?
+  if first and (!inst._isCompany()) and global.getTopName()?
     buildName = global.getTopName()
 
   if inst.__uniq
@@ -572,6 +572,7 @@ getVerilogParameter=(inst)->
 
 module.exports.buildCompanyModule=(companyModule,params...)->
   inst=new companyModule(params...)
+  inst._setCompany()
   name=inst.getModuleName() ? inst.constructor.name
   if not globalModuleCache[name]?
     globalModuleCache[name]=inst

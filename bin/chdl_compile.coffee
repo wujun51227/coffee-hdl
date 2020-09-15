@@ -1,5 +1,8 @@
 #!/usr/bin/env coffee
 
+require('json5/lib/register')
+JSON5    = require('json5')
+
 fs = require 'fs'
 path = require 'path'
 _ = require 'lodash'
@@ -130,8 +133,13 @@ configBase(cfg)
 
 programParam=[]
 
-if fs.existsSync("./chdl_config.json")
+config_obj=null
+if fs.existsSync("./chdl_config.json5")
+  config_obj = require path.resolve("./chdl_config.json5")
+else if fs.existsSync("./chdl_config.json")
   config_obj = require path.resolve("./chdl_config.json")
+
+if config_obj?
   if program.config?
     if config_obj[program.config]?
       programParam = config_obj[program.config]
