@@ -84,7 +84,7 @@ class RegSimple extends Module
          $cond(@clear==0) => $ @ff13.getState('idle')
        ]
 
-    assign @reg_out[12] = @ff12.isState('write')
+    assign @reg_out[12] = @ff12.isState('write','idle')
     assign @reg_out[13] = @ff13.isState('pending')
 
     assign @reg_out[0] = @ff0

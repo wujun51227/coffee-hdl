@@ -305,10 +305,23 @@ class Wire extends CircuitEl
     else
       throw new Error('Set sateMap error')
 
-  isState: (name)=>
-    throw new Error(name+' is not valid') unless @stateIsValid(name)
-    item = _.find(@states,(i)=> i.label==name)
-    return Expr.start().next('(').next(packEl('wire',this)).next('==').next(item).next(')')
+  isState: (names...)=>
+    tmp=Expr.start().next('(')
+    if names.length>1
+      for name,index in names
+        throw new Error(name+' is not valid') unless @stateIsValid(name)
+        item=_.find(@states,(i)=> i.label==name)
+        if index==0
+          tmp=tmp.next('(').next(packEl('wire',this)).next('==').next(item).next(')').next('||')
+        else
+          tmp=tmp.next('(').next(packEl('wire',this)).next('==').next(item).next(')')
+    else if names.length==1
+      name = names[0]
+      throw new Error(name+' is not valid') unless @stateIsValid(name)
+      item=_.find(@states,(i)=> i.label==name)
+      tmp=tmp.next(packEl('wire',this)).next('==').next(item)
+    tmp.next(')')
+
 
   notState: (name)=>
     throw new Error(name+' is not valid') unless @stateIsValid(name)

@@ -314,6 +314,13 @@ module.exports={
     consign (d1) = sig
     return $ (sig & (!d1))
 
+  $capture: (sig,enable,clock='',reset='')->
+    s = reg(sig.getWidth(),'capture_').clock(clock).reset(reset)
+    consign s
+      $if(enable) => $ sig
+      $else => $ s
+    return $ s
+
   $sample: (sig,clock='',reset='')->
     s = reg(sig.getWidth(),'sample_').clock(clock).reset(reset)
     consign s = sig

@@ -448,10 +448,22 @@ class Reg extends CircuitEl
     item = _.find(@states,(i)=> i.label==name)
     Expr.start().next('(').next(@getDwire()).next('==').next(item).next(')')
 
-  isState: (name)=>
-    throw new Error(name+' is not valid') unless @stateIsValid(name)
-    item = _.find(@states,(i)=> i.label==name)
-    Expr.start().next('(').next(packEl('reg',this)).next('==').next(item).next(')')
+  isState: (names...)=>
+    tmp=Expr.start().next('(')
+    if names.length>1
+      for name,index in names
+        throw new Error(name+' is not valid') unless @stateIsValid(name)
+        item=_.find(@states,(i)=> i.label==name)
+        if index==0
+          tmp=tmp.next('(').next(packEl('reg',this)).next('==').next(item).next(')').next('||')
+        else
+          tmp=tmp.next('(').next(packEl('reg',this)).next('==').next(item).next(')')
+    else if names.length==1
+      name = names[0]
+      throw new Error(name+' is not valid') unless @stateIsValid(name)
+      item=_.find(@states,(i)=> i.label==name)
+      tmp=tmp.next(packEl('reg',this)).next('==').next(item)
+    tmp.next(')')
 
   isNthState: (n)=>
     item=@states[n]
