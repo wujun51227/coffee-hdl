@@ -1,0 +1,98 @@
+_ = require 'lodash'
+
+class ahb_sram_wrapper extends Module
+  constructor: (aw,dw,bn)->
+    super()
+
+    @specifyModuleName("ahb_sram_wrapper")
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    @aw=aw
+    @dw=dw
+    @bn=bn
+
+    Port(
+      hclk: input().asClock()
+      sram:
+        SRAMRDATA : output(@dw)
+        SRAMADDR  : input(@aw)
+        SRAMWEN   : input(@bn)
+        SRAMWDATA : input(@dw)
+        SRAMCS    : input()
+    )
+
+    Mem(
+      mem:@createArray(@bn,=>vec(@dw/@bn,2**@aw))
+    )
+
+  build: ->
+    latch={
+      ce: reg(1,'ce').reset(null)
+      we: reg(1,'we').reset(null)
+      addr :reg(@aw,'addr').reset(null)
+      wdata:reg(@dw,'wdata').reset(null)
+      wm   :reg(@bn,'wm').reset(null)
+    }
+
+    assign(latch.ce)    = @sram.SRAMCS
+    assign(latch.we)    = (|@sram.SRAMWEN)
+    assign(latch.wm)    = @sram.SRAMWEN
+    assign(latch.addr)  = @sram.SRAMADDR
+    assign(latch.wdata) = @sram.SRAMWDATA
+
+    bit_width=@bn
+    byte_width=@dw/@bn
+
+    always
+      $if(latch.ce && latch.we)
+        for i in _.range(bit_width)
+          $if(latch.wm(i))
+            @mem[i].set(latch.addr,$ latch.wdata(i*byte_width,byte_width))
+
+    out_data = @createArray(bit_width,=>wire(byte_width))
+
+    for i in _.range(bit_width)
+      assign out_data[i]
+        $if(latch.ce && !latch.we)
+          $ @mem[i].get(latch.addr.fromLsb(@aw))
+        $else
+          $ 0
+
+    assign @sram.SRAMRDATA = cat(out_data.reverse()...)
+
+    initial
+      $sequence()
+      .delay(1000) =>
+        @assert_report()
+        @sim_finish()
+      .end()
+
+class ahb_to_sram extends Module
+  constructor: (aw,bus_width)->
+    super()
+
+    @addrWidth=aw ? 16
+    @bus_width =bus_width ? 32
+
+    @bank_num = @bus_width/8
+    @offset_width = @numWidth(@bank_num-1)
+
+    Port(
+      hclk: input().asClock()
+      hresetn: input().asReset()
+
+      sram:
+        SRAMRDATA : input(@bus_width)
+        SRAMADDR  : output(@addrWidth-@offset_width)
+        SRAMWEN   : output(@bank_num)
+        SRAMWDATA : output(@bus_width)
+        SRAMCS    : output()
+    )
+
+    CompanyModule(ahb_sram_wrapper,@addrWidth,@bus_width,@bank_num)
+
+
+  build:->
+
+module.exports=ahb_to_sram
