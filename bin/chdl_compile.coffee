@@ -51,6 +51,7 @@ program
   .option('--obfuscate')
   .option('--untouch_modules <module names>')
   .option('--config <config name>')
+  .option('--config_file  <config file name>')
   .option('--param <object string>')
   .option('--rename <new top name>')
   .option('--debug')
@@ -134,24 +135,22 @@ configBase(cfg)
 programParam=[]
 
 config_obj=null
-if fs.existsSync("./chdl_config.json5")
+if program.config_file?
+  config_obj = require path.resolve(program.config_file)
+else if fs.existsSync("./chdl_config.json5")
   config_obj = require path.resolve("./chdl_config.json5")
 else if fs.existsSync("./chdl_config.json")
   config_obj = require path.resolve("./chdl_config.json")
 
 if config_obj?
   if program.config?
-    if config_obj[program.config]?
-      programParam = config_obj[program.config]
+    programParam = _.get(config_obj,program.config,null)
+    if programParam?
       log 'Use config name "'+program.config+'" to generate code'
       log 'Parameter',JSON.stringify(programParam)
     else
       log "Can not find config name",program.config
       process.exit()
-  else if config_obj.default?
-    programParam = config_obj.default
-    log 'Use config name "default" to generate code'
-    log 'Parameter',JSON.stringify(programParam)
 
 if program.param_file?
   if fs.existsSync(path.resolve(program.param_file))
