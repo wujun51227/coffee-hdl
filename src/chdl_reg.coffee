@@ -41,7 +41,13 @@ class Reg extends CircuitEl
   isVirtual: => false
 
   init: (v)=>
-    @resetValue=v ? 0
+    if v?
+      if v<0
+        @resetValue=Vnumber.hex(@width,2n**BigInt(@width)+BigInt(v))
+      else
+        @resetValue=v
+    else
+      @resetValue=0
     return packEl('reg',this)
 
   clock:(clock)=>
