@@ -17,6 +17,9 @@ module.exports={
   sim_finish: ()->
     @verilog("$finish;")
 
+  random: (seed='')->
+    return $("$urandom#{seed}")
+
   fopen:(name=null)->
     fileName = name ? @getHierarchy()+'.dump'
     handle=vreg(32)

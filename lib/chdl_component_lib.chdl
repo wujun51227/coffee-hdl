@@ -327,7 +327,7 @@ module.exports={
     else
       roundReg = reg(width,'round')
     Net(ret,width)
-    assign(roundReg)
+    consign(roundReg)
       $if(enable)
         $if(ret==list.length-1) => $ 0
         $else => $ ret+1

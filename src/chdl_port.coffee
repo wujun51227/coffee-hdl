@@ -111,14 +111,20 @@ class Port extends Wire
       @shadowReg.slice(n,m)
     else
       if n.constructor.name=='Expr'
-        wire= Wire.create(toNumber(n.str)-toNumber(m.str)+1)
+        width=toNumber(n.str)-toNumber(m.str)+1
+        if width==@width
+          return packEl('wire',this)
+        wire= Wire.create(width)
         wire.link(@cell,@hier)
         wire.setLsb(m.str)
         wire.setMsb(n.str)
         wire.share=@share
         return packEl('wire',wire)
       else
-        wire= Wire.create(toNumber(n)-toNumber(m)+1)
+        width=toNumber(n)-toNumber(m)+1
+        if width==@width
+          return packEl('wire',this)
+        wire= Wire.create(width)
         wire.link(@cell,@hier)
         wire.setLsb(m)
         wire.setMsb(n)
