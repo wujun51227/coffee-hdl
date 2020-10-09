@@ -252,14 +252,20 @@ class Reg extends CircuitEl
 
   slice: (n,m)=>
     if n.constructor?.name=='Expr'
-      reg= Reg.create(toNumber(n.str)-toNumber(m.str)+1)
+      width=toNumber(n.str)-toNumber(m.str)+1
+      if width==@width
+        return packEl('reg',this)
+      reg= Reg.create(width)
       reg.link(@cell,@hier)
       reg.setMsb(n.str)
       reg.setLsb(m.str)
       reg.share=@share
       return packEl('reg',reg)
     else
-      reg= Reg.create(toNumber(n)-toNumber(m)+1)
+      width=toNumber(n)-toNumber(m)+1
+      if width==@width
+        return packEl('reg',this)
+      reg= Reg.create(width)
       reg.link(@cell,@hier)
       reg.setMsb(n)
       reg.setLsb(m)

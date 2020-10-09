@@ -86,20 +86,20 @@ module.exports={
     tx_data= reg(data.getWidth(),'tx_data').clock(clock).reset(reset)
     always
       $if(valid)
-        assign tx_data = data
-        assign valid_latch = 1
+        consign tx_data = data
+        consign valid_latch = 1
       $elseif(done)
-        assign valid_latch = 0
+        consign valid_latch = 0
 
     tx_valid = reg(1,'tx_valid').clock(clock).reset(reset)
     always
       $sequence('handshake_tx',clock,reset)
         .init (next)=>
           $if(next)
-            assign tx_valid=1
+            consign tx_valid=1
         .wait($ !ack_sync && valid_latch) (trans,next)=>
           $if(next)
-            assign tx_valid=0
+            consign tx_valid=0
             assign done = 1
         .posedge(ack_sync) =>
         .end()
@@ -119,13 +119,13 @@ module.exports={
       $sequence('handshake_rx',clock,reset)
         .init (next)=>
           $if(next)
-            assign ack=1
+            consign ack=1
         .posedge(valid_sync) (trans,next)=>
           $if(trans)
             assign rx_data=data
             assign done = 1
           $if(next)
-            assign ack=0
+            consign ack=0
         .wait($ valid_sync==0) =>
         .end()
     return {
@@ -327,7 +327,7 @@ module.exports={
     else
       roundReg = reg(width,'round')
     Net(ret,width)
-    assign(roundReg)
+    consign(roundReg)
       $if(enable)
         $if(ret==list.length-1) => $ 0
         $else => $ ret+1
