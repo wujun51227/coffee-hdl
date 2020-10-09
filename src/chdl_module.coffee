@@ -13,11 +13,10 @@ log    =  require 'fancy-log'
 uuid  = require 'uuid/v1'
 colors   = require 'colors'
 
-localCnt=0
 
 _id=(name)=>
-  ret="#{name}_#{localCnt}"
-  localCnt+=1
+  ret="#{name}_#{global.getIdCnt()}"
+  global.incrIdCnt()
   return ret
 
 sharpToDot = (s)->  s.replace(/#/g,'.')

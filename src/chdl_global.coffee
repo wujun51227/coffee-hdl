@@ -18,6 +18,8 @@ untouch_modules=[]
 
 topName = null
 
+idCnt=0
+
 module.exports.setPrefix = (s)-> prefix=s
 
 module.exports.getPrefix = -> prefix
@@ -60,3 +62,11 @@ module.exports.isRelease= -> release
 module.exports.setTopName = (n)-> topName=n
 
 module.exports.getTopName = -> topName
+
+module.exports.incrIdCnt= ->
+  idCnt+=1
+  return idCnt
+
+module.exports.setIdCnt= (v)-> idCnt=v
+
+module.exports.getIdCnt= -> idCnt
