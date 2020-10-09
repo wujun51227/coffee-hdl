@@ -1044,8 +1044,7 @@ pushToReload=(s,type='user')->
 
 cleanCache= ->
   for i in reloadList
-    if i.type=='user'
-      delete require.cache[i.path]
+    delete require.cache[i.path]
   reloadList=[]
 
 buildCode= (fullFileName,text,debug=false,param=[]) ->
