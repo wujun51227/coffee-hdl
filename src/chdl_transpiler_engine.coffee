@@ -1130,7 +1130,12 @@ importLib=(path,dirname)->
     list.push(process.env.NODE_PATH.split(/:/)...)
     for i in list
       if Path.extname(path)=='.chdl'
-        fullName= Path.resolve(i+'/'+path+'.js')
+        chdlFullName=Path.resolve(i+'/'+path)
+        jsFullName=Path.resolve(i+'/'+path+'.js')
+        if fs.existsSync(chdlFullName) and (not fs.existsSync(jsFullName))
+          text=fs.readFileSync(chdlFullName, 'utf-8')
+          transToJs(chdlFullName,text,false)
+        fullName=jsFullName
       else
         fullName= Path.resolve(i+'/'+path)
       if fs.existsSync(fullName)
