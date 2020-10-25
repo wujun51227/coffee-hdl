@@ -15,7 +15,10 @@ module.exports={
     #return (channel() for i in [0...number])
 
   numWidth: (number)->
-    Math.floor(Math.log2(number))+1
+    if number==0
+      return 1
+    else
+      Math.floor(Math.log2(number))+1
 
   $sigMux:(select,sig1,sig2)->
     selSig=wire(sig1.getWidth(),'sel')

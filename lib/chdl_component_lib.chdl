@@ -14,29 +14,29 @@ module.exports={
     always
       ready.pending(0)
       $if(clear)
-        assign index = 0
+        consign index = 0
       $elseif(valid)
         $if(index==ratio*2-1)
-          assign ready = 1
-          assign index = 0
-          assign pingpong=0
+          consign ready = 1
+          consign index = 0
+          consign pingpong=0
         $elseif(index==ratio-1)
-          assign ready = 1
-          assign index = index + 1
-          assign pingpong=1
+          consign ready = 1
+          consign index = index + 1
+          consign pingpong=1
         $else
-          assign index = index + 1
+          consign index = index + 1
 
     always_if(valid)
       $arrayMuxSet(data_array,index,data)
 
     always
       $if(clear)
-        assign ready_cnt = 0
+        consign ready_cnt = 0
       $elseif(ready)
-        assign ready_cnt = ratio-1
+        consign ready_cnt = ratio-1
       $elseif(ready_cnt!=0)
-        assign ready_cnt = ready_cnt - 1
+        consign ready_cnt = ready_cnt - 1
 
     Net ready_out = ready|(ready_cnt!=0)
 
@@ -65,10 +65,10 @@ module.exports={
     always
       $if(pop)
         $if(pop_cnt==pop_num-1)
-          assign pop_cnt = 0
+          consign pop_cnt = 0
           assign pop_word = 1
         $else
-          assign pop_cnt = pop_cnt + 1
+          consign pop_cnt = pop_cnt + 1
     always
       for i in _.range(pop_num)
         $if(i==pop_cnt)
@@ -144,9 +144,9 @@ module.exports={
       for j in _.range(size)
         for k in _.range(size)
           $if(update_entry&&(j==update_index)&&(k!=update_index))
-            assign matrix[j](k) = 1
+            consign matrix[j](k) = 1
           $elseif(update_entry&&(k==update_index))
-            assign matrix[j](k) = 0
+            consign matrix[j](k) = 0
           #$else
           #  assign matrix[j](k) = matrix[j](k)
 
@@ -157,7 +157,7 @@ module.exports={
     
     Net(lru_out,width) = $order(condList)
 
-    assign lru_hold = lru_out
+    consign lru_hold = lru_out
 
     return $ lru_out
 
@@ -186,45 +186,45 @@ module.exports={
 
     always
       $if(clear)
-        assign(empty_flag) = 1
-        assign(prefetched) = 0
+        consign(empty_flag) = 1
+        consign(prefetched) = 0
       $else
-        assign(empty_flag) = !next_level
+        consign(empty_flag) = !next_level
         $if(cat(pop,read)==2'b01')
-          assign(prefetched) = 1
+          consign(prefetched) = 1
         $elseif(cat(pop,read)==2'b10')
-          assign(prefetched) = 0
+          consign(prefetched) = 0
 
     Net(rdata,width) = $arrayDecode(rff_data,raddr)
 
     always_if(read)
-      assign(rd_data) = rdata
+      consign(rd_data) = rdata
 
     always_if(push)
       $arrayMuxSet(rff_data,waddr,din)
 
     always
       $if(clear)
-        assign(waddr) = 0
-        assign(raddr) = 0
-        assign(level) = 0
-        assign(full)  = 0
+        consign(waddr) = 0
+        consign(raddr) = 0
+        consign(level) = 0
+        consign(full)  = 0
       $else
-        assign(level)   = next_level
+        consign(level)   = next_level
         if(Exponential_Full_Flag)
-          assign(full)    = next_level(addrWidth)
+          consign(full)    = next_level(addrWidth)
           $if(push)
-            assign(waddr) = waddr+1
+            consign(waddr) = waddr+1
           $if(read)
-            assign(raddr) = raddr+1
+            consign(raddr) = raddr+1
         else
-          assign(full) = depth==next_level
+          consign(full) = depth==next_level
           $if(push)
-            assign(waddr)
+            consign(waddr)
               $if((depth-1)==waddr) => $ 0
               $else => $ waddr+1
           $if(read)
-            assign(raddr)
+            consign(raddr)
               $if((depth-1)==raddr) => $ 0
               $else => $ raddr+1
 
@@ -272,36 +272,42 @@ module.exports={
 
     Net r_or=hasOdd1(r_code.fromMsb(2))
     Net w_or=hasOdd1(w_code.fromMsb(2))
-    Net(rd_addr,addrWidth) = cat( r_or , r_code.fromLsb(addrWidth-1))
-
-    Net(wr_addr,addrWidth) = cat( w_or , w_code.fromLsb(addrWidth-1))
+    if addrWidth == 1
+      Net(rd_addr,addrWidth) = r_or
+      Net(wr_addr,addrWidth) = w_or
+    else
+      Net(rd_addr,addrWidth) = cat( r_or , r_code.fromLsb(addrWidth-1))
+      Net(wr_addr,addrWidth) = cat( w_or , w_code.fromLsb(addrWidth-1))
 
     always
       $if(cat(pop,read)==2'b01')
-        assign(prefetched) = 1
+        consign(prefetched) = 1
       $elseif(cat(pop,read)==2'b10')
-        assign(prefetched) = 0
+        consign(prefetched) = 0
 
-    assign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr)
+    consign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr)
 
-    assign(r_code) = succeeding_code_rd
+    consign(r_code) = succeeding_code_rd
 
     Net(syncRdCode,addrWidth+1) = $doubleSync(r_code,clkw)
-    assign(w_code) = succeeding_code_wr
+    consign(w_code) = succeeding_code_wr
 
     full = reg(1,'full').clock(clkw).reset(rstw)
     Net(inv_w ,2)= ~syncRdCode.fromMsb(2)
-    assign(full) = succeeding_code_wr == cat(inv_w ,syncRdCode.fromLsb(addrWidth-1))
+    if addrWidth == 1
+      consign(full) = succeeding_code_wr == inv_w
+    else
+      consign(full) = succeeding_code_wr == cat(inv_w ,syncRdCode.fromLsb(addrWidth-1))
 
     assign(next_rd) = $grayNextCode(r_code)
     assign(next_wr) = $grayNextCode(w_code)
 
     aff_data = (reg(width,'aff').clock(clkw).reset(null) for i in _.range(depth))
 
-    rdata= reg(width,'rdata').clock(clkr).reset(null)
+    rdata= reg(width,'rdata').clock(clkr).reset(rstr)
 
     always_if(read)
-      assign(rdata) = $arrayDecode(aff_data,rd_addr)
+      consign(rdata) = $arrayDecode(aff_data,rd_addr)
 
     always_if(push)
       $arrayMuxSet(aff_data,wr_addr,din)
