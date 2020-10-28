@@ -195,7 +195,7 @@ processFile= (fileName,outDir) ->
             outDir+'/'+i.name
           else
             i.name
-        flist.push(fname+'.sv')
+        flist.push(path.resolve(fname)+'.sv')
         fs.writeFileSync(fname+'.sv', code,'utf8')
         log ("generate code "+fname+".sv").magenta
 
