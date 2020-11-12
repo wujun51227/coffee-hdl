@@ -307,8 +307,25 @@ scanToken= (tokens,index)->
         list
       ]
   else
-    token = ['STRING',"'"+String(tokens[index][1])+"'",{range:[]}]
-    return [1,[token]]
+    if tokens[index][1].match(/^\$/)
+      token1 = ['@','@',{range:[]}]
+      token2 = ['PROPERTY',tokens[index][1].replace(/^\$/,'_'),{range:[]}]
+
+      start_index=index
+      [dummy,stop_index]=findPropertyBound(tokens,index+1)
+      if stop_index==-1
+        throw new Error("Cant find property bound")
+      else
+        list=tokens.slice(start_index+1,stop_index+1)
+        return [
+          list.length+2
+          [token1,token2,list...]
+        ]
+
+      return [1,[token1,token2]]
+    else
+      token = ['STRING',"'"+String(tokens[index][1])+"'",{range:[]}]
+      return [1,[token]]
 
 exprStart= () ->
   tokens=coffee.tokens 'chdl_base.Expr.start()'
