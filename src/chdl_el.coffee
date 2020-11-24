@@ -17,7 +17,7 @@ class CircuitEl
 
   getName: -> @elName
 
-  sign: -> "$signed(#{@hier})"
+  sign: -> "$signed(#{toSignal(@hier)})"
 
   getPath: ->
     list=[@elName]

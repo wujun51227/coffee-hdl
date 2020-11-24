@@ -35,6 +35,7 @@ program
   .option('-t, --tree')
   .option('-i, --info')
   .option('-n, --new <module name>')
+  .option('--tb <module name>')
   .option('--flist <file list name>')
   .option('--fsdb')
   .option('--nowave')
@@ -66,7 +67,9 @@ class #{moduleName} extends Module
   constructor: ->
     super()
 
-    #CellMap(name: new cell())
+    #CellMap([
+    #  { name: cell_name,  inst: new cell() }
+    #])
 
     Port(
     )
@@ -85,6 +88,71 @@ class #{moduleName} extends Module
 module.exports=#{moduleName}
 """
   fs.writeFileSync("./#{moduleName}.chdl",code,'utf8')
+  process.exit()
+
+if program.tb?
+  moduleName = program.tb
+  code = """
+_ = require 'lodash'
+dut = importDesign './#{moduleName}.chdl'
+class tb_#{moduleName} extends Module
+  constructor: ->
+    super()
+
+    Mixin importLib('verilog_helpers.chdl')
+
+    CellMap([
+      { name: 'dut',  inst: new dut() }
+    ])
+
+    Channel(
+      ch: @mold(@dut)
+    )
+
+    Reg(
+      clk: vreg()
+      rstn: vreg().init(1)
+    )
+
+    @setDefaultClock('clk')
+    @setDefaultReset('rstn')
+
+
+  build: ->
+    @create_clock(@clk,10)
+    @create_resetn(@rstn)
+    @dump_wave("dump_#{moduleName}")
+
+    Net signal = 1
+    count=vreg(32)
+
+    forever
+      seq=$sequence()
+      seq.polling(@clk,$(signal)) =>
+      seq.delay(1) =>
+        @display("%x",$(signal))
+      seq.end()
+
+    initial
+      seq=$sequence()
+      seq.init =>
+      seq.delay(200) =>
+        $while(count>0)
+          assign cnt=cnt-1
+      seq.do =>
+      seq.polling(@clk,$(signal)) =>
+      seq.posedge(@clk) =>
+      seq.negedge(@clk) =>
+      seq.wait(@clk) =>
+      seq.delay(1) =>
+        @display("%x",$(signal))
+        @assert_report()
+        @sim_finish()
+      seq.end()
+
+module.exports=tb_#{moduleName}
+"""
+  fs.writeFileSync("./tb_#{moduleName}.chdl",code,'utf8')
   process.exit()
 
 cfg={

@@ -489,6 +489,33 @@ module.exports={
     else
       sig
 
+  $signExtendTo:(sig,totalWidth=null)->
+    w = sig.getWidth()
+    if totalWidth?
+      total = totalWidth
+    else
+      total = @__assignWidth
+    if w<total
+      num = total-w
+      Net(extSign,num) = expand(num,sig.fromMsb(1))
+      return $ cat(extSign,sig)
+    else
+      sig
+
+  $headMask:(mask_bit_num,totalWidth)->
+    if mask_bit_num==0
+      return $ hex(totalWidth,0)
+    else
+      Net(mask_bit,mask_bit_num)= expand(mask_bit_num,1'b1')
+      return $ cat(mask_bit,hex(totalWidth-mask_bit_num,0))
+
+  $tailMask:(mask_bit_num,totalWidth)->
+    if mask_bit_num==0
+      return $ hex(totalWidth,0)
+    else
+      Net(mask_bit,mask_bit_num)= expand(mask_bit_num,1'b1')
+      return $ cat(hex(totalWidth-mask_bit_num,0),mask_bit)
+
   $seqState:(stateReg,nextState,lastStateReg,bin)->
     assign(stateReg) = nextState
     assign(lastStateReg) = stateReg
