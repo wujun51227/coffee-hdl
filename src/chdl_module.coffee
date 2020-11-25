@@ -921,7 +921,7 @@ class Module
               return ({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signalName})
             )
           return @_sequence(name,bin,clock,reset)
-      after_posedge: (signal,delay,stepName=null)=>
+      after_posedge: (signal,delay=0.1,stepName=null)=>
         signalName = do ->
           if _.isString(signal)
             signal
