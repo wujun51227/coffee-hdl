@@ -921,6 +921,20 @@ class Module
               return ({type:'polling',id:id,expr:expr,list:@__regAssignList,active:active.getName(),next:null,signal:signalName})
             )
           return @_sequence(name,bin,clock,reset)
+      after_posedge: (signal,delay,stepName=null)=>
+        signalName = do ->
+          if _.isString(signal)
+            signal
+          else
+            signal.getName()
+        return (func)=>
+          if @__initialMode
+            @_seqAction(env,bin,()=>
+              func()
+              id = stepName ? _id('after_posedge')
+              return ({type:'after_posedge',id:id,expr:null,delay:delay,list:@__regAssignList,active:null,next:null,signal:signalName})
+            )
+          return @_sequence(name,bin,clock,reset)
       posedge: (signal,stepName=null)=>
         signalName = do ->
           if _.isString(signal)

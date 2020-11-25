@@ -449,6 +449,9 @@ code_gen= (inst,allInst,first=false)=>
           printBuffer.add "  end;"
         if item.type=='posedge'
           printBuffer.add "  @(posedge #{item.signal});"
+        if item.type=='after_posedge'
+          printBuffer.add "  @(posedge #{item.signal});"
+          printBuffer.add "  ##{item.delay};"
         if item.type=='negedge'
           printBuffer.add "  @(negedge #{item.signal});"
         if item.type=='wait'
@@ -482,6 +485,9 @@ code_gen= (inst,allInst,first=false)=>
           printBuffer.add "  end;"
         if item.type=='posedge'
           printBuffer.add "  @(posedge #{item.signal});"
+        if item.type=='after_posedge'
+          printBuffer.add "  @(posedge #{item.signal});"
+          printBuffer.add "  ##{item.delay};"
         if item.type=='negedge'
           printBuffer.add "  @(negedge #{item.signal});"
         if item.type=='wait'
