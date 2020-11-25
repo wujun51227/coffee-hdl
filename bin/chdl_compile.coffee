@@ -63,12 +63,14 @@ debug = program.debug ? false
 if program.new?
   moduleName = program.new
   code = """
+_ = require 'lodash'
+#cell = importDesign './foo.chdl'
 class #{moduleName} extends Module
   constructor: ->
     super()
 
     #CellMap([
-    #  { name: cell_name,  inst: new cell() }
+    #  { name: 'u0_cell',  inst: new cell() }
     #])
 
     Port(
@@ -88,17 +90,20 @@ class #{moduleName} extends Module
 module.exports=#{moduleName}
 """
   fs.writeFileSync("./#{moduleName}.chdl",code,'utf8')
+  log ("Write to file ./#{moduleName}.chdl").yellow
   process.exit()
 
 if program.tb?
-  moduleName = program.tb
+  moduleFile = program.tb
+  moduleName = path.basename(moduleFile,'.chdl')
   code = """
 _ = require 'lodash'
-dut = importDesign './#{moduleName}.chdl'
+dut = importDesign '#{moduleFile}'
 class tb_#{moduleName} extends Module
   constructor: ->
     super()
 
+    Mixin importLib('chdl_testbench_lib.chdl')
     Mixin importLib('verilog_helpers.chdl')
 
     CellMap([
@@ -106,7 +111,7 @@ class tb_#{moduleName} extends Module
     ])
 
     Channel(
-      ch: @mold(@dut)
+      dut_channel: @mold(@dut)
     )
 
     Reg(
@@ -119,18 +124,29 @@ class tb_#{moduleName} extends Module
 
 
   build: ->
-    @create_clock(@clk,10)
-    @create_resetn(@rstn)
+    @create_clock(@clk,10)  # clock period is 10ns
+    @create_resetn(@rstn,10,100) # rstn assert from 10ns,hold 100ns
     @dump_wave("dump_#{moduleName}")
 
+    dev= @dut_channel
+
+    fifo=@tb_fifo_gen(32,1024,'fifo') # create a fifo 32 width,1024 depth
+    # [fifo api]
+    # fifo.push(data)
+    # fifo.pop()
+    # fifo.$front()
+    # fifo.$tail()
+    # fifo.$isEmpty()
+    # fifo.$isFull()
+    # fifo.$getSize()
     Net signal = 1
     count=vreg(32)
 
     forever
       seq=$sequence()
       seq.polling(@clk,$(signal)) =>
-      seq.delay(1) =>
-        @display("%x",$(signal))
+      seq.delay(200) =>
+        @display("in forever %x",$(signal))
       seq.end()
 
     initial
@@ -138,14 +154,14 @@ class tb_#{moduleName} extends Module
       seq.init =>
       seq.delay(200) =>
         $while(count>0)
-          assign cnt=cnt-1
+          assign count=count-1
       seq.do =>
       seq.polling(@clk,$(signal)) =>
       seq.posedge(@clk) =>
       seq.negedge(@clk) =>
-      seq.wait(@clk) =>
+      seq.wait($(@clk)) =>
       seq.delay(1) =>
-        @display("%x",$(signal))
+        @display("simulation finish %x",$(signal))
         @assert_report()
         @sim_finish()
       seq.end()
@@ -153,6 +169,7 @@ class tb_#{moduleName} extends Module
 module.exports=tb_#{moduleName}
 """
   fs.writeFileSync("./tb_#{moduleName}.chdl",code,'utf8')
+  log ("Write to file ./tb_#{moduleName}.chdl").yellow
   process.exit()
 
 cfg={

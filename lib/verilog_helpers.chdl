@@ -47,6 +47,8 @@ module.exports={
   create_resetn: (rstn,assert_start=0,assert_hold_time=100)->
     initial
       $sequence()
+      .init =>
+        assign rstn = 1
       .delay(assert_start) =>
         assign rstn = 0
       .delay(assert_hold_time) =>
