@@ -79,6 +79,47 @@ module.exports={
       dout: $ dout
     }
 
+  $async_trans: (valid,src_clock='',src_reset='',dst_clock,dst_reset)->
+    ack= reg(1,'ack').clock(dst_clock).reset(dst_reset)
+    Net ack_sync=$doubleSync(ack,src_clock,src_reset)
+    Net tx_done
+    valid_latch = reg(1,'valid_latch').clock(src_clock).reset(src_reset)
+    always
+      $if(valid)
+        consign valid_latch = 1
+      $elseif(tx_done)
+        consign valid_latch = 0
+
+    tx_valid = reg(1,'tx_valid').clock(src_clock).reset(src_reset)
+    always
+      $sequence('handshake_tx',src_clock,src_reset)
+        .init (next)=>
+          $if(next)
+            consign tx_valid=1
+        .wait($ !ack_sync && valid_latch) (trans,next)=>
+          $if(next)
+            consign tx_valid=0
+            assign tx_done = 1
+        .posedge(ack_sync) =>
+        .end()
+
+    Net valid_sync=$doubleSync(tx_valid,dst_clock,dst_reset)
+    Net rx_done
+
+    always
+      $sequence('handshake_rx',dst_clock,dst_reset)
+        .init (next)=>
+          $if(next)
+            consign ack=1
+        .posedge(valid_sync) (trans,next)=>
+          $if(trans)
+            assign rx_done = 1
+          $if(next)
+            consign ack=0
+        .wait($ valid_sync==0) =>
+        .end()
+    return $ rx_done
+
   $async_handshake_tx: (valid,data,ack,clock='',reset='')->
     Net ack_sync=$doubleSync(ack,clock,reset)
     Net done
