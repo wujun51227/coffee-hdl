@@ -79,7 +79,7 @@ module.exports={
       dout: $ dout
     }
 
-  $async_trans: (valid,src_clock='',src_reset='',dst_clock,dst_reset)->
+  $async_trans: (valid,src_clock,src_reset,dst_clock='',dst_reset='')->
     ack= reg(1,'ack').clock(dst_clock).reset(dst_reset)
     Net ack_sync=$doubleSync(ack,src_clock,src_reset)
     Net tx_done
