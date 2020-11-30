@@ -171,7 +171,7 @@ class Reg extends CircuitEl
     else
       return null
 
-  field: (name,msb,lsb)=>
+  field: (name)=>
     item = @fieldMap[name]
     if item?
       msb=item.msb

@@ -5,6 +5,7 @@ Reg     = require 'chdl_reg'
 Wire    = require 'chdl_wire'
 Channel = require 'chdl_channel'
 Vconst  = require 'chdl_const'
+{cat} = require 'chdl_operator'
 global  = require('chdl_global')
 Table   = require 'table'
 {_expr,toEventList,packEl,toSignal,toHier,toFlatten}=require('chdl_utils')
@@ -781,13 +782,23 @@ class Module
     @__local_vecs.push(ret)
     return ret
 
-  _localWire: (width=1,name='t')->
-    pWire=Wire.create(Number(width))
+  _localWire: (arg=1,name='t')->
+    list=null
+    if _.isArray(arg)
+      width=0
+      list=arg
+      for i in list
+        width+=i.getWidth()
+    else
+      width=Number(arg)
+    pWire=Wire.create(width)
     pWire.cell=this
     pWire.setLocal()
     pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pWire.hier=pWire.elName
     ret = packEl('wire',pWire)
+    if list?
+      pWire.assign(->_expr(Expr.start().next(cat(list))))
     @__local_wires.push(ret)
     return ret
 

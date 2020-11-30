@@ -124,6 +124,11 @@ class tb extends Module
     )
 
   build: ->
+    Net(a,16)=0x1122
+    Net(b,16)=0x3344
+
+    c = wire([a,b],'c')
+
     initial
       $sequence()
       .delay(10) =>
@@ -144,6 +149,9 @@ class tb extends Module
         @assert_eq(@dout[12],0b10100,'test data pack return')
         @assert_eq(@dout[13],0b10101)
         @assert_eq(@dout[14],0b10110)
+        @assert_eq(c,0x11223344,'test auto cat wire')
+        if(c.getWidth()!=32)
+          @assert_fail('auto cat wire width check failed')
       .delay(10) =>
         @assert_report()
         @sim_finish()
