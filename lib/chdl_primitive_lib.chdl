@@ -473,16 +473,24 @@ module.exports={
   $tailPadding:(sig,num,v=0)->
     return $ cat(sig,bin(num,v))
 
-  $headPaddingTo:(sig,total,v=0)->
+  $headPaddingTo:(sig,totalWidth=null,v=0)->
     w = sig.getWidth()
+    if totalWidth?
+      total = totalWidth
+    else
+      total = @__assignWidth
     if w<total
       num = total-w
       return $ cat(bin(num,v),sig)
     else
       sig
 
-  $tailPaddingTo:(sig,total,v=0)->
+  $tailPaddingTo:(sig,totalWidth=null,v=0)->
     w = sig.getWidth()
+    if totalWidth?
+      total = totalWidth
+    else
+      total = @__assignWidth
     if w<total
       num = total-w
       return $ cat(sig,bin(num,v))
