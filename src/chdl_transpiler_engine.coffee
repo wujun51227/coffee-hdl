@@ -695,6 +695,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='unpack_wire'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_localUnpackWire', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='importDesign'
       list =[
         ['IDENTIFIER', '_importLib', {range:[]}]

@@ -802,6 +802,24 @@ class Module
     @__local_wires.push(ret)
     return ret
 
+  _localUnpackWire: (list,name='t')->
+    width=0
+    for i in list
+      width+=i.getWidth()
+
+    pWire=Wire.create(width)
+    pWire.cell=this
+    pWire.setLocal()
+    pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
+    pWire.hier=pWire.elName
+    ret = packEl('wire',pWire)
+    lsb=0
+    for i in list[..].reverse()
+      i.assign(->_expr(Expr.start().next(ret(lsb,i.getWidth()))))
+      lsb += i.getWidth()
+    @__local_wires.push(ret)
+    return ret
+
   _localVreg: (width=1,name='v')->
     pWire=Wire.create(Number(width))
     pWire.cell=this

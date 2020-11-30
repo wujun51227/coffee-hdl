@@ -129,6 +129,12 @@ class tb extends Module
 
     c = wire([a,b],'c')
 
+    Net(e,8)
+    Net(f,16)
+    d = unpack_wire([e,f],'d')
+
+    assign d = 0x8899aa
+
     initial
       $sequence()
       .delay(10) =>
@@ -152,6 +158,10 @@ class tb extends Module
         @assert_eq(c,0x11223344,'test auto cat wire')
         if(c.getWidth()!=32)
           @assert_fail('auto cat wire width check failed')
+        @assert_eq(e,0x88,'test auto unpack wire')
+        @assert_eq(f,0x99aa,'test auto unpack wire')
+        if(d.getWidth()!=24)
+          @assert_fail('auto unpack wire width check failed')
       .delay(10) =>
         @assert_report()
         @sim_finish()
