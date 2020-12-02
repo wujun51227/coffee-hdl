@@ -349,10 +349,11 @@ module.exports={
 
     if fifo_reset
       aff_data = (reg(width,'aff').clock(clkw).reset(rstw) for i in _.range(depth))
+      rdata= reg(width,'rdata').clock(clkr).reset(rstr)
     else
       aff_data = (reg(width,'aff').clock(clkw).reset(null) for i in _.range(depth))
+      rdata= reg(width,'rdata').clock(clkr).reset(null)
 
-    rdata= reg(width,'rdata').clock(clkr).reset(rstr)
 
     always_if(read)
       consign(rdata) = $arrayDecode(aff_data,rd_addr)
