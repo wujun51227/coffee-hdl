@@ -202,7 +202,7 @@ module.exports={
 
     return $ lru_out
 
-  $fifo: (depth,din,push,pop,clear=0,clock='',reset='')->
+  $fifo: (depth,din,push,pop,clear=0,clock='',reset='',fifo_reset=true)->
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth-1))+1
     Exponential_Full_Flag= depth==(2**addrWidth)
@@ -212,8 +212,12 @@ module.exports={
     waddr      = reg(addrWidth,'waddr').clock(clock).reset(reset)
     empty_flag = reg(1,'empty_flag').init(1).clock(clock).reset(reset)
     prefetched = reg(1,'prefetched').clock(clock).reset(reset)
-    rff_data= @createArray(depth,=>reg(width,'rff').clock(clock).reset(reset))
-    rd_data= reg(width,'rd_data').clock(clock).reset(reset)
+    if fifo_reset
+      rff_data= @createArray(depth,=>reg(width,'rff').clock(clock).reset(reset))
+      rd_data= reg(width,'rd_data').clock(clock).reset(reset)
+    else
+      rff_data= @createArray(depth,=>reg(width,'rff').clock(clock).reset(null))
+      rd_data= reg(width,'rd_data').clock(clock).reset(null)
 
     Net read  = !empty_flag && (pop || !prefetched)
 
@@ -276,7 +280,7 @@ module.exports={
       level: $ level
     }
 
-  $async_fifo: (depth,din,push,pop)->
+  $async_fifo: (depth,din,push,pop,fifo_reset=true)->
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth-1))+1
     clkw=push.getClock()
@@ -343,7 +347,10 @@ module.exports={
     assign(next_rd) = $grayNextCode(r_code)
     assign(next_wr) = $grayNextCode(w_code)
 
-    aff_data = (reg(width,'aff').clock(clkw).reset(null) for i in _.range(depth))
+    if fifo_reset
+      aff_data = (reg(width,'aff').clock(clkw).reset(rstw) for i in _.range(depth))
+    else
+      aff_data = (reg(width,'aff').clock(clkw).reset(null) for i in _.range(depth))
 
     rdata= reg(width,'rdata').clock(clkr).reset(rstr)
 

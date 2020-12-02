@@ -513,6 +513,8 @@ module.exports={
   $headMask:(mask_bit_num,totalWidth)->
     if mask_bit_num==0
       return $ hex(totalWidth,0)
+    else if mask_bit_num==totalWidth
+      return $ expand(mask_bit_num,1'b1')
     else
       Net(mask_bit,mask_bit_num)= expand(mask_bit_num,1'b1')
       return $ cat(mask_bit,hex(totalWidth-mask_bit_num,0))
@@ -520,6 +522,8 @@ module.exports={
   $tailMask:(mask_bit_num,totalWidth)->
     if mask_bit_num==0
       return $ hex(totalWidth,0)
+    else if mask_bit_num==totalWidth
+      return $ expand(mask_bit_num,1'b1')
     else
       Net(mask_bit,mask_bit_num)= expand(mask_bit_num,1'b1')
       return $ cat(hex(totalWidth-mask_bit_num,0),mask_bit)
