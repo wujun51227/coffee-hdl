@@ -19,7 +19,7 @@ class CircuitEl
 
   sign: -> "$signed(#{toSignal(@hier)})"
 
-  getPath: ->
+  getPath: =>
     list=[@elName]
     cell=@cell
     while(1)
@@ -30,5 +30,8 @@ class CircuitEl
         list.push cell.constructor.name
         break
     return list.reverse()
+
+  getPathStr: =>
+    return @getPath().join('.')
 
 module.exports=CircuitEl
