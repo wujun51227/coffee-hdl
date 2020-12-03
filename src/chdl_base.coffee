@@ -125,6 +125,9 @@ rhsExpand=(expandItem)->
       else if item.cond?
         str+="(#{item.cond.str}#{anno})?(#{v.code}):"
       else
+        if not v?
+          log("Error:assign expr is undefined #{anno}".red)
+          throw new Error("assign expr is undefined #{anno}")
         str+="#{v.code}#{anno}"
       if index==0
         w=v.w

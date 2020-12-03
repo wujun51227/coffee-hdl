@@ -303,11 +303,15 @@ processFile= (fileName,outDir) ->
         )
 
     catch e
-      log.error e
       if (e instanceof SyntaxError)
+        errStr=e.toString()
+        log.error errStr.red
         lineNum=e.location.first_line-headOver
-        log.error (path.basename(fileName)+' '+lineNum+':Error "'+fs.readFileSync(fileName,'utf8').split(/\n/)[lineNum-1].trim()+'"').red
-      if (e instanceof TypeError) or (e instanceof ReferenceError)
+        for i in _.range(10)
+          line_no=lineNum+i
+          log.error (path.basename(fileName)+' '+line_no+': "'+fs.readFileSync(fileName,'utf8').split(/\n/)[line_no-1].trim()+'"').red
+      else if (e instanceof TypeError) or (e instanceof ReferenceError)
+        log.error e
         lines=e.stack.toString().split(/\s+at\s+/)
         if lines.length>1
           m=lines[1].match(/\((.*)\)/)
@@ -320,6 +324,8 @@ processFile= (fileName,outDir) ->
               jsfile=m[1]
               lineno=m[2]
               log.error (path.basename(jsfile)+' '+lineno+':Error "'+fs.readFileSync(jsfile,'utf8').split(/\n/)[Number(lineno-1)].trim()+'"').red
+      else
+        log.error e
 
 
 fileName = program.args[0]
