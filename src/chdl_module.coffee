@@ -1117,6 +1117,8 @@ class Module
     @_do_assign(signal,lineno)
 
   _assign: (signal,lineno=-1)=>
+    if not signal?
+      throw new Error("Module #{this.getModuleName()} assign signal is NULL at line #{lineno}".red)
     assign_warn=false
     if signal.__type=='reg' and !signal.isVirtual()
       assign_warn=true

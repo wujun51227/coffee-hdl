@@ -296,11 +296,13 @@ module.exports={
     len=array.length
     for i in [0...len]
       $if(i==select)
+        item = array[i]
         if field?
           item = _.get(array[i],field)
-          assign(item) = din
+        if(item.__type=='reg')
+          consign(item) = din
         else
-          assign(array[i]) = din
+          assign(item) = din
 
   $arrayDecode: (array,select,width=null,field=null)->
     len=array.length
