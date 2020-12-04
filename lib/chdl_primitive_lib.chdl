@@ -278,19 +278,13 @@ module.exports={
       item = iterator.next()
 
   $grayNextCode: (code_word)->
-    width = code_word.getWidth()
-    condList=[]
-    for i in _.range(width)
-      condList.push($cond(code_word(i)) => $ 1<<i)
-    condList.push($cond(null) => $ 0)
-    Net(gray,width) = $order(condList)
-    $if(hasOdd1(code_word))
-      $if(gray(width-1)==1)
-        $ 0
-      $else
-        $ code_word ^ (gray<<1)
-    $else
-      $ code_word ^ hex(width,1)
+    CodeWidth = code_word.getWidth()
+    Net(alter_idc,CodeWidth-1)
+    Net(alter_mask,CodeWidth) = cat(1'b1',alter_idc) & ~cat(alter_idc,1'b0')
+    Net(out,CodeWidth) = alter_mask ^ code_word
+    assign alter_idc.fromMsb(-1) = code_word | alter_idc
+    assign alter_idc(0)  = ~(^code_word)
+    return $ out
 
   $arrayMuxSet: (array,select,din,field=null)->
     len=array.length

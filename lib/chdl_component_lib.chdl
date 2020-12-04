@@ -280,7 +280,7 @@ module.exports={
       level: $ level
     }
 
-  $async_fifo: (depth,din,push,pop,fifo_reset=true)->
+  $async_fifo: (depth,din,push,pop,fifo_reset=true,hint_name=null)->
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth-1))+1
     clkw=push.getClock()
@@ -330,11 +330,11 @@ module.exports={
       $elseif(cat(pop,read)==2'b10')
         consign(prefetched) = 0
 
-    consign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr)
+    consign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr,rstr)
 
     consign(r_code) = succeeding_code_rd
 
-    Net(syncRdCode,addrWidth+1) = $doubleSync(r_code,clkw)
+    Net(syncRdCode,addrWidth+1) = $doubleSync(r_code,clkw,rstw)
     consign(w_code) = succeeding_code_wr
 
     full = reg(1,'full').clock(clkw).reset(rstw)
@@ -347,11 +347,12 @@ module.exports={
     assign(next_rd) = $grayNextCode(r_code)
     assign(next_wr) = $grayNextCode(w_code)
 
+    fifo_name = hint_name ? 'aff_'
     if fifo_reset
-      aff_data = (reg(width,'aff').clock(clkw).reset(rstw) for i in _.range(depth))
+      aff_data = (reg(width,fifo_name+i).clock(clkw).reset(rstw) for i in _.range(depth))
       rdata= reg(width,'rdata').clock(clkr).reset(rstr)
     else
-      aff_data = (reg(width,'aff').clock(clkw).reset(null) for i in _.range(depth))
+      aff_data = (reg(width,fifo_name+i).clock(clkw).reset(null) for i in _.range(depth))
       rdata= reg(width,'rdata').clock(clkr).reset(null)
 
 
