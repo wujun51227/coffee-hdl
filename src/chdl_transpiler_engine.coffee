@@ -10,7 +10,7 @@ Path = require 'path'
 
 reloadList=[]
 
-headOver=7
+headOver=6
 
 debugExpr=''
 
