@@ -611,6 +611,20 @@ toVerilog=(inst)->
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   if global.getInfo()
+    list=    [['register name','width']]
+    list.push(['-------------','-----'])
+    dffBitSum=0
+    for [name,reg] in toFlatten(inst.__regs)
+      list.push([toSignal(name),reg.getWidth()])
+      dffBitSum+=reg.getWidth()
+    for [name,reg] in toFlatten(inst.__local_regs)
+      list.push([reg.refName(),reg.getWidth()])
+      dffBitSum+=reg.getWidth()
+    if list.length>2
+      list.push(['-------------','-----'])
+      list.push(['TotalBits',dffBitSum])
+      console.log(table(list,{singleLine:true,columnDefault: {width:30}}))
+  if global.getInfo()
     condCnt=0
     transferCnt=0
     tableList=[]

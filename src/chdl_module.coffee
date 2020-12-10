@@ -483,12 +483,6 @@ class Module
         list.push([toSignal(name),port.getType(),port.getWidth()])
     if list.length>2 and global.getInfo()
       console.log(Table.table(list,{singleLine:true,columnDefault: {width:30}}))
-    list=    [['register name','width']]
-    list.push(['-------------','-----'])
-    for [name,reg] in toFlatten(@__regs)
-      list.push([toSignal(name),reg.getWidth()])
-    if list.length>2 and global.getInfo()
-      console.log(Table.table(list,{singleLine:true,columnDefault: {width:30}}))
     for [name,channel] in toFlatten(@__channels)
       if channel.probeChannel?  # probe dont have elName
         if channel.isMonitor()
