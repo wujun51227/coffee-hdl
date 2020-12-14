@@ -289,6 +289,8 @@ class Reg extends CircuitEl
     else
       @elName
 
+  next: => @getDwire()
+
   getDwire: =>
     wire= Wire.create(@width)
     wire.link(@cell,global.getPrefix()+'_'+@hier)
