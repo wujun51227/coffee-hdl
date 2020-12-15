@@ -469,9 +469,9 @@ class Reg extends CircuitEl
         throw new Error(name+' is not valid') unless @stateIsValid(name)
         item=_.find(@states,(i)=> i.label==name)
         if index==0
-          tmp=tmp.next('(').next(packEl('reg',this)).next('==').next(item).next(')').next('||')
-        else
           tmp=tmp.next('(').next(packEl('reg',this)).next('==').next(item).next(')')
+        else
+          tmp=tmp.next('||').next('(').next(packEl('reg',this)).next('==').next(item).next(')')
     else if names.length==1
       name = names[0]
       throw new Error(name+' is not valid') unless @stateIsValid(name)
