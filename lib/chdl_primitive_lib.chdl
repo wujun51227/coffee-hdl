@@ -124,14 +124,14 @@ module.exports={
             find=_.get(n,name)
             if find? and find.getType()=='output' and port.getType()=='input'
               if find.getWidth()!=port.getWidth()
-                throw new Error("port connect width mismatch")
+                throw new Error("port connect width mismatch \""+name+'" "'+port.getName()+'"')
               if not el.isAssigned()
                 assign(el) = find
         else
           for n in clone_list when n.__type=='wire'
             if n.getType()=='output' and port.getType()=='input'
               if n.getWidth()!=port.getWidth()
-                throw new Error("port connect width mismatch")
+                throw new Error("port connect width mismatch \""+name+'" "'+port.getName()+'"')
               if not port.isAssigned()
                 assign(port) = n
       clone_list.push(dst)
