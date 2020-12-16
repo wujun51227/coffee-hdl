@@ -524,6 +524,14 @@ module.exports={
       Net(mask_bit,mask_bit_num)= expand(mask_bit_num,1'b1')
       return $ cat(hex(totalWidth-mask_bit_num,0),mask_bit)
 
+  $expandSig: (num,sig)->
+    Net(expand_sig,num*sig.getWidth()) = expand(num,sig)
+    return expand_sig
+
+  $catSig: (sig_list...)->
+    t = wire(sig_list,'cat_sig')
+    return t
+
   $seqState:(stateReg,nextState,lastStateReg,bin)->
     assign(stateReg) = nextState
     assign(lastStateReg) = stateReg
