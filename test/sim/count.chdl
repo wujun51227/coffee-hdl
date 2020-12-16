@@ -13,7 +13,7 @@ class count extends Module
   build: ->
     assign(@dout) = @cnt
 
-    assign(@cnt)
+    consign(@cnt)
       $if(@enable)
         $if(@cnt<100)
           $ @cnt+1
@@ -51,16 +51,17 @@ class bench_top extends Module
     @setDefaultReset('rstn')
 
   build: ->
-    assign(@en_channel.Port) = @en
+    assign(@en_channel) = @en
 
     forever
-      $sequence() =>
+      $sequence()
       .delay(10) =>
-        assign(@clk) = $ !@clk
+        assign(@clk) = !@clk
       .end()
 
     s1= =>
-      $sequence('delay') =>
+      $sequence('delay')
+        .init =>
           assign(@rstn) =  1
         .delay(10) =>
           assign(@rstn) =  0
