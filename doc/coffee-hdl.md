@@ -1,4 +1,4 @@
-# coffee-hdl 用户手册 v0.3
+# coffee-hdl 用户手册 v0.4
 ##  介绍
 
 本文档是coffee-hdl(coffeescript hardware description language)的使用手册.coffee-hdl是嵌入在coffeescript编程语言中的硬件构造语言,是一种对coffeescript语言做了词法编译的改造扩充后的DSL,所以当您编写coffee-hdl时,实际上是在编写构造硬件电路的coffeescript程序.
@@ -268,7 +268,7 @@ end
 ## wire 
 wire类型是用于表达组合电路输出结果的元素,对应生成verilog的wire,最简单声明方式如下
 ```coffeescript
-Wire wire_name: wire(width)
+Wire wire_name: wire(number|[])
 ```
 
 如果把wire组织成数组,声明方式如下
@@ -331,10 +331,41 @@ build:->
 assign result[32] = 1'b1;
 assign result[31:0] = 32'h12345678;
 ```
+如果参数是一个列表的话，列表里面是带有宽度信息的信号或者常量，生成的wire宽度是列表内宽度的总和，这个wire会被assign成所有列表信号的拼接.
+
+```coffeescript
+result = wire([a,b,10'b0'],'result')
+```
+
+生成代码
+
+```verilog
+wire result_1 = {a,b,10'b0};
+```
+
+还有一种wire,通过unpack_wire函数可以构造一种线，这种线可以解开成列表里面的信号，并自动计算宽度
+
+示例代码
+
+```coffeescript
+data = unpack_wire([e,f],'data')
+```
+
+生成代码
+
+```verilog
+wire [23:0] __data_29;
+assign __f_28 = __data_29[15:0];
+assign __e_27 = __data_29[23:16];
+```
+
+
+
 wire类型带有以下常用方法
-	* reverse() 高低位逆序排列
-	* select( (index)=> func) 根据函数式取得wire相应bit组成新的wire
-示例代码(test/wire/wire_simple.chdl)
+ * reverse() 高低位逆序排列
+ * select( (index)=> func) 根据函数式取得wire相应bit组成新的wire
+  示例代码(test/wire/wire_simple.chdl)
+
 ```coffeescript
 Wire (
   in: wire(8)
@@ -956,8 +987,8 @@ class top extends Module
 * $else
 * $cond(expr) =>
 * $ expr
-* expand(times,signal)
-* cat(signal1,signal2...)
+* $expand(times,signal)
+* $cat(signal1,signal2...)
 
 模块资源申明
 
