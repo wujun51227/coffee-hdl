@@ -398,9 +398,9 @@ module.exports.out_port = out_port
 ```
 使用
 ```coffeescript
-#########################################################3
+#########################################################
 # Design
-#########################################################3
+#########################################################
 {in_port,out_port} = require 'port_def'
 
 class PortComplex extends Module
@@ -430,13 +430,24 @@ module PortComplex(
 endmodule
 ```
 端口进一步加强的语义包括如下一些方法：
-* asReg(): 当前output端口为reg的q端 (test/reg/reg_simple.chld)
-			
+* asReg(config=null): 当前output端口为reg的q端 (test/reg/reg_simple.chld)
+
+config是可选的，通过属性确定寄存器类型，定义如下：
+
+```coffeescript
+config = {
+    syncReset: boolean
+    reset: string || null
+    clock: string
+    init:  number
+    negedge: boolean
+}
+```
+
 
 除了标准的input/output以外,还可以用bind(channel_name)的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见下一章.
 
 
-	
 ## reg,时钟,复位信号
 coffee-hdl中的reg类型元素和verilog中d-flipflop存储类型对应,寄存器相关的有时钟
 和复位信号可以来自于以下几处定义,靠前的定义优先级更高.
