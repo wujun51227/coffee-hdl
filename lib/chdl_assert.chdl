@@ -4,6 +4,7 @@ class chdl_assert extends Module
     Reg(
       assert_fail_flag: vreg().init(0)
       assert_message: vreg(8*256).init(0)
+      monitor_handle: vreg(128)
     )
     @message_prefix='[chdl_message]'
     @assert_prefix='[chdl_assert]'

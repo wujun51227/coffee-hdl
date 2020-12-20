@@ -1,11 +1,11 @@
 _ = require 'lodash'
 
 module.exports={
-  tb_fifo_gen: (width,depth,name)->
+  tb_fifo_gen: (width,depth,name='fifo')->
     fifo_bin=vec(width,depth)
     wsp=vreg(32,name+'_wsp')
     rsp=vreg(32,name+'_rsp')
-    size=vreg(32,name+'_fifo_size')
+    size=vreg(32,name+'_size')
     tail_sp=vreg(32,name+'_tail_point')
     return {
       $front: =>

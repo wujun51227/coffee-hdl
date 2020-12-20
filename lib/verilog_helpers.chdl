@@ -1,5 +1,6 @@
 assert_module = GlobalModule(importLib('chdl_assert.chdl.js'))
 global  = require('chdl_global')
+{toFlatten}=require('chdl_utils')
 
 module.exports={
   dump_wave: (fileName)->
@@ -19,6 +20,30 @@ module.exports={
 
   random: (seed='')->
     return $("$urandom#{seed}")
+
+  set_monitor:(name,inst_list...)->
+    fileName = name ? @getHierarchy()+'.monitor'
+    assert_module.monitor_handle.setWireType()
+    handle = assert_module.monitor_handle
+    initial
+      $sequence()
+      .init =>
+        assign assert_module.monitor_handle= {"$fopen(\"#{fileName}\")"}
+        @display("#{assert_module.message_prefix} Create file #{fileName}")
+        for inst in inst_list
+          for [name,item] in toFlatten(inst.__local_regs)
+            @verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
+      .end()
+    return assert_module.monitor_handle
+
+  inst_monitor: (inst)->
+    handle = assert_module.monitor_handle
+    initial
+      $sequence()
+      .delay(0.1) =>
+        for [name,item] in toFlatten(inst.__local_regs)
+          @verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
+      .end()
 
   fopen:(name=null)->
     fileName = name ? @getHierarchy()+'.dump'
