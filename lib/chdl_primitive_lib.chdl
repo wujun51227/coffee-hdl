@@ -340,13 +340,16 @@ module.exports={
 
   $delay: (n,sig,clock='',reset='')->
     width=sig.getWidth()
-    list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
-    for i in _.range(n)
-      if i==0
-        consign(list[0]) = sig
-      else
-        consign(list[i]) = list[i-1]
-    return $ list[n-1]
+    if n==0
+      return $ sig
+    else
+      list=(reg(width).clock(clock).reset(reset) for i in _.range(n))
+      for i in _.range(n)
+        if i==0
+          consign(list[0]) = sig
+        else
+          consign(list[i]) = list[i-1]
+      return $ list[n-1]
 
   $count: (n,enable,clear,clock='',reset='')->
     width=Math.ceil(Math.log2(n))
