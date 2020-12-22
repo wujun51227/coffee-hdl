@@ -31,7 +31,7 @@ class CircuitEl
         break
     return list.reverse()
 
-  getPathStr: =>
+  oomrName: =>
     return @getPath().join('.')
 
 module.exports=CircuitEl
