@@ -1084,10 +1084,10 @@ class Module
 
   display: (s,args...)->
     if args.length==0
-      @__regAssignList.push ['verilog',"$display(\"#{s}\");"]
+      @__regAssignList.push ['verilog',"$display(\"[%0t] #{s}\",$time);"]
     else
       list = _.map(args,(i)-> sharpToDot(i.e.str))
-      @__regAssignList.push ['verilog',"$display(\"#{s}\",#{list.join(',')});"]
+      @__regAssignList.push ['verilog',"$display(\"[%0t] #{s}\",$time,#{list.join(',')});"]
 
   getHierarchy: -> @_getPath()
           
