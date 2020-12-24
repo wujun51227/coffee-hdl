@@ -26,6 +26,12 @@ module.exports={
       $getSize: =>
         $ size
 
+      $get: (index)=>
+        $ fifo_bin.get(index)
+
+      $set: (index,expr)=>
+        fifo_bin.set(index,expr)
+
       pop: =>
         $if(rsp==(fifo_bin.getDepth()-1))
           assign rsp= 0
@@ -34,11 +40,10 @@ module.exports={
         assign size=size-1
 
       push: (data)=>
-        $if(wsp==fifo_bin.getDepth())
-          fifo_bin.set(0,$(data))
+        fifo_bin.set(wsp,$(data))
+        $if(wsp==fifo_bin.getDepth()-1)
           assign wsp = 0
         $else
-          fifo_bin.set(wsp,$(data))
           assign wsp = wsp + 1
         assign size=size+1
     }
