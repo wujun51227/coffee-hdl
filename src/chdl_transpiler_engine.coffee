@@ -620,6 +620,13 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='CellList'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_celllist', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     #else if token[0] is 'IDENTIFIER' and token[1]=='Hub'
     #  list =[
     #    ['@', '@', {range:[]}]

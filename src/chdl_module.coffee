@@ -54,6 +54,11 @@ class Module
         @__cells.push({name:name,inst:inst})
         @[name]=inst
 
+  _celllist: (v...) ->
+    for item in v
+      @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item.inst})
+      @[item.name]=item.inst
+
   _getCell: (name)=>
     p=Object.getPrototypeOf(this)
     for k,v of p when typeof(v)=='object' and v instanceof Module
