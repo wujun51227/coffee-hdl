@@ -25,6 +25,8 @@ class Reg extends CircuitEl
     @enableValue=null
     @clearSignal=null
     @clearValue=null
+    @stallSignal=null
+    @stallValue=null
     @fieldMap={}
     @local=false
     @share={
@@ -363,6 +365,18 @@ class Reg extends CircuitEl
           list.push "  end"
         else
           throw new Error("cant not find enable signal #{@clearSignal}")
+      if @stallSignal?
+        if _.isString(@stallSignal)
+          enableSig=_.get(@cell,@stallSignal)
+        else
+          enableSig=@stallSignal
+        if enableSig?
+          #console.log enableSig
+          list.push "  else if(#{enableSig.getName()}==#{@stallValue} )  begin"
+          list.push "    "+@elName+" <= #`UDLY #{global.getPrefix()}_"+@elName+";"
+          list.push "  end"
+        else
+          throw new Error("cant not find enable signal #{@stallSignal}")
       if @enableSignal?
         if _.isString(@enableSignal)
           enableSig=_.get(@cell,@enableSignal)
@@ -525,6 +539,11 @@ class Reg extends CircuitEl
     @clearValue=value
     return packEl('reg',this)
 
+  stall: (s,value=1)=>
+    @stallSignal=s
+    @stallValue=value
+    return packEl('reg',this)
+
   simProperty: ->
     {
       clock: @getClock()
@@ -534,6 +553,8 @@ class Reg extends CircuitEl
       resetValue: @resetValue
       clearSignal: @clearSignal
       clearValue: @clearValue
+      stallSignal: @stallSignal
+      stallValue: @stallValue
       enableSignal: @enableSignal
       enableValue: @enableValue
     }

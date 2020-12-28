@@ -177,14 +177,17 @@ build: ->
 ```verilog
 assign out = 101+5'h1f;
 ```
-## assign
-coffee-hdl的组合电路信号传递通过assign语句生成,表达方式为
+## assign/consign
+coffee-hdl的组合电路信号传递通过assign/consign语句生成,两者的区别在于assign是对wire传递信号，consign是对reg的d端传递信号，如果用assign对reg传递信号，功能正确但是编译会提出警告，consign对wire传递信号，编译会报错，表达方式为
 ```coffeescript
 assign signal  = expr 
+consign dff = expr
 ```
 或者 
 ```coffeescript
 assign signal
+   语句块
+consign dff
    语句块
 ```
 语句块的返回值必须是$表达式产生的verilog语句
@@ -205,9 +208,39 @@ assign @dout
 dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 ```
 
-dout信号始终保持wire语义,而不必像verilog在使用if else的情况下需要把wire声明成reg,模块中申明的reg类型都是真实的寄存器
+区分assign/consign的主要原因是在代码上可以直观的知道当前获得值的信号是组合逻辑还是寄存器，被assign的信号，获得值当前可以继续运算，被consign的的信号，传递生效时间是下一个相关寄存器时钟有效沿发生的时候，寄存器当前的值没有立即改变，如果需要获得寄存器d端的当前值可以使用寄存器成员函数.next()获得，示例代码:
 
-通过和coffeescript语言结合,可以基于规格化输入格式生成verilog代码(demo/rsicv32i_decoder.chdl).
+```coffeescript
+consign dout1 = a + b
+consign dout2 = dout1.next()
+```
+
+生成代码
+
+```verilog
+assign _dout1 = a + b;
+always @(posedge clk or negedge rstn) begin
+    if(!rstn) begin
+        dout1 <= #`UDLY 0;
+    end
+   	else begin
+        dout1 <= _dout1
+    end
+end
+assign _dout2 = _dout1;
+always @(posedge clk or negedge rstn) begin
+    if(!rstn) begin
+        dout2 <= #`UDLY 0;
+    end
+   	else begin
+        dout2 <= _dout2
+    end
+end
+```
+
+
+
+这里dout2传递的是dout1的d端，所以dout1和dout2的值始终是一样的
 
 
 
@@ -364,7 +397,7 @@ assign __e_27 = __data_29[23:16];
 wire类型带有以下常用方法
  * reverse() 高低位逆序排列
  * select( (index)=> func) 根据函数式取得wire相应bit组成新的wire
-  示例代码(test/wire/wire_simple.chdl)
+    示例代码(test/wire/wire_simple.chdl)
 
 ```coffeescript
 Wire (
