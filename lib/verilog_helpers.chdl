@@ -21,6 +21,9 @@ module.exports={
   random: (seed='')->
     return $("$urandom#{seed}")
 
+  toExprList: (list)->
+    return ($(i) for i in list)
+
   set_monitor:(name,inst_list...)->
     fileName = name ? @getHierarchy()+'.monitor'
     assert_module.monitor_handle.setWireType()
@@ -32,7 +35,7 @@ module.exports={
         @display("#{assert_module.message_prefix} Create file #{fileName}")
         for inst in inst_list
           for [name,item] in toFlatten(inst.__local_regs)
-            @verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
+            @verilog("$fmonitor(#{handle.oomrName()},\"%0d #{item.oomrName()} 0x%x\",$time,#{item.oomrName()});")
       .end()
     return assert_module.monitor_handle
 
