@@ -4,14 +4,14 @@
 
 ##  介绍
 
-本文档是Coffee-HDL(coffeescript hardware description language)的使用手册.Coffee-HDL是嵌入在coffeescript编程语言中的硬件构造语言,是一种对coffeescript语言做了词法编译的改造扩充后的DSL,所以当您编写Coffee-HDL时,实际上是在编写构造硬件电路的coffeescript程序.
+本文档是Coffee-HDL(CoffeeScript hardware description language)的使用手册.Coffee-HDL是嵌入在CoffeeScript编程语言中的硬件构造语言,是一种对CoffeeScript语言做了词法编译的改造扩充后的DSL,所以当您编写Coffee-HDL时,实际上是在编写构造硬件电路的CoffeeScript程序.
 
-作者并不假定您是否了解如何在coffeescript中编程,我们将通过给出的例子指出必要的Coffee-HDL语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
+作者并不假定您是否了解如何在CoffeeScript中编程,我们将通过给出的例子指出必要的Coffee-HDL语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
 
-对于宿主语言coffeescript 我们建议您花费几个小时浏览[coffeescript.org](https://coffeescript.org)来学习coffeescript的基本语法,coffeescript是一门表达能力很强但是又非常简单的动态语言,最终编译器会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的coffeescript书籍 ["coffeescript in action"](https://www.manning.com/books/coffeescript-in-action).
+对于宿主语言CoffeeScript 我们建议您花费几个小时浏览[coffeescript.org](https://coffeescript.org)来学习CoffeeScript的基本语法,CoffeeScript是一门表达能力很强但是又非常简单的动态语言,最终编译器会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的CoffeeScript书籍 ["CoffeeScript in action"](https://www.manning.com/books/CoffeeScript-in-action).
 
 ##  安装
-Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的coffeescript编译器支持,如果操作系统没有自带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目录的bin目录就可以了.
+Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的CoffeeScript编译器支持,如果操作系统没有自带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目录的bin目录就可以了.
 
 Coffee-HDL安装步骤
 
@@ -49,12 +49,12 @@ Coffee-HDL关注二进制逻辑设计,能表达所有的verilog时序电路和�
   
 
 Coffee-HDL的未来要实现的功能	
-* 使用宿主语言coffeescript仿真
+* 使用宿主语言CoffeeScript仿真
 * 对firrtl支持
 
 ## 文件类型和模块
 Coffee-HDL模块描述文件以.chdl作为文件后缀名,一个模块一个文件,导入模块
-使用importDesign(file_name),  其中file_name可以省略.chdl后缀名,如果导入普通coffeescript模块,使用标准的require方式导入.
+使用importDesign(file_name),  其中file_name可以省略.chdl后缀名,如果导入普通CoffeeScript模块,使用标准的require方式导入.
 
 Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
 
@@ -179,7 +179,7 @@ endmodule
 ## 语言要素
 
 1.	 标识符
-Coffee-HDL语言标识符可以是任意字母，数字，$符号和_符号的组合，但是标识符的第一个字母不可以是数字或者_,标识符中不可以出现_ _ (连续两个下划线)。标识符的区分大小写的。以下标识符都是合法的：
+Coffee-HDL语言标识符可以是任意字母，数字，$符号和_符号的组合，但是标识符的第一个字母不可以是数字或者 _ ,标识符中不可以出现 _ _ (连续两个下划线)。标识符的区分大小写的。以下标识符都是合法的：
         	• add
         	• ADD
         	• Add_1
@@ -192,12 +192,12 @@ Coffee-HDL语言标识符可以是任意字母，数字，$符号和_符号的�
 
 ​    
 2. 注释
-   Coffee-HDL使用Coffeescript定义的#号作为行注释的起始符号，用###作为多行注释的起始和结尾符号
+   Coffee-HDL使用CoffeeScript定义的#号作为行注释的起始符号，用###作为多行注释的起始和结尾符号
 
    
 
 3. 格式
-   Coffee-HDL区分大小写,大小写不同的标识符是不同的。Coffee-HDL语句块使用缩进代表作用域范围，具体规则请参见Coffeescript语言手册。
+   Coffee-HDL区分大小写,大小写不同的标识符是不同的。Coffee-HDL语句块使用缩进代表作用域范围，具体规则请参见CoffeeScript语言手册。
 
    
 
@@ -217,7 +217,7 @@ Coffee-HDL语言标识符可以是任意字母，数字，$符号和_符号的�
 		32’h55aa’ => 32’h55aa
 		4’b0011’   => 4’b0011
 
-	c. 使用Coffeescript基本整数类型,如果宽度大于32,需要在数字最后加上n，表达为BigInt数据类型。
+	c. 使用CoffeeScript基本整数类型,如果宽度大于32,需要在数字最后加上n，表达为BigInt数据类型。
 	   编译器会根据数据有效宽度自动加上宽度信息，比如
 		
 		0x55aa => 15’h55aa
@@ -478,14 +478,17 @@ assign result[31:0] = 32'h12345678;
 ```
 如果参数是一个列表的话，列表里面是带有宽度信息的信号或者常量，生成的wire宽度是列表内宽度的总和，这个wire会被assign成所有列表信号的拼接.
 
+示例代码
+
 ```coffeescript
-result = wire([a,b,10'b0'],'result')
+result = wire([a,b,10'b0'],'result') #a是10位，b是12位
 ```
 
 生成代码
 
 ```verilog
-wire result_1 = {a,b,10'b0};
+wire [31:0] result_1;
+assign result_1 = {a,b,10'b0};
 ```
 
 还有一种wire,通过unpack_wire函数可以构造一种线，这种线可以解开成列表里面的信号，并自动计算宽度
@@ -493,7 +496,7 @@ wire result_1 = {a,b,10'b0};
 示例代码
 
 ```coffeescript
-data = unpack_wire([e,f],'data')
+data = unpack_wire([e,f],'data') # f是16位，e是8位
 ```
 
 生成代码
@@ -559,7 +562,7 @@ wire声明还有前缀表达形式Net wire_name/Net(wire_name,width), Net形式�
 的缩略形式
 
 ## port
-在 Coffee-HDL中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,端口也可以组织成数组,对象,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为协议给hdl模块共享
+在 Coffee-HDL中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,端口也可以组织成数组,对象,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为协议给chdl模块共享
 
 示例代码
 
@@ -614,7 +617,7 @@ module PortComplex(
 endmodule
 ```
 端口进一步加强的语义包括如下一些方法：
-* asReg(config=null): 当前output端口为reg的q端
+* asReg(config=null): 当前output端口为reg的q端,port拥有reg的所有能力
 
 config是可选的，通过属性确定寄存器类型，定义如下：
 
@@ -629,7 +632,7 @@ config = {
 ```
 
 
-除了标准的input/output以外,还可以用bind(channel_name)的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见下一章.
+除了标准的input/output以外,还可以用bind(channel_name)的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见“通道”相关章节.
 
 
 ## reg,clock,reset
@@ -873,7 +876,7 @@ end
 Coffee-HDL支持用函数生成电路以增强代码复用,生成电路函数返回值必须为$表达式，在函数内部可以声明局部wire和reg,编译器会确保在函数内部的wire和reg的变量名全局唯一，函数可以嵌套调用。
 
 Coffee-HDL支持函数抽象表达以增强代码复用,函数声明方式是普通
-coffeescript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
+CoffeeScript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
 	
 示例代码
 
