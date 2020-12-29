@@ -15,7 +15,7 @@ Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的coffeescript
 
 Coffee-HDL安装步骤
 
-		git clone git@e.coding.net:thriller/carbonite.git
+		git clone https://e.coding.net/thriller/carbonite.git
 		cd carbonite
 		npm install #or yarn install
 		source sourceme.sh
@@ -755,6 +755,117 @@ Coffee-HDL连接，复制，规约操作符通过函数实现
   - fromMsb(n:number): 从高位选择n位信号，如果n是负数，则选择选择从高位开始的总宽度减去abs(n)的宽度
   - fromLsb(n:number): 从低位选择n位信号，如果n是负数，则选择选择从低位开始的总宽度减去abs(n)的宽度
 
+## 分支
+在verilog语言中，mux电路可以通过两种写法生成，一种是?:表达式，一种if-else语句块，在Coffee-HDL语言中，这两种方式都被统一到$if-$elseif-$else语句，编译器自动根据上下文生成相应的 ? :操作符，或者if else语句。
+
+Coffee-HDL的数字逻辑分支形式如下
+
+```coffeescript
+$if(cond)
+  block_code1
+$elseif(cond)
+  block_code2
+$else
+  block_code3
+```
+在assign环境下,分支语句块的返回值自动生成?:表达式,在always环境下,分支语句生成if elseif形式的组合逻辑.
+示例代码
+```coffeescript
+assign(@w2.w4)
+  $if(@in1==hex(5,1))
+    $ @w2.w3+1
+  $elseif(@in1==hex(5,2))
+    $ @w2.w3+2
+
+always
+  $if(@in1==hex(5,1))
+    assign(@r1(3,1)) = $ @din(4,2)+0x100
+  $elseif(@in1==hex(5,2))
+    assign(@r1(3,1)) = $ @din(4,2)+0x200
+```
+生成代码
+```verilog
+assign w2__w4 = (in1==5'h1)?w2__w3+1'b1:(in1==5'h2)?w2__w3+2'd2:0;
+always_comb begin
+   _r1=r1;
+   if(in1==5'h1) begin
+     _r1[3:1] = din[4:2]+9'h100;
+   end
+   else if(in1==5'h2) begin
+     _r1[3:1] = din[4:2]+10'h200;
+   end
+ end
+```
+
+
+
+
+无优先级并行电路可以使用$balance语句,前提是程序员需要保证cond1,cond2互斥
+
+示例代码
+
+```coffeescript
+assign(@out)
+   $balance([                                      
+    $cond(@cond1) => $ @data1                                           
+    $cond(@cond2) => $ @data2                                           
+  ] , 16)
+```
+生成代码
+```verilog
+assign out = (16{cond1}&(data1))|
+            (16{cond2}&(data2));
+```
+
+如果需要批量化产生if elseif else语句,可以使用$order/$case语句
+
+$order 示例代码
+```coffeescript
+assign @w2.w6
+  $order([
+    $cond(@in1(1)) => $ @w2.w3(9:7)
+    $cond(@in1(2)) => $ @w2.w3(3:1)
+	  $cond(@in1(3))
+    $cond(@in1(4)) => $ 100
+    $cond() => $ @w2.w3(6:4)
+    ]
+  )
+```
+
+生成代码
+```verilog
+assign w2__w6 =(in1[1])?(w2__w3[9:7]):(in1[2])?(w2__w3[3:1]):(((in1[3])||(in1[4])))?(100):w2__w3[6:4];
+```
+$case 示例代码
+
+```coffeescript
+  always
+      $case(@casein) =>
+        [
+          $lazy_cond(10) =>
+            assign(@caseout) = 100
+          $lazy_cond(20)
+          $lazy_cond(30)
+          $lazy_cond(40) =>
+            assign(@caseout) = 200
+          $lazy_cond() =>
+            assign(@caseout) = 300
+        ]
+```
+
+生成代码
+```verilog
+always_comb begin /* 121 */ 
+  caseout=0;
+  caseout /* 131 */ = 'd300;
+  if((casein=='d20)||(casein=='d30)||(casein=='d40)) begin
+  	caseout /* 129 */ = 'd200;
+  end
+  if(casein=='d10) begin
+      caseout /* 125 */ = 'd100;
+  end
+end
+```
 
 
 ## 函数抽象
@@ -1032,117 +1143,6 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 
 在always当中如果使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是直接进入第一个状态.
 
-## 分支
-在verilog语言中，mux电路可以通过两种写法生成，一种是?:表达式，一种if-else语句块，在Coffee-HDL语言中，这两种方式都被统一到$if-$elseif-$else语句，编译器自动根据上下文生成相应的 ? :操作符，或者if else语句。
-
-Coffee-HDL的数字逻辑分支形式如下
-
-```coffeescript
-$if(cond)
-  block_code1
-$elseif(cond)
-  block_code2
-$else
-  block_code3
-```
-在assign环境下,分支语句块的返回值自动生成?:表达式,在always环境下,分支语句生成if elseif形式的组合逻辑.
-示例代码
-```coffeescript
-assign(@w2.w4)
-  $if(@in1==hex(5,1))
-    $ @w2.w3+1
-  $elseif(@in1==hex(5,2))
-    $ @w2.w3+2
-
-always
-  $if(@in1==hex(5,1))
-    assign(@r1(3,1)) = $ @din(4,2)+0x100
-  $elseif(@in1==hex(5,2))
-    assign(@r1(3,1)) = $ @din(4,2)+0x200
-```
-生成代码
-```verilog
-assign w2__w4 = (in1==5'h1)?w2__w3+1'b1:(in1==5'h2)?w2__w3+2'd2:0;
-always_comb begin
-   _r1=r1;
-   if(in1==5'h1) begin
-     _r1[3:1] = din[4:2]+9'h100;
-   end
-   else if(in1==5'h2) begin
-     _r1[3:1] = din[4:2]+10'h200;
-   end
- end
-```
-
-
-
-
-无优先级并行电路可以使用$balance语句,前提是程序员需要保证cond1,cond2互斥
-
-示例代码
-
-```coffeescript
-assign(@out)
-   $balance([                                      
-    $cond(@cond1) => $ @data1                                           
-    $cond(@cond2) => $ @data2                                           
-  ] , 16)
-```
-生成代码
-```verilog
-assign out = (16{cond1}&(data1))|
-            (16{cond2}&(data2));
-```
-
-如果需要批量化产生if elseif else语句,可以使用$order/$case语句
-
-$order 示例代码
-```coffeescript
-assign @w2.w6
-  $order([
-    $cond(@in1(1)) => $ @w2.w3(9:7)
-    $cond(@in1(2)) => $ @w2.w3(3:1)
-	  $cond(@in1(3))
-    $cond(@in1(4)) => $ 100
-    $cond() => $ @w2.w3(6:4)
-    ]
-  )
-```
-
-生成代码
-```verilog
-assign w2__w6 =(in1[1])?(w2__w3[9:7]):(in1[2])?(w2__w3[3:1]):(((in1[3])||(in1[4])))?(100):w2__w3[6:4];
-```
-$case 示例代码
-
-```coffeescript
-  always
-      $case(@casein) =>
-        [
-          $lazy_cond(10) =>
-            assign(@caseout) = 100
-          $lazy_cond(20)
-          $lazy_cond(30)
-          $lazy_cond(40) =>
-            assign(@caseout) = 200
-          $lazy_cond() =>
-            assign(@caseout) = 300
-        ]
-```
-
-生成代码
-```verilog
-always_comb begin /* 121 */ 
-  caseout=0;
-  caseout /* 131 */ = 'd300;
-  if((casein=='d20)||(casein=='d30)||(casein=='d40)) begin
-  	caseout /* 129 */ = 'd200;
-  end
-  if(casein=='d10) begin
-      caseout /* 125 */ = 'd100;
-  end
-end
-```
 
 ##  集成
 除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,Coffee-HDL还可以使用hub方式集成.
