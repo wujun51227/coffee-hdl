@@ -85,10 +85,13 @@ Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
 cell1 = importDesign('./cell1.chdl')  #引入子模块
 
 class ImportSimple extends Module     #申明当前模块
-  u0_cell1: new cell1()               #例化子模块
-
   constructor: ->
     super()
+    
+    CellMap(
+       u0_cell1: new cell1()          #例化子模块
+    )
+
     Port(                             #端口申明
       bindBundle: bind('up_signal')   #绑定通道
       clock: input().asClock()        #输入时钟信号
