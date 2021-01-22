@@ -5,11 +5,12 @@ _ = require 'lodash'
 
 class Vec extends CircuitEl
 
-  constructor: (width,depth)->
+  constructor: (width,depth,annotate=null)->
     super()
     @width=width
     @depth=depth
     @__type='vec'
+    @__annotate=annotate
 
   set: (n,expr)=>
     addr=getValue(n)
@@ -18,14 +19,31 @@ class Vec extends CircuitEl
   get: (n)=>
     addr=getValue(n)
     return VecMember.create(this,addr)
+
+  array_set: (n,cond,expr,clk=null)=>
+    addr=getValue(n)
+    if clk?
+      @cell.__wireAssignList.push ["array_set",VecMember.create(this,addr),[cond,expr,clk.refName()],-1]
+    else
+      @cell.__wireAssignList.push ["array_set",VecMember.create(this,addr),[cond,expr,@cell._clock()],-1]
+
+  array_get: (n,cond,target,clk=null)=>
+    addr=getValue(n)
+    if clk?
+      @cell.__wireAssignList.push ["array_get",VecMember.create(this,addr),[cond,target,clk.refName()],-1]
+    else
+      @cell.__wireAssignList.push ["array_get",VecMember.create(this,addr),[cond,target,@cell._clock()],-1]
     
-  @create: (width,depth)-> new Vec(width,depth)
+  @create: (width,depth,annotate=null)-> new Vec(width,depth,annotate)
 
   getWidth:()=> @width
 
   getDepth:()=> @depth
 
   verilogDeclare: ()->
-    return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"];"
+    if @__annotate?
+      return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"]; /* #{@__annotate} */"
+    else
+      return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"];"
 
 module.exports=Vec

@@ -398,6 +398,46 @@ code_gen= (inst,allInst,first=false)=>
         printBuffer.add "reg #{name}#{lineComment(lineno)};"
       else
         printBuffer.add "reg #{name};"
+    else if statement[0]=='array_set'
+      lhs=statement[1]
+      lhsName=lhs.refName()
+
+      cond=statement[2][0]
+      condInfo=rhsExpand(cond)
+      if _.isNil(condInfo) or _.isNil(condInfo.code)
+        throw new Error("arrays set to #{lhsName} condition is null".red)
+
+      rhs=statement[2][1]
+      rhsInfo=rhsExpand(rhs)
+      if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
+        throw new Error("arrays set to #{lhsName} value is null".red)
+
+      clock=statement[2][2]
+
+      printBuffer.add "always @(posedge #{clock})  begin"+"#{lineComment(lineno)}"
+      printBuffer.add "  if(#{condInfo.code}) begin"
+      printBuffer.add "    #{lhsName} <= #{rhsInfo.code};"
+      printBuffer.add "  end"
+      printBuffer.add "end"
+    else if statement[0]=='array_get'
+      lhs=statement[1]
+      lhsName=lhs.refName()
+
+      cond=statement[2][0]
+      condInfo=rhsExpand(cond)
+      if _.isNil(condInfo) or _.isNil(condInfo.code)
+        throw new Error("arrays get to #{lhsName} condition is null".red)
+
+      target=statement[2][1]
+      targetName=target.refName()
+
+      clock=statement[2][2]
+
+      printBuffer.add "always @(posedge #{clock})  begin"+"#{lineComment(lineno)}"
+      printBuffer.add "  if(#{condInfo.code}) begin"
+      printBuffer.add "    #{targetName} <= #{lhsName};"
+      printBuffer.add "  end"
+      printBuffer.add "end"
     else if statement[0]=='assign'
       lhs=statement[1]
       rhs=statement[2]
