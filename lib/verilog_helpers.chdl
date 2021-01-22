@@ -23,7 +23,7 @@ module.exports={
 
   set_monitor:(name,inst_list...)->
     fileName = name ? @getHierarchy()+'.monitor'
-    assert_module.monitor_handle.setWireType()
+    assert_module.monitor_handle.noInit()
     handle = assert_module.monitor_handle
     initial
       $sequence()
