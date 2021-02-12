@@ -55,6 +55,9 @@ blur=(s)=>
       else
         out.push i
     return out.join('')
+  else if global.getPrefix()
+    prefix = global.getPrefix()
+    return prefix+'__'+s
   else
     return s
 
