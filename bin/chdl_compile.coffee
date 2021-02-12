@@ -222,6 +222,8 @@ programParam=[]
 config_obj=null
 if program.config_file?
   config_obj = require path.resolve(program.config_file)
+else if fs.existsSync("./chdl_config.coffee")
+  config_obj = require path.resolve("./chdl_config.coffee")
 else if fs.existsSync("./chdl_config.json5")
   config_obj = require path.resolve("./chdl_config.json5")
 else if fs.existsSync("./chdl_config.json")
