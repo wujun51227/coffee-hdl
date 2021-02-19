@@ -20,6 +20,8 @@ topName = null
 
 idCnt=0
 
+ifdefProtect=false
+
 module.exports.setPrefix = (s)-> prefix=s
 
 module.exports.getPrefix = -> prefix
@@ -70,3 +72,7 @@ module.exports.incrIdCnt= ->
 module.exports.setIdCnt= (v)-> idCnt=v
 
 module.exports.getIdCnt= -> idCnt
+
+module.exports.setIfdefProtect= -> ifdefProtect=true
+
+module.exports.getIfdefProtect= -> ifdefProtect

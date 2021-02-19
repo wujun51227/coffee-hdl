@@ -348,6 +348,9 @@ code_gen= (inst,allInst,first=false)=>
   printBuffer.add '`ifndef UDLY'
   printBuffer.add '`define UDLY 1'
   printBuffer.add '`endif'
+  if global.getIfdefProtect()
+    printBuffer.add '`ifndef _CHDL_'+buildName.toUpperCase()+'_'
+    printBuffer.add '`define _CHDL_'+buildName.toUpperCase()+'_'
   printBuffer.add 'module '+buildName+'('
   printBuffer.add _.map(toFlatten(inst.__ports), (i)=>
     "  "+i[1].getName()
@@ -610,6 +613,8 @@ code_gen= (inst,allInst,first=false)=>
       printBuffer.blank()
 
   printBuffer.add 'endmodule'
+  if global.getIfdefProtect()
+    printBuffer.add '`endif'
   printBuffer.blank()
   printBuffer.flush()
 

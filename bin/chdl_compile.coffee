@@ -55,6 +55,7 @@ program
   .option('--config_file  <config file name>')
   .option('--param <object string>')
   .option('--rename <new top name>')
+  .option('--ifdef_protect')
   .option('--debug')
   .parse(process.argv)
 
@@ -181,6 +182,9 @@ cfg={
 
 if program.obfuscate
   global.setObfuscate()
+
+if program.ifdef_protect
+  global.setIfdefProtect()
 
 if program.release
   global.setRelease()
