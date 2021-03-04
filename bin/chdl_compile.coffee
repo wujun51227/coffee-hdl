@@ -55,6 +55,7 @@ program
   .option('--config_file  <config file name>')
   .option('--param <object string>')
   .option('--rename <new top name>')
+  .option('--ifdef_protect')
   .option('--debug')
   .parse(process.argv)
 
@@ -182,6 +183,9 @@ cfg={
 if program.obfuscate
   global.setObfuscate()
 
+if program.ifdef_protect
+  global.setIfdefProtect()
+
 if program.release
   global.setRelease()
 
@@ -222,6 +226,8 @@ programParam=[]
 config_obj=null
 if program.config_file?
   config_obj = require path.resolve(program.config_file)
+else if fs.existsSync("./chdl_config.coffee")
+  config_obj = require path.resolve("./chdl_config.coffee")
 else if fs.existsSync("./chdl_config.json5")
   config_obj = require path.resolve("./chdl_config.json5")
 else if fs.existsSync("./chdl_config.json")

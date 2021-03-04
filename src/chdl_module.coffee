@@ -772,8 +772,8 @@ class Module
     v.hier=v.elName
     return v
 
-  _localVec: (width=32,depth=32,name='t')->
-    pWire=Vec.create(Number(width),Number(depth))
+  _localVec: (width=32,depth=32,name='t',annotate=null)->
+    pWire=Vec.create(Number(width),Number(depth),annotate)
     pWire.cell=this
     pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pWire.hier=pWire.elName

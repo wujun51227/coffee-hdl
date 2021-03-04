@@ -63,10 +63,13 @@ class Wire extends CircuitEl
   setLocal: => @local=true
 
   setVirtual: => @virtual=true
-  setWireType: => @virtual=false
   isVirtual: => @virtual
 
   setGlobal: => @local=false
+
+  noInit: =>
+    @value=null
+    return packEl('reg',this)
 
   init: (v)=>
     @value=v
@@ -283,7 +286,7 @@ class Wire extends CircuitEl
       else
         list.push "logic ["+(@width-1)+":0] "+@elName+";"
 
-    if @virtual
+    if @virtual and @value?
       list.push "initial begin"
       list.push "  #{@elName} = #{Vnumber.hex(@width,@value).refName()};"
       list.push "end"
