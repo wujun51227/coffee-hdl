@@ -69,21 +69,31 @@ class Vnumber
 
   isAutoWidth: => @autoWidth
 
+  sign: =>
+    @signed = true
+    return this
+
   refName: =>
+    out=null
     if @show_type=='bin'
       str= @bits[..].reverse().join('')
-      return "#{@width}'b#{str}"
+      out="#{@width}'b#{str}"
     else if @show_type=='oct'
       str= BigInt('0b'+@bits[..].reverse().join('')).toString(8)
-      return "#{@width}'o#{str}"
+      out="#{@width}'o#{str}"
     else if @show_type=='hex'
       str= BigInt('0b'+@bits[..].reverse().join('')).toString(16)
-      return "#{@width}'h#{str}"
+      out="#{@width}'h#{str}"
     else if @show_type=='dec'
       str= BigInt('0b'+@bits[..].reverse().join('')).toString(10)
-      return str
+      out=str
     else
       throw new Error("Unkown show type")
+
+    if @signed
+      return "$signed(#{out})"
+    else
+      return out
 
   format: (type) => @show_type=type
 
