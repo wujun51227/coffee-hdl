@@ -543,6 +543,12 @@ module.exports={
     t = wire(sig_list,'cat_sig')
     return t
 
+  $isZero: (sig)->
+    return $ sig==hex(sig.getWidth(),0)
+
+  $isNotZero: (sig)->
+    return $ sig!=hex(sig.getWidth(),0)
+
   $seqState:(stateReg,nextState,lastStateReg,bin)->
     assign(stateReg) = nextState
     assign(lastStateReg) = stateReg

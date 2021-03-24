@@ -81,6 +81,8 @@ class UsePrimitiveLib extends Module
     Net d12    = $fall(v1)
     Net(d13,32) = $arrayDecode(@w,v2)
     #count hold1 hold0 holdData headPadding tailPadding headPaddingTo tailPaddingTo
+
+    Net d14 = $isZero(d13) && $isZero(d12)
     
     initial
       $sequence()

@@ -234,7 +234,7 @@ module.exports={
         consign(empty_flag) = 1
         consign(prefetched) = 0
       $else
-        consign(empty_flag) = !next_level
+        consign(empty_flag) = $isZero(next_level)
         $if(cat(pop,read)==2'b01')
           consign(prefetched) = 1
         $elseif(cat(pop,read)==2'b10')
