@@ -144,6 +144,13 @@ class RegSimple extends Module
 
     Dff(ff14,32) = 32'h12345678'
 
+    SignDff(ff18,32) = 32'h12345678'
+
+    ff19 = reg(20,'ff19').setSign()
+
+    consign ff19 = 1
+
+
     assign @reg_out[14]=ff14.fromMsb(16).fromLsb(8)
 
     ff15=reg(16,'ff15').init(-1)

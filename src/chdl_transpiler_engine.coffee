@@ -406,7 +406,7 @@ patchCode=(text)->
 
   patchList=[]
   for i,index in tokens
-    if i[0]=='IDENTIFIER' and (i[1]=='consign' or i[1]=='assign' or i[1]=='Net' or i[1]=='Dff')
+    if i[0]=='IDENTIFIER' and (i[1]=='consign' or i[1]=='assign' or i[1]=='Net' or i[1]=='Dff' or i[1]=='SignNet' or i[1]=='SignDff')
       lineNum=i[2].first_line
       callPos=i[2].last_column
       if tokens[index+1]?[0]=='CALL_START'
@@ -545,6 +545,63 @@ extractLogic = (tokens)->
           '_localWire'
         else if token[1]=='Dff'
           '_localReg'
+      netName = tokens[i+2][1]
+      [dummy,callEnd]=findCallSlice(tokens,i+1)
+      if tokens[i+3][0]==','
+        widthArgs=tokens[i+4...callEnd]
+        list =[
+          ['IDENTIFIER',netName,{range:[]}]
+          ['=','=',{range:[]}]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', sigType, {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          widthArgs...
+          [',',',',{range:[]}]
+          ['STRING',"'"+netName+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+          [ 'TERMINATOR',   '\n',    {range:[]} ]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', sigAssign, {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          ['IDENTIFIER',netName,{range:[]}]
+          [',',',',{range:[]}],
+          ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+        ]
+      else
+        list =[
+          ['IDENTIFIER',netName,{range:[]}]
+          ['=','=',{range:[]}]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', sigType, {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          [ 'NUMBER',  '1',     {range:[]} ]
+          [',',',',{range:[]}]
+          ['STRING',"'"+netName+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+          [ 'TERMINATOR',   '\n',    {range:[]} ]
+          ['@', '@', {range:[]}]
+          ['PROPERTY', sigAssign, {range:[]}]
+          [ 'CALL_START',  '(',     {range:[]} ]
+          ['IDENTIFIER',netName,{range:[]}]
+          [',',',',{range:[]}],
+          ['NUMBER',"'"+String(lineno)+"'",{range:[]}]
+          [ 'CALL_END',     ')',    {range:[]} ]
+        ]
+      patchLength=findAssignBlock(tokens,callEnd)
+      tokens.splice i, callEnd-i+1, list...
+      i+=list.length+patchLength
+    else if token[0] is 'IDENTIFIER' and (token[1]=='SignNet' or token[1]=='SignDff')
+      sigAssign= do ->
+        if token[1]=='SignNet'
+          '_assign'
+        else if token[1]=='SignDff'
+          '_consign'
+      sigType = do ->
+        if token[1]=='SignNet'
+          '_localSignWire'
+        else if token[1]=='SignDff'
+          '_localSignReg'
       netName = tokens[i+2][1]
       [dummy,callEnd]=findCallSlice(tokens,i+1)
       if tokens[i+3][0]==','

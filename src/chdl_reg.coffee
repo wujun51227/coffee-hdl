@@ -29,6 +29,7 @@ class Reg extends CircuitEl
     @stallValue=null
     @fieldMap={}
     @local=false
+    @signed=false
     @share={
       assignBits:{}
       pendingValue:null
@@ -76,6 +77,10 @@ class Reg extends CircuitEl
 
   negedge: =>
     @negClock=true
+    return packEl('reg',this)
+
+  setSign: =>
+    @signed=true
     return packEl('reg',this)
 
   syncReset: ()=>
@@ -319,18 +324,22 @@ class Reg extends CircuitEl
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
         list.push i.verilogDeclare(true)
+
+    signStr = ''
+    if @signed
+      signStr = 'signed '
     if @width==1
-      list.push "reg "+@elName+";"
+      list.push "reg #{signStr}"+@elName+";"
       if @isAssigned()
-        list.push "wire "+@getDwire().refName()+";"
+        list.push "wire #{signStr}"+@getDwire().refName()+";"
       else
-        list.push "logic "+@getDwire().refName()+";"
+        list.push "logic #{signStr}"+@getDwire().refName()+";"
     else if @width>1
-      list.push "reg ["+(@width-1)+":0] "+@elName+";"
+      list.push "reg #{signStr}["+(@width-1)+":0] "+@elName+";"
       if @isAssigned()
-        list.push "wire ["+(@width-1)+":0] "+@getDwire().refName()+";"
+        list.push "wire #{signStr}[["+(@width-1)+":0] "+@getDwire().refName()+";"
       else
-        list.push "logic ["+(@width-1)+":0] "+@getDwire().refName()+";"
+        list.push "logic #{signStr}[["+(@width-1)+":0] "+@getDwire().refName()+";"
 
     return list.join("\n")
 

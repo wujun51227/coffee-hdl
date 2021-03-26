@@ -801,6 +801,27 @@ class Module
     @__local_wires.push(ret)
     return ret
 
+  _localSignWire: (arg=1,name='t')->
+    list=null
+    if _.isArray(arg)
+      width=0
+      list=arg
+      for i in list
+        width+=i.getWidth()
+    else
+      width=Number(arg)
+    pWire=Wire.create(width)
+    pWire.cell=this
+    pWire.setLocal()
+    pWire.setSign()
+    pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
+    pWire.hier=pWire.elName
+    ret = packEl('wire',pWire)
+    if list?
+      pWire.assign(->_expr(Expr.start().next(cat(list))))
+    @__local_wires.push(ret)
+    return ret
+
   _localUnpackWire: (list,name='t')->
     width=0
     for i in list
@@ -834,6 +855,17 @@ class Module
     pReg=Reg.create(Number(width))
     pReg.cell=this
     pReg.setLocal()
+    pReg.elName=toSignal(_id(global.getPrefix()+'__'+name))
+    pReg.hier=pReg.elName
+    ret = packEl('reg',pReg)
+    @__local_regs.push(ret)
+    return ret
+
+  _localSignReg: (width=1,name='r')=>
+    pReg=Reg.create(Number(width))
+    pReg.cell=this
+    pReg.setLocal()
+    pReg.setSign()
     pReg.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pReg.hier=pReg.elName
     ret = packEl('reg',pReg)

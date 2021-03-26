@@ -68,6 +68,12 @@ class WireSimple extends Module
     assign(@result.field('sum')) = 4'b1001'
     assign(@dout[4]) =  @result
 
+    SignNet(w9,16) = 0x55aa
+
+    w10 = wire(16,'w10').setSign()
+
+    assign w10 = 0x1234
+
     Net x = 0
     always
       @w4.pending(17)

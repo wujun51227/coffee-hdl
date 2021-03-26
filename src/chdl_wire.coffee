@@ -26,6 +26,7 @@ class Wire extends CircuitEl
     @clockName=null
     @resetName=null
     @virtual=false
+    @signed=false
     @share={
       assignBits:{}
       pendingValue:null
@@ -74,6 +75,10 @@ class Wire extends CircuitEl
   init: (v)=>
     @value=v
     return packEl('reg',this)
+
+  setSign: ()=>
+    @signed=true
+    return packEl('wire',this)
 
   pending: (v)=> @share.pendingValue=v
 
@@ -275,16 +280,19 @@ class Wire extends CircuitEl
     if @states?
       for i in _.sortBy(@states,(n)=>n.value)
         list.push i.verilogDeclare(true)
+    signStr=''
+    if @signed
+      signStr='signed '
     if @width==1
       if @type=='input'
-        list.push "wire "+@elName+";"
+        list.push "wire #{signStr}"+@elName+";"
       else
-        list.push "logic "+@elName+";"
+        list.push "logic #{signStr}"+@elName+";"
     else if @width>1
       if @type=='input'
-        list.push "wire ["+(@width-1)+":0] "+@elName+";"
+        list.push "wire #{signStr}["+(@width-1)+":0] "+@elName+";"
       else
-        list.push "logic ["+(@width-1)+":0] "+@elName+";"
+        list.push "logic #{signStr}["+(@width-1)+":0] "+@elName+";"
 
     if @virtual and @value?
       list.push "initial begin"
