@@ -337,9 +337,9 @@ class Reg extends CircuitEl
     else if @width>1
       list.push "reg #{signStr}["+(@width-1)+":0] "+@elName+";"
       if @isAssigned()
-        list.push "wire #{signStr}[["+(@width-1)+":0] "+@getDwire().refName()+";"
+        list.push "wire #{signStr}["+(@width-1)+":0] "+@getDwire().refName()+";"
       else
-        list.push "logic #{signStr}[["+(@width-1)+":0] "+@getDwire().refName()+";"
+        list.push "logic #{signStr}["+(@width-1)+":0] "+@getDwire().refName()+";"
 
     return list.join("\n")
 
