@@ -318,7 +318,7 @@ scanToken= (tokens,index)->
       else
         list=tokens.slice(start_index+1,stop_index+1)
         return [
-          list.length+2
+          list.length+1
           [token1,token2,list...]
         ]
 
