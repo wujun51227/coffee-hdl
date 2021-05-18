@@ -95,13 +95,10 @@ class Module
     for k,v of obj
       @__vecs[k]=v
       if this[k]?
-        if this[k].__type=='port' #only for 2d array as port
-          console.warn("Vec override the Port '#{k}'".yellow)
-          this[k]=v
-          for [name,inst] in toFlatten(v,'vec')
-            inst.link(this,toHier(k,name))
-        else
-          throw new Error('Vec name conflicted '+k)
+        console.warn("Name '#{k}' conflicted,Vec type override".yellow)
+        this[k]=v
+        for [name,inst] in toFlatten(v,'vec')
+          inst.link(this,toHier(k,name))
       else
         this[k]=v
         for [name,inst] in toFlatten(v,'vec')
