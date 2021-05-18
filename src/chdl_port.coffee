@@ -38,6 +38,8 @@ class Port extends Wire
     super(width)
     @type=type
     @isReg=false
+    @isVec=false
+    @depth=0
     @shadowReg=null
     @isRegConfig={}
     @bindChannel=null
@@ -186,6 +188,14 @@ class Port extends Wire
       throw new Error('Only output port can be treat as a register')
     return packEl('port',this)
 
+  asVec: (depth)=>
+    if @type=='output'
+      @isVec=true
+      @depth=depth
+    else
+      throw new Error('Only output port can be treat as a register')
+    return packEl('port',this)
+
   portDeclare: ->
     if @type=='input'
       if @width==1
@@ -194,9 +204,15 @@ class Port extends Wire
         "input ["+(@width-1)+":0] "+toSignal(@elName)
     else if @type=='output'
       if @width==1
-        "output "+@elName
+        if @isVec
+          "output "+@elName+"[0:#{@depth-1}]"
+        else
+          "output "+@elName
       else
-        "output ["+(@width-1)+":0] "+@elName
+        if @isVec
+          "output ["+(@width-1)+":0] "+@elName+"[0:#{@depth-1}]"
+        else
+          "output ["+(@width-1)+":0] "+@elName
 
   setShadowReg: (i)=> @shadowReg = i
 

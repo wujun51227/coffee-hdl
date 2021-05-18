@@ -19,6 +19,11 @@ class PortSimple extends Module
         out_port
         in_port
       ]
+      vec_port: output(10).asVec(1024)
+    )
+
+    Mem(
+      vec_port: vec(10,1024)
     )
 
 
@@ -31,6 +36,12 @@ class PortSimple extends Module
 
     tmp= $ @compose[1].enable
     assign(@compose[0].dout) = @compose[1].din+ tmp
+
+    Net(dummy,10)
+    always
+      @vec_port.set(0x1, $ 0x111)
+      @vec_port.set(0x200, $ 0x222)
+      assign(dummy) => $ @vec_port.get(0x1)+ @vec_port.get(@din)
 
 class tb extends Module
   constructor: ->

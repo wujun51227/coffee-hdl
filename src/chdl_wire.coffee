@@ -287,12 +287,14 @@ class Wire extends CircuitEl
       if @type=='input'
         list.push "wire #{signStr}"+@elName+";"
       else
-        list.push "logic #{signStr}"+@elName+";"
+        if not @isVec
+          list.push "logic #{signStr}"+@elName+";"
     else if @width>1
       if @type=='input'
         list.push "wire #{signStr}["+(@width-1)+":0] "+@elName+";"
       else
-        list.push "logic #{signStr}["+(@width-1)+":0] "+@elName+";"
+        if not @isVec
+          list.push "logic #{signStr}["+(@width-1)+":0] "+@elName+";"
 
     if @virtual and @value?
       list.push "initial begin"
