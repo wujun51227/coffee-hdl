@@ -40,6 +40,9 @@ class Vec extends CircuitEl
 
   getDepth:()=> @depth
 
+  readmemh: (self,path)=>
+    self.__regAssignList.push ["array_init",this,['hex',path],-1]
+
   verilogDeclare: ()->
     if @__annotate?
       return "reg ["+(@width-1)+":0] "+@elName+"[0:"+(@depth-1)+"]; /* #{@__annotate} */"

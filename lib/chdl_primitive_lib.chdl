@@ -74,6 +74,24 @@ module.exports={
       item = iterator.next()
     return out
 
+  $portMux:(sel,outPort,inPortList)->
+    for [out_name,out_port] in toFlatten(outPort)
+      port_el = _.get(outPort,out_name)
+      list=[]
+      for dst,index in inPortList
+        in_port = _.get(dst,out_name)
+        if in_port?
+          if in_port.getType()=='input'
+            if out_port.getType()=='output'
+              list.puhs($cond(index==sel) => $ in_port)
+          else
+            if in_port.getType()=='output'
+              if out_port.getType()=='input'
+                assign(in_port) = port_el
+      if list.length>0
+        list.puhs($cond() => $ 0)
+        assign(port_el) = $order(list)
+
   $portHub:(list...)->
     clone_list=list[...]
     i=0

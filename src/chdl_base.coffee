@@ -265,6 +265,14 @@ statementGen=(buffer,statement)->
     buffer.add "  wait(#{item.expr.e.str})"
     for i in item.list
       statementGen(buffer,i)
+  else if stateType=='array_init'
+    array_el=statement[1]
+    file_type=statement[2][0]
+    file_path=statement[2][1]
+    if file_type=='hex'
+      buffer.add "  $readmemh(\"#{file_path}\",#{array_el.oomrName()});"
+    else
+      throw new Error("arrays init format #{file_type} undefined".red)
   else if stateType=='endif'
     1
   else

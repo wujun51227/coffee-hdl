@@ -83,6 +83,9 @@ module.exports={
         assign rstn = 1
       .end()
 
+  readmemh: (file_path,sig)->
+    sig.readmemh(this,file_path)
+
   assert_1: (sig,message='')->
     assert_module.compare_gen('eq').call(this,sig,1,message)
 
