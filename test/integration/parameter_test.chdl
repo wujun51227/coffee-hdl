@@ -4,6 +4,7 @@
 class SubModule extends Module
   constructor: ->
     super()
+    Mixin importLib('verilog_helpers.chdl')
     Port(
       dout: output(16)
     )
@@ -11,8 +12,18 @@ class SubModule extends Module
       { key:'hello',value:100}
     ])
 
+    Mem(
+      mem: vec(10,20)
+    )
+
   build: ->
     assign @dout = @getParameter('hello')
+
+    initial
+      $sequence()
+      .init =>
+        @readmemh(@getParameter('hello'),@mem)
+      .end()
 
 class ParameterTest extends Module
   u0_cell: new SubModule()
@@ -38,6 +49,7 @@ class ParameterTest extends Module
     initial
       $sequence()
       .delay(100) =>
+        @readmemh('hello',@u0_cell.mem)
         @assert_eq(@ch,200,'test parameter')
         @assert_report()
         @sim_finish()

@@ -41,7 +41,15 @@ class Vec extends CircuitEl
   getDepth:()=> @depth
 
   readmemh: (self,path)=>
-    self.__regAssignList.push ["array_init",this,['hex',path],-1]
+    oomr=true
+    if @cell.getModuleName()==self.getModuleName()
+      oomr=false
+    if _.isString(path)
+      self.__regAssignList.push ["array_init",this,['hex','"'+path+'"',oomr],-1]
+    else if path.constructor?.name=='Vconst'
+      self.__regAssignList.push ["array_init",this,['hex',path.label,oomr],-1]
+    else
+      self.__regAssignList.push ["array_init",this,['hex',path,oomr],-1]
 
   verilogDeclare: ()->
     if @__annotate?

@@ -269,8 +269,13 @@ statementGen=(buffer,statement)->
     array_el=statement[1]
     file_type=statement[2][0]
     file_path=statement[2][1]
+    oomr=statement[2][2]
+    if oomr
+      array_path=array_el.oomrName()
+    else
+      array_path=array_el.getName()
     if file_type=='hex'
-      buffer.add "  $readmemh(\"#{file_path}\",#{array_el.oomrName()});"
+      buffer.add "  $readmemh(#{file_path},#{array_path});"
     else
       throw new Error("arrays init format #{file_type} undefined".red)
   else if stateType=='endif'
