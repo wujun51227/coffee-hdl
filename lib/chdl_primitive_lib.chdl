@@ -334,6 +334,11 @@ module.exports={
         list.push($cond(i==select) => $ array[i])
     $balance(list,width)
 
+  $bothEdge: (sig,clock='',reset='')->
+    d1 = reg(1,'d_').clock(clock).reset(reset)
+    consign (d1) = sig
+    return $ (sig & (!d1))||((!sig) & d1)
+
   $rise: (sig,clock='',reset='')->
     d1 = reg(1,'r_').clock(clock).reset(reset)
     consign (d1) = sig
