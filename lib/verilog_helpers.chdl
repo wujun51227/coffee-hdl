@@ -3,16 +3,22 @@ global  = require('chdl_global')
 {toFlatten}=require('chdl_utils')
 
 module.exports={
-  dump_wave: (fileName)->
+  dump_wave: (fileName,inst=null,level=0)->
     initial
       $sequence()
       .init ()=>
         if global.getWaveFormat()=='fsdb'
           @verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
-          @verilog("$fsdbDumpvars;")
+          if inst?
+            @verilog("$fsdbDumpvars(#{level},#{inst.getHierarchy()});")
+          else
+            @verilog("$fsdbDumpvars;")
         else if global.getWaveFormat()=='vcd'
           @verilog("$dumpfile(\"#{fileName}.vcd\");")
-          @verilog("$dumpvars;")
+          if inst?
+            @verilog("$dumpvars(#{level},#{inst.getHierarchy()});")
+          else
+            @verilog("$dumpvars;")
       .end()
 
   sim_finish: ()->
