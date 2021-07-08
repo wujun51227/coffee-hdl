@@ -705,7 +705,15 @@ class Module
     return bindTable
     
   bind: (obj)->
-    for port,channel of obj when _.get(@__ports,port)?
+    list=[]
+    if _.isArray(obj)
+      for {port,channel} in obj when _.get(@__ports,port)?
+        list.push([port,channel])
+    else
+      for port,channel of obj when _.get(@__ports,port)?
+        list.push([port,channel])
+
+    for [port,channel] in list
       if channel instanceof Channel
         @__bindChannels.push {portName:port, channel: channel}
         portInst = _.get(@__ports,port)

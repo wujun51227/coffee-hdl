@@ -342,7 +342,7 @@ code_gen= (inst,allInst,first=false)=>
     #fs.writeFileSync(buildName+'.dump.json',JSON.stringify(inst.dump(),null,2),'utf8')
 
   instEnv.register(inst)
-  allInst.push(inst)
+  allInst.push(inst) if allInst?
 
   channelWireList=[]
   for [name,channel] in toFlatten(inst.__channels)
