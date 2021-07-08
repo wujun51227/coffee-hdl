@@ -106,6 +106,16 @@ class Vnumber
   getNumber: =>
     return BigInt('0b'+@bits[..].reverse().join('')).toString(10)
 
+  toString: (format=16)=>
+    if format==16
+      return BigInt('0b'+@bits[..].reverse().join('')).toString(16)
+    else if format==10
+      return BigInt('0b'+@bits[..].reverse().join('')).toString(10)
+    else if format==8
+      return BigInt('0b'+@bits[..].reverse().join('')).toString(8)
+    else if format==2
+      return BigInt('0b'+@bits[..].reverse().join('')).toString(2)
+
   setWidth:(w)->
     newBits=new Array(w)
     for i in _.range(w)

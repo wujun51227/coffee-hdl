@@ -43,27 +43,27 @@ class chdl_assert extends Module
         @display("#{self.message_prefix} %0s",$(self.assert_message))
       if type=='eq'
         $if(sig!==value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should == #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should == 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
       else if type=='ne'
         $if(sig===value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should != #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should != 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
       else if type=='ge'
         $if(sig<value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should > #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should > 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
       else if type=='gt'
         $if(sig<=value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should >= #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should >= 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
       else if type=='le'
         $if(sig>value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should <= #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should <= 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
       else if type=='lt'
         $if(sig>=value)
-          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should < #{value}\",$time);")
+          @verilog("$display(\"#{self.assert_prefix} %0t Error: #{sig.getName()} should < 0x#{value.toString(16)}\",$time);")
           assign self.assert_fail_flag = 1
 
   fail_gen: ()->
