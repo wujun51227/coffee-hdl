@@ -83,13 +83,13 @@ module.exports={
         if in_port?
           if in_port.getType()=='input'
             if out_port.getType()=='output'
-              list.puhs($cond(index==sel) => $ in_port)
+              list.push($cond(index==sel) => $ in_port)
           else
             if in_port.getType()=='output'
               if out_port.getType()=='input'
                 assign(in_port) = port_el
       if list.length>0
-        list.puhs($cond() => $ 0)
+        list.push($cond() => $ 0)
         assign(port_el) = $order(list)
 
   $portHub:(list...)->
@@ -333,6 +333,11 @@ module.exports={
       else
         list.push($cond(i==select) => $ array[i])
     $balance(list,width)
+
+  $bothEdge: (sig,clock='',reset='')->
+    d1 = reg(1,'d_').clock(clock).reset(reset)
+    consign (d1) = sig
+    return $ (sig & (!d1))||((!sig) & d1)
 
   $rise: (sig,clock='',reset='')->
     d1 = reg(1,'r_').clock(clock).reset(reset)
