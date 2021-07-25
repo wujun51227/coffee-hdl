@@ -5,7 +5,7 @@ class UsePrimitiveLib extends Module
   constructor: ->
     super()
 
-    @lib=importLib('chdl_primitive_lib.chdl')
+    @lib = MixinAs importLib('chdl_primitive_lib.chdl')
     Mixin importLib('verilog_helpers.chdl')
 
     a={
