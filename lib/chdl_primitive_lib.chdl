@@ -27,7 +27,7 @@ module.exports={
       $else => $ sig2
     return $ selSig
     
-  $channelMux:(select,outChannel,inChannelList...)->
+  $channelMux:(select,outChannel,inChannelList)->
     for dst in outChannel.wireList()
       list=[]
       width=dst.net.getWidth()
