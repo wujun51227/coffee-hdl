@@ -113,22 +113,7 @@ module.exports={
       i+=1
 
   $portBind:(a,b)->
-    for [name,port] in toFlatten(a)
-      if name
-        el=_.get(a,name)
-        if port.getType()=='input'
-          find=_.get(b,name)
-          if find? and find.getType()=='input'
-            assign(find) = el
-        else if port.getType()=='output'
-          find=_.get(b,name)
-          if find? and find.getType()=='output'
-            assign(el) = find
-      else
-        if b.getType()=='output'
-          assign(port) = b
-        else if b.getType()=='input'
-          assign(b) = port
+    throw new Error('$portBind is deprecated, use $portHub')
 
   $channelPortHub:(list...)->
     clone_list=list[...]
