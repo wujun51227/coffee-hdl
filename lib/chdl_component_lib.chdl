@@ -159,9 +159,10 @@ module.exports={
             consign ack=0
         .wait($ valid_sync==0) =>
         .end()
+
     return {
       done: $(rx_done)
-      ack: $(ack)
+      tx_done: $(tx_done)
     }
 
   $async_handshake_tx: (valid,data,ack,clock='',reset='')->
