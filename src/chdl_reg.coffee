@@ -19,6 +19,7 @@ class Reg extends CircuitEl
     @states=[]
     @lsb= -1
     @msb= -1
+    @addr=null
     @assertHigh=false
     @negClock=false
     @enableSignal=null
@@ -42,6 +43,15 @@ class Reg extends CircuitEl
   setGlobal: => @local=false
 
   isVirtual: => false
+
+  setAddr: (addr)=>
+    @addr=addr
+    return packEl('reg',this)
+
+  getAddr: => @addr
+
+  hasAddr: =>
+    return @add!=null
 
   init: (v)=>
     if v?
@@ -163,17 +173,21 @@ class Reg extends CircuitEl
 
   setField: (name,msb=0,lsb=null)=>
     if _.isString(name)
+      [fieldName,desc]=name.split(/::/)
+      fieldDesc = desc ? 'None'
       if lsb==null
-        @fieldMap[name]={msb:msb,lsb:msb}
+        @fieldMap[fieldName]={msb:msb,lsb:msb,desc:fieldDesc}
       else
-        @fieldMap[name]={msb:msb,lsb:lsb}
+        @fieldMap[fieldName]={msb:msb,lsb:lsb,desc:fieldDesc}
       return packEl('reg',this)
     else if _.isPlainObject(name)
       for k,v of name
+        [fieldName,desc]=k.split(/::/)
+        fieldDesc = desc ? 'None'
         if _.isNumber(v)
-          @fieldMap[k]={msb:v,lsb:v}
+          @fieldMap[fieldName]={msb:v,lsb:v,desc:fieldDesc}
         else if _.isArray(v)
-          @fieldMap[k]={msb:v[0],lsb:v[1]}
+          @fieldMap[fieldName]={msb:v[0],lsb:v[1],desc:fieldDesc}
       return packEl('reg',this)
     else
       return null
