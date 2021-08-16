@@ -28,7 +28,7 @@ class Reg extends CircuitEl
     @clearValue=null
     @stallSignal=null
     @stallValue=null
-    @fieldMap={}
+    @fieldList={}
     @local=false
     @signed=false
     @share={
@@ -176,24 +176,24 @@ class Reg extends CircuitEl
       [fieldName,desc]=name.split(/::/)
       fieldDesc = desc ? 'None'
       if lsb==null
-        @fieldMap[fieldName]={msb:msb,lsb:msb,desc:fieldDesc}
+        @fieldList.push {name:fieldName,msb:msb,lsb:msb,desc:fieldDesc}
       else
-        @fieldMap[fieldName]={msb:msb,lsb:lsb,desc:fieldDesc}
+        @fieldList.push {name:fieldName,msb:msb,lsb:lsb,desc:fieldDesc}
       return packEl('reg',this)
     else if _.isPlainObject(name)
       for k,v of name
         [fieldName,desc]=k.split(/::/)
         fieldDesc = desc ? 'None'
         if _.isNumber(v)
-          @fieldMap[fieldName]={msb:v,lsb:v,desc:fieldDesc}
+          @fieldList.push {name:fieldName,msb:v,lsb:v,desc:fieldDesc}
         else if _.isArray(v)
-          @fieldMap[fieldName]={msb:v[0],lsb:v[1],desc:fieldDesc}
+          @fieldList.push {name:fieldName,msb:v[0],lsb:v[1],desc:fieldDesc}
       return packEl('reg',this)
     else
       return null
 
   field: (name)=>
-    item = @fieldMap[name]
+    item = _.find(@fieldList,{name:name})
     if item?
       msb=item.msb
       lsb=item.lsb
@@ -599,5 +599,13 @@ class Reg extends CircuitEl
     tempWire=@cell._localWire(list.length,'select')
     tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
+
+  dumpJson: =>
+    retObj = {
+      name: @elName
+      width: @width
+      default: @resetValue
+      fields: _.sortBy(@fieldList,['lsb'])
+    }
 
 module.exports=Reg
