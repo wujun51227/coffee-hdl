@@ -32,6 +32,7 @@ class Wire extends CircuitEl
       pendingValue:null
     }
     @type=null
+    @attached = false
 
   setType: (t)=> @type=t
   getType: => @type
@@ -51,12 +52,21 @@ class Wire extends CircuitEl
       @resetName=null
     else
       @resetName=reset.getName()
+    @attached = true
 
     return packEl('wire',this)
 
-  getClock: => @clockName
+  getClock: =>
+    if @attached
+      @clockName
+    else
+      @cell._clock()
 
-  getReset: => @resetName
+  getReset: =>
+    if @attached
+      @resetName
+    else
+      @cell._reset()
 
   setLocal: => @local=true
 

@@ -1,0 +1,487 @@
+_ = require 'lodash'
+
+module.exports={
+  $width_expand: (valid,data,clear,ratio=2)->
+    clock = valid.getClock()
+    reset = valid.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{valid.getName()}")
+    width       = data.getWidth()
+    data_array  = @createArray(ratio*2,=>reg(width).clock(clock).reset(reset))
+
+    index_width = @numWidth(ratio*2-1)
+    index       = reg(index_width,'index').clock(clock).reset(reset)
+    ready        = reg(1,'ready').clock(clock).reset(reset)
+    ready_cnt    = reg(index_width,'ready_cnt').clock(clock).reset(reset)
+    pingpong    = reg(1,'pingpong').clock(clock).reset(reset)
+
+    always
+      ready.pending(0)
+      $if(clear)
+        consign index = 0
+      $elseif(valid)
+        $if(index==ratio*2-1)
+          consign ready = 1
+          consign index = 0
+          consign pingpong=0
+        $elseif(index==ratio-1)
+          consign ready = 1
+          consign index = index + 1
+          consign pingpong=1
+        $else
+          consign index = index + 1
+
+    always_if(valid)
+      $arrayMuxSet(data_array,index,data)
+
+    always
+      $if(clear)
+        consign ready_cnt = 0
+      $elseif(ready)
+        consign ready_cnt = ratio-1
+      $elseif(ready_cnt!=0)
+        consign ready_cnt = ready_cnt - 1
+
+    Net ready_out = ready|(ready_cnt!=0)
+
+    Net(expand_ret,width*ratio)
+      $if(ready_out & pingpong)
+        $ cat(_.clone(data_array[0..ratio-1]).reverse())
+      $elseif(ready_out & !pingpong)
+        $ cat(_.clone(data_array[ratio..ratio*2-1]).reverse())
+      $else
+        $ 0
+
+    return {
+        data: $ expand_ret
+        ready: $ ready_out
+    }
+
+  $width_split: (depth,din,push,pop,pop_width,clear=0)->
+    clock = din.getClock()
+    reset = din.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{din.getName()}")
+
+    pop_num=Math.ceil(din.getWidth()/pop_width)
+    pop_cnt=reg(@numWidth(pop_num-1),'pop_cnt')
+    Net empty
+    Net full
+    Net(dout_word,din.getWidth())
+    Net(dout,pop_width)
+    Net pop_word
+    assign({empty:empty,full:full,dout:dout_word})=$fifo(depth,din,push,pop_word,clear,clock,reset)
+    always
+      $if(pop)
+        $if(pop_cnt==pop_num-1)
+          consign pop_cnt = 0
+          assign pop_word = 1
+        $else
+          consign pop_cnt = pop_cnt + 1
+    always
+      for i in _.range(pop_num)
+        $if(i==pop_cnt)
+          assign dout = dout_word(i*pop_width,pop_width)
+    return {
+      empty: $ empty
+      full: $ full
+      dout: $ dout
+    }
+
+  $async_trans: (valid,dst_clock='',dst_reset='')->
+    src_clock = valid.getClock()
+    src_reset = valid.getReset()
+    if src_clock==null or src_reset==null
+      throw new Error("Please attach clock/reset to #{valid.getName()}")
+    ack= reg(1,'ack').clock(dst_clock).reset(dst_reset)
+    Net ack_sync=$doubleSync(ack,src_clock,src_reset)
+    Net tx_done
+    valid_latch = reg(1,'valid_latch').clock(src_clock).reset(src_reset)
+    always
+      $if(valid)
+        consign valid_latch = 1
+      $elseif(tx_done)
+        consign valid_latch = 0
+
+    tx_valid = reg(1,'tx_valid').clock(src_clock).reset(src_reset)
+    always
+      $sequence('handshake_tx',src_clock,src_reset)
+        .init (next)=>
+          $if(next)
+            consign tx_valid=1
+        .wait($ !ack_sync && valid_latch) (trans,next)=>
+          $if(next)
+            consign tx_valid=0
+            assign tx_done = 1
+        .posedge(ack_sync) =>
+        .end()
+
+    Net valid_sync=$doubleSync(tx_valid,dst_clock,dst_reset)
+    Net rx_done
+
+    always
+      $sequence('handshake_rx',dst_clock,dst_reset)
+        .init (next)=>
+          $if(next)
+            consign ack=1
+        .posedge(valid_sync) (trans,next)=>
+          $if(trans)
+            assign rx_done = 1
+          $if(next)
+            consign ack=0
+        .wait($ valid_sync==0) =>
+        .end()
+    return $ rx_done
+
+  $async_trans_ack: (valid,dst_clock='',dst_reset='')->
+    src_clock = valid.getClock()
+    src_reset = valid.getReset()
+    if src_clock==null or src_reset==null
+      throw new Error("Please attach clock/reset to #{valid.getName()}")
+
+    ack= reg(1,'ack').clock(dst_clock).reset(dst_reset)
+    Net ack_sync=$doubleSync(ack,src_clock,src_reset)
+    Net tx_done
+    valid_latch = reg(1,'valid_latch').clock(src_clock).reset(src_reset)
+    always
+      $if(valid)
+        consign valid_latch = 1
+      $elseif(tx_done)
+        consign valid_latch = 0
+
+    tx_valid = reg(1,'tx_valid').clock(src_clock).reset(src_reset)
+    always
+      $sequence('handshake_tx',src_clock,src_reset)
+        .init (next)=>
+          $if(next)
+            consign tx_valid=1
+        .wait($ !ack_sync && valid_latch) (trans,next)=>
+          $if(next)
+            consign tx_valid=0
+            assign tx_done = 1
+        .posedge(ack_sync) =>
+        .end()
+
+    Net valid_sync=$doubleSync(tx_valid,dst_clock,dst_reset)
+    Net rx_done
+
+    always
+      $sequence('handshake_rx',dst_clock,dst_reset)
+        .init (next)=>
+          $if(next)
+            consign ack=1
+        .posedge(valid_sync) (trans,next)=>
+          $if(trans)
+            assign rx_done = 1
+          $if(next)
+            consign ack=0
+        .wait($ valid_sync==0) =>
+        .end()
+
+    return {
+      done: $(rx_done)
+      tx_done: $(tx_done)
+    }
+
+  $async_handshake_tx: (valid,data,ack)->
+    clock = valid.getClock()
+    reset = valid.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{valid.getName()}")
+
+    Net ack_sync=$doubleSync(ack,clock,reset)
+    Net done
+    valid_latch = reg(1,'valid_latch').clock(clock).reset(reset)
+    tx_data= reg(data.getWidth(),'tx_data').clock(clock).reset(reset)
+    always
+      $if(valid)
+        consign tx_data = data
+        consign valid_latch = 1
+      $elseif(done)
+        consign valid_latch = 0
+
+    tx_valid = reg(1,'tx_valid').clock(clock).reset(reset)
+    always
+      $sequence('handshake_tx',clock,reset)
+        .init (next)=>
+          $if(next)
+            consign tx_valid=1
+        .wait($ !ack_sync && valid_latch) (trans,next)=>
+          $if(next)
+            consign tx_valid=0
+            assign done = 1
+        .posedge(ack_sync) =>
+        .end()
+    return {
+        valid:$ tx_valid
+        data: $ tx_data
+        done: $ done
+    }
+
+  $async_handshake_rx: (valid,data,clock='',reset='')->
+    Net valid_sync=$doubleSync(valid,clock,reset)
+    Net done
+    ack= reg(1,'ack').clock(clock).reset(reset)
+    rx_data= wire(data.getWidth(),'rx_data')
+
+    always
+      $sequence('handshake_rx',clock,reset)
+        .init (next)=>
+          $if(next)
+            consign ack=1
+        .posedge(valid_sync) (trans,next)=>
+          $if(trans)
+            assign rx_data=data
+            assign done = 1
+          $if(next)
+            consign ack=0
+        .wait($ valid_sync==0) =>
+        .end()
+    return {
+      done:$ done
+      data: $ rx_data
+      ack: $ ack
+    }
+
+  $lru: (update_entry,update_index)->
+    clock = update_entry.getClock()
+    reset = update_entry.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{update_entry.getName()}")
+    width=update_index.getWidth()
+    size=2**width
+    matrix= @createArray(size,=>reg(size,'matrix').clock(clock).reset(reset))
+    lru_hold=reg(width,'lru_hold').clock(clock).reset(reset)
+
+    always
+      for j in _.range(size)
+        for k in _.range(size)
+          $if(update_entry&&(j==update_index)&&(k!=update_index))
+            consign matrix[j](k) = 1
+          $elseif(update_entry&&(k==update_index))
+            consign matrix[j](k) = 0
+          #$else
+          #  assign matrix[j](k) = matrix[j](k)
+
+    condList=[]
+    for i in _.range(size)
+      condList.push($cond(matrix[i]==0) => $ i)
+    condList.push($cond() => $ lru_hold)
+    
+    Net(lru_out,width) = $order(condList)
+
+    consign lru_hold = lru_out
+
+    return $ lru_out
+
+  $fifo: (depth,din,push,pop,clear=0,fifo_reset=true)->
+    clock = din.getClock()
+    reset = din.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{din.getName()}")
+
+    width=din.getWidth()
+    addrWidth = Math.floor(Math.log2(depth-1))+1
+    Exponential_Full_Flag= depth==(2**addrWidth)
+    level      = reg(addrWidth+1,'level').clock(clock).reset(reset)
+    full       = reg(1,'full').clock(clock).reset(reset)
+    raddr      = reg(addrWidth,'raddr').clock(clock).reset(reset)
+    waddr      = reg(addrWidth,'waddr').clock(clock).reset(reset)
+    empty_flag = reg(1,'empty_flag').init(1).clock(clock).reset(reset)
+    prefetched = reg(1,'prefetched').clock(clock).reset(reset)
+    if fifo_reset
+      rff_data= @createArray(depth,=>reg(width,'rff').clock(clock).reset(reset))
+      rd_data= reg(width,'rd_data').clock(clock).reset(reset)
+    else
+      rff_data= @createArray(depth,=>reg(width,'rff').clock(clock).reset(null))
+      rd_data= reg(width,'rd_data').clock(clock).reset(null)
+
+    Net read  = !empty_flag && (pop || !prefetched)
+
+    Net(next_level,addrWidth+1)
+      $if(read==0&&push==1)
+        $ level+1
+      $elseif(read==1&&push==0)
+        $ level-1
+      $else
+        $ level
+
+    always
+      $if(clear)
+        consign(empty_flag) = 1
+        consign(prefetched) = 0
+      $else
+        consign(empty_flag) = $isZero(next_level)
+        $if(cat(pop,read)==2'b01')
+          consign(prefetched) = 1
+        $elseif(cat(pop,read)==2'b10')
+          consign(prefetched) = 0
+
+    Net(rdata,width) = $arrayDecode(rff_data,raddr)
+
+    always_if(read)
+      consign(rd_data) = rdata
+
+    always_if(push)
+      $arrayMuxSet(rff_data,waddr,din)
+
+    always
+      $if(clear)
+        consign(waddr) = 0
+        consign(raddr) = 0
+        consign(level) = 0
+        consign(full)  = 0
+      $else
+        consign(level)   = next_level
+        if(Exponential_Full_Flag)
+          consign(full)    = next_level(addrWidth)
+          $if(push)
+            consign(waddr) = waddr+1
+          $if(read)
+            consign(raddr) = raddr+1
+        else
+          consign(full) = depth==next_level
+          $if(push)
+            consign(waddr)
+              $if((depth-1)==waddr) => $ 0
+              $else => $ waddr+1
+          $if(read)
+            consign(raddr)
+              $if((depth-1)==raddr) => $ 0
+              $else => $ raddr+1
+
+    return {
+      empty: $ (!prefetched)
+      full: $ full
+      dout: $ rd_data
+      level: $ level
+    }
+
+  $async_fifo: (depth,din,push,pop,fifo_reset=true,hint_name=null)->
+    width=din.getWidth()
+    addrWidth = Math.floor(Math.log2(depth-1))+1
+    clkw=push.getClock()
+    rstw=push.getReset()
+    clkr=pop.getClock()
+    rstr=pop.getReset()
+    if clkw==null or rstw==null
+      throw new Error("Please attach clock/reset to #{push.getName()}")
+    if clkr==null or rstr==null
+      throw new Error("Please attach clock/reset to #{pop.getName()}")
+
+    prefetched = reg(1,'prefetched').clock(clkr).reset(rstr)
+    empty_flag = reg(1,'empty_flag').clock(clkr).reset(rstr).init(1)
+
+    Net read = !empty_flag && ( pop || !prefetched)
+    Net empty = !prefetched
+
+    w_code= reg(addrWidth+1,'w_code').clock(clkw).reset(rstw)
+    r_code= reg(addrWidth+1,'r_code').clock(clkr).reset(rstr)
+
+    Net(next_rd ,addrWidth+1)
+    Net(next_wr ,addrWidth+1)
+
+    Net(succeeding_code_rd,addrWidth+1)
+    Net(succeeding_code_wr,addrWidth+1)
+
+    assign(succeeding_code_rd)
+      $if(read) => $ next_rd
+      $else => $ r_code
+
+    assign(succeeding_code_wr)
+      $if(push) => $ next_wr
+      $else => $ w_code
+
+    Net r_or=hasOdd1(r_code.fromMsb(2))
+    Net w_or=hasOdd1(w_code.fromMsb(2))
+    if addrWidth == 1
+      Net(rd_addr,addrWidth) = r_or
+      Net(wr_addr,addrWidth) = w_or
+    else
+      Net(rd_addr,addrWidth) = cat( r_or , r_code.fromLsb(addrWidth-1))
+      Net(wr_addr,addrWidth) = cat( w_or , w_code.fromLsb(addrWidth-1))
+
+    always
+      $if(cat(pop,read)==2'b01')
+        consign(prefetched) = 1
+      $elseif(cat(pop,read)==2'b10')
+        consign(prefetched) = 0
+
+    consign(empty_flag) = succeeding_code_rd == $doubleSync(w_code,clkr,rstr)
+
+    consign(r_code) = succeeding_code_rd
+
+    Net(syncRdCode,addrWidth+1) = $doubleSync(r_code,clkw,rstw)
+    consign(w_code) = succeeding_code_wr
+
+    full = reg(1,'full').clock(clkw).reset(rstw)
+    Net(inv_w ,2)= ~syncRdCode.fromMsb(2)
+    if addrWidth == 1
+      consign(full) = succeeding_code_wr == inv_w
+    else
+      consign(full) = succeeding_code_wr == cat(inv_w ,syncRdCode.fromLsb(addrWidth-1))
+
+    assign(next_rd) = $grayNextCode(r_code)
+    assign(next_wr) = $grayNextCode(w_code)
+
+    fifo_name = hint_name ? 'aff_'
+    if fifo_reset
+      aff_data = (reg(width,fifo_name+i).clock(clkw).reset(rstw) for i in _.range(depth))
+      rdata= reg(width,'rdata').clock(clkr).reset(rstr)
+    else
+      aff_data = (reg(width,fifo_name+i).clock(clkw).reset(null) for i in _.range(depth))
+      rdata= reg(width,'rdata').clock(clkr).reset(null)
+
+
+    always_if(read)
+      consign(rdata) = $arrayDecode(aff_data,rd_addr)
+
+    always_if(push)
+      $arrayMuxSet(aff_data,wr_addr,din)
+
+    return {
+      dout: $ rdata
+      empty: $ empty
+      full: $ full
+    }
+
+  $fix_arbiter: (list,defaultIndex=0)->
+    condList=[]
+    #ret = wire(getWidth(list.length))
+    for i,index in list
+      condList.push($cond(i) =>index)
+    condList.push($cond(null) => defaultIndex)
+    $order(condList)
+
+  $round_arbiter: (list,enable,defaultIndex=0)->
+    clock = enable.getClock()
+    reset = enable.getReset()
+    if clock==null or reset==null
+      throw new Error("Please attach clock/reset to #{enable.getName()}")
+
+    width = Math.floor(Math.log2(list.length-1))+1
+    roundReg = reg(width,'round').clock(clock).reset(reset)
+    Net(ret,width)
+    consign(roundReg)
+      $if(enable)
+        $if(ret==list.length-1) => $ 0
+        $else => $ ret+1
+      $else
+        $ roundReg
+    indexArray=(wire(width,'index') for i in _.range(list.length))
+    assign indexArray[0] = roundReg
+    for i,index in indexArray when index>0
+      assign(indexArray[index])
+        $if((roundReg+index)>=list.length)
+          $ roundReg+index-list.length
+        $else
+          $ roundReg+index
+    condList=[]
+    for i in indexArray
+      Net valid = $arrayDecode(list,i)
+      condList.push($cond(valid) => i)
+    condList.push($cond(null) =>defaultIndex)
+    assign ret=$order(condList)
+    return $(ret)
+
+}
