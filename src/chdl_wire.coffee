@@ -36,7 +36,7 @@ class Wire extends CircuitEl
   setType: (t)=> @type=t
   getType: => @type
 
-  attach:(clock,reset)=>
+  attach:(clock,reset=null)=>
     if _.isString(clock)
       @clockName=clock
     else
@@ -44,6 +44,8 @@ class Wire extends CircuitEl
 
     if _.isString(reset)
       @resetName=reset
+    else if reset==null
+      @resetName=null
     else
       @resetName=reset.getName()
 
