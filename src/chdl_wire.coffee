@@ -37,6 +37,9 @@ class Wire extends CircuitEl
   getType: => @type
 
   attach:(clock,reset=null)=>
+    unless clock?
+      throw new Error("attach clock can not be null/undefined")
+
     if _.isString(clock)
       @clockName=clock
     else
@@ -51,17 +54,9 @@ class Wire extends CircuitEl
 
     return packEl('wire',this)
 
-  getClock: =>
-    if @clockName?
-      @clockName
-    else
-      null
+  getClock: => @clockName
 
-  getReset: =>
-    if @resetName?
-      @resetName
-    else
-      null
+  getReset: => @resetName
 
   setLocal: => @local=true
 
