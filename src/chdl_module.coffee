@@ -538,6 +538,8 @@ class Module
     for evalFunc in @__alwaysList
       evalFunc()
 
+  targetWidth: => @__assignWidth
+
   build: ->
 
   _if_blocks: (list)=>

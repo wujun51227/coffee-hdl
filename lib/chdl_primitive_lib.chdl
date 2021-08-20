@@ -379,8 +379,11 @@ module.exports={
     return  $ cnt=={n-1}
 
   $count1: (sig)->
+    width = sig.getWidth()
+    cntWidth = Math.floor(Math.log2(width)) + 1
     list=sig.toList()
-    return $join(list,(a,b)=>$ a+b)
+    Net(ret,cntWidth) = $join(list,(a,b)=>$ a+b)
+    return $ ret
 
   $hold1: (sig,clear,clock='',reset='')->
     out = wire(1,'hold')
@@ -408,7 +411,7 @@ module.exports={
         consign (latch) = 0
     return  $ out
 
-  $holdData: (sig,enable,initValue=null,clock='',reset='')->
+  $holdData: (sig,enable,initValue=0,clock='',reset='')->
     out = wire(sig.getWidth(),'hold')
     latch = reg(sig.getWidth(),'hold').clock(clock).reset(reset).init(initValue)
     assign(out)
@@ -615,7 +618,7 @@ module.exports={
 
   $stateSwitch: (stateReg)->
     return (func)=>
-      obj=func()
+      obj=func(stateReg)
       always
         for src,list of obj
           if _.last(list).cond!=null
