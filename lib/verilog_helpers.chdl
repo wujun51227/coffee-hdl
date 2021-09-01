@@ -25,7 +25,7 @@ module.exports={
     @verilog("$finish;")
 
   random: (seed='')->
-    return $("$urandom#{seed}")
+    return $("$urandom(#{seed})")
 
   toExprList: (list)->
     return ($(i) for i in list)
