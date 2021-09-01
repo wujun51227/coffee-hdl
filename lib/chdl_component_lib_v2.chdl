@@ -357,6 +357,62 @@ module.exports={
       level: $ level
     }
 
+  $async_fifo_flag: (depth,water_level,push,pop)->
+    cntWidth = Math.floor(Math.log2(depth))+1
+    push_clk=push.getClock()
+    push_rst=push.getReset()
+    pop_clk=pop.getClock()
+    pop_rst=pop.getReset()
+
+    Net push_flag
+    Net pop_flag
+
+    if push_clk==null or push_rst==null
+      throw new Error("Please attach clock/reset to #{push.getName()}")
+    if pop_clk==null or pop_rst==null
+      throw new Error("Please attach clock/reset to #{pop.getName()}")
+
+    w_cnt = reg(cntWidth,'w_cnt').clock(push_clk).reset(push_rst)
+    r_cnt = reg(cntWidth,'r_cnt').clock(pop_clk).reset(pop_rst)
+
+    pop_dec_req = reg(1,'pop_dec_req').clock(pop_clk).reset(pop_rst)
+
+    Net push_dec
+    Net pop_dec_ack
+
+    always
+      $if(push&&(!push_dec))
+        consign w_cnt = w_cnt + 1
+      $elseif((!push)&&push_dec)
+        consign w_cnt = w_cnt - 1
+
+    assign push_flag = w_cnt <= water_level
+
+    always
+      $if(pop&&(!pop_dec_ack))
+        consign r_cnt = r_cnt + 1
+      $elseif((!pop)&&pop_dec_ack)
+        consign r_cnt = r_cnt - 1
+
+    Net pop_flag_tmp = !push_flag
+    assign pop_flag = $doubleSync(pop_flag_tmp,pop_clk,pop_rst)
+
+    always
+      $if(r_cnt>0 && pop_dec_req==0)
+        consign pop_dec_req = 1
+      $elseif(pop_dec_req && pop_dec_ack)
+        consign pop_dec_req = 0
+
+    Net pop_dec_req_pulse = $rise(pop_dec_req,pop_clk,pop_rst)
+
+    pop_dec_req_pulse.attach(pop_clk,pop_rst)
+
+    assign {done:push_dec, ack:pop_dec_ack}=$async_trans_ack(pop_dec_req_pulse,push_clk,push_rst)
+    return {
+      pop_flag: $ pop_flag
+      push_flag: $ push_flag
+    }
+
   $async_fifo: (depth,din,push,pop,fifo_reset=true,hint_name=null)->
     width=din.getWidth()
     addrWidth = Math.floor(Math.log2(depth-1))+1

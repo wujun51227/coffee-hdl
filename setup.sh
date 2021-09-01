@@ -1,4 +1,5 @@
 chdl_lib.coffee --force ./lib/chdl_component_lib.chdl \
+./lib/chdl_component_lib_v2.chdl \
 ./lib/chdl_testbench_lib.chdl \
 ./lib/chdl_primitive_lib.chdl \
 ./lib/chdl_assert.chdl \
