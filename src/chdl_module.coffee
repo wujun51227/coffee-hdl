@@ -55,9 +55,14 @@ class Module
         @[name]=inst
 
   _celllist: (v...) ->
-    for item in v
-      @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item.inst})
-      @[item.name]=item.inst
+    if _.isArray(v[0]) and v.length==1
+      for item in v[0]
+        @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item})
+        @[item.name]=item.inst
+    else
+      for item in v
+        @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item})
+        @[item.name]=item.inst
 
   _getCell: (name)=>
     p=Object.getPrototypeOf(this)
