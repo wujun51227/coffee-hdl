@@ -22,6 +22,8 @@ idCnt=0
 
 ifdefProtect=false
 
+cdcCheck=false
+
 module.exports.setPrefix = (s)-> prefix=s
 
 module.exports.getPrefix = -> prefix
@@ -76,3 +78,7 @@ module.exports.getIdCnt= -> idCnt
 module.exports.setIfdefProtect= -> ifdefProtect=true
 
 module.exports.getIfdefProtect= -> ifdefProtect
+
+module.exports.setCdcCheck = -> cdcCheck=true
+
+module.exports.isCdcCheck = -> cdcCheck

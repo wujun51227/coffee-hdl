@@ -57,6 +57,7 @@ program
   .option('--rename <new top name>')
   .option('--ifdef_protect')
   .option('--debug')
+  .option('--cdc')
   .parse(process.argv)
 
 debug = program.debug ? false
@@ -179,6 +180,9 @@ cfg={
   noAlwaysComb: program.no_always_comb ? false
   lint: program.lint ? false
 }
+
+if program.cdc
+  global.setCdcCheck()
 
 if program.obfuscate
   global.setObfuscate()
