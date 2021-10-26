@@ -390,7 +390,10 @@ code_gen= (inst,allInst,first=false)=>
 
   for [name,item] in toFlatten(inst.__channels)
     if item.probeChannel==null
-      _.set(inst,name,item.Port)
+      if item.wireMap?
+        _.set(inst,name,item.wireMap)
+      else
+        _.set(inst,name,item.portMap)
 
   inst.build()
   if global.getSim()

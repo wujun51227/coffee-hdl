@@ -9,14 +9,12 @@ class Channel extends CircuitEl
   constructor: (path=null)->
     super()
     @bindPortPath=null
-    @Port={}
+    @portMap={}
+    @wireMap=null
     @portList= []
     @__type='channel'
     @monitor=false
-    if path!=null
-      @probeChannel=path
-    else
-      @probeChannel=null
+    @probeChannel=path ? null
     global.setId(@uuid,this)
 
   @create: (path)-> new Channel(path)
@@ -101,17 +99,9 @@ class Channel extends CircuitEl
       wire.link(@cell,toSignal(@elName))
       return packEl('wire',wire)
 
-  getWire: (path=null)=>
-    if @bindPortPath?
-      return @signal(path)
-    else if @probeChannel?
-      wireName=@elName+'.'+path
-      for [name,wireEl] in toFlatten(@cell.__wires)
-        #console.log 'get wire',name,wireName
-        if wireName==name
-          return wireEl
-      throw new Error('Can not find probeChannel wire:'+@elName+' '+path)
-    else
-      throw new Error('Channel should bind to a port')
+  setPortMap:(k,v)=>
+    _.set(@portMap,k,v)
 
+  setWireMap:(k)=>
+    @wireMap = k
 module.exports= Channel

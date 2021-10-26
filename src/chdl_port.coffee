@@ -15,15 +15,16 @@ class Port extends Wire
     return port
 
   @bind: (channel_name)->
-    port=new Port(null,0)
+    port=new Port('channel',0)
     port.setBindChannel(channel_name)
     return port
 
-  setType: (t)=> @type=t
-  getType: => @type
   setBindChannel: (c)=> @bindChannel=c
+  getBindChannel: => @bindChannel
+
   setBindSignal: (c)=> @bindSignal=c
   isBinded: => @bindChannel? or @bindSignal?
+
   sync: (t)=>
     @syncClock = t
     @syncType= syncType.sync
@@ -49,7 +50,7 @@ class Port extends Wire
 
   constructor: (type,width)->
     super(width)
-    @type=type
+    @setType(type)
     @isReg=false
     @isVec=false
     @depth=0

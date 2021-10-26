@@ -8,9 +8,6 @@ global= require 'chdl_global'
 
 class Wire extends CircuitEl
 
-  setBindChannel: (c)-> @bindChannel=c
-  isBinded: -> @bindChannel?
-
   @create: (width=1)-> new Wire(width)
 
   constructor: (width)->
@@ -20,7 +17,6 @@ class Wire extends CircuitEl
     @lsb= -1
     @msb= -1
     @states=[]
-    @bindChannel=null
     @fieldMap={}
     @local=false
     @clockName=null

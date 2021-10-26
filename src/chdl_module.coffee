@@ -500,8 +500,8 @@ class Module
     list=    [['Port name','dir'  ,'width']]
     list.push(['---------','-----','-----'])
     for [name,port] in toFlatten(@__ports)
-      if port.type==null
-        @__postProcess.push {type:'port',elName:port.getName(),bindChannel:port.bindChannel}
+      if port.getType()=='channel'
+        @__postProcess.push {type:'port',elName:port.getName(),bindChannel:port.getBindChannel()}
       else
         list.push([toSignal(name),port.getType(),port.getWidth()])
     if list.length>2 and global.getInfo()
@@ -730,76 +730,75 @@ class Module
       for port,channel of obj when _.get(@__ports,port)?
         list.push([port,channel])
 
-    for [port,channel] in list
-      if channel instanceof Channel
-        @__bindChannels.push {portName:port, channel: channel}
-        portInst = _.get(@__ports,port)
-        for [name,sig] in toFlatten(portInst)
-          if not sig.isBinded()
-            net=Wire.create(sig.getWidth())
+    for [port,channel] in list when channel instanceof Channel
+      @__bindChannels.push {portName:port, channel: channel}
+      portInst = _.get(@__ports,port)
+      for [name,sig] in toFlatten(portInst)
+        if not sig.isBinded()
+          net=Wire.create(sig.getWidth())
+          if name
+            net.link(channel.cell,toHier(channel.hier,name))
+            netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
+            channel.setPortMap(name,netEl)
+            @__pinPortPair.push({
+              pin: netEl
+              port: sig
+            })
+          else
+            net.link(channel.cell,channel.hier)
+            netEl=packEl('wire',net)
+            netEl.setType(sig.getType())
+            channel.setWireMap(netEl)
+            @__pinPortPair.push({
+              pin: netEl
+              port: sig
+            })
+        else
+          channelInst = _.get(this,sig.getBindChannel())
+          throw new Error("Can find bindChannel #{sig.getBindChannel()}") unless channelInst
+          if channelInst.wireMap?
+            v=channelInst.wireMap
+            net=Wire.create(v.getWidth())
             if name
               net.link(channel.cell,toHier(channel.hier,name))
               netEl=packEl('wire',net)
-              netEl.setType(sig.getType())
-              _.set(channel.Port,name,netEl)
+              netEl.setType(v.getType())
+              channel.setPortMap(name,netEl)
               @__pinPortPair.push({
                 pin: netEl
                 port: sig
               })
             else
-              net.link(channel.cell,channel.hier)
+              net.link(channel.cell,toHier(channel.hier))
               netEl=packEl('wire',net)
-              netEl.setType(sig.getType())
-              channel.Port=netEl
+              netEl.setType(v.getType())
+              channel.setWireMap(netEl)
               @__pinPortPair.push({
                 pin: netEl
                 port: sig
               })
           else
-            channelInst = _.get(this,sig.bindChannel)
-            throw new Error("Can find bindChannel #{sig.bindChannel}") unless channelInst
-            if channelInst.Port.__type=='wire'
-              v=channelInst.Port
+            for [k,v] in toFlatten(channelInst.portMap,'wire')
               net=Wire.create(v.getWidth())
               if name
-                net.link(channel.cell,toHier(channel.hier,name))
+                net.link(channel.cell,toHier(channel.hier,name+'.'+k))
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
-                _.set(channel.Port,name,netEl)
+                channel.setPortMap(name+'.'+k,netEl)
                 @__pinPortPair.push({
                   pin: netEl
-                  port: sig
+                  port: v
                 })
               else
-                net.link(channel.cell,toHier(channel.hier))
+                net.link(channel.cell,toHier(channel.hier,k))
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
-                channel.Port=netEl
+                channel.setPortMap(k,netEl)
                 @__pinPortPair.push({
                   pin: netEl
-                  port: sig
+                  port: v
                 })
-            else
-              for [k,v] in toFlatten(channelInst.Port,'wire')
-                net=Wire.create(v.getWidth())
-                if name
-                  net.link(channel.cell,toHier(channel.hier,name+'.'+k))
-                  netEl=packEl('wire',net)
-                  netEl.setType(v.getType())
-                  _.set(channel.Port,name+'.'+k,netEl)
-                  @__pinPortPair.push({
-                    pin: netEl
-                    port: v
-                  })
-                else
-                  net.link(channel.cell,toHier(channel.hier,k))
-                  netEl=packEl('wire',net)
-                  netEl.setType(v.getType())
-                  _.set(channel.Port,k,netEl)
-                  @__pinPortPair.push({
-                    pin: netEl
-                    port: v
-                  })
 
   _link: (name)-> @__instName=name
 

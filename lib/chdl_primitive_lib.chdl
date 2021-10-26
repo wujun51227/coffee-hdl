@@ -33,12 +33,12 @@ module.exports={
       width=dst.net.getWidth()
       for src,index in inChannelList when dst.dir=='input'
         Net eq = (select==index)
-        list.push($ expand(width,eq) & src.getWire(dst.path))
+        list.push($ expand(width,eq) & src.signal(dst.path))
       if dst.dir=='input'
         assign(dst.net) = $join(list,(sum,i)=>$(sum+i))
       else if dst.dir=='output'
         for src,index in inChannelList
-          assign(src.getWire(dst.path)) = dst.net
+          assign(src.signal(dst.path)) = dst.net
 
   mirrorPort:(i)->
     iterator=new RecursiveIterator(i)
