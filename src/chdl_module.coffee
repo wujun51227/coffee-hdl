@@ -147,7 +147,7 @@ class Module
   _probe: (obj) ->
     for k,v of obj
       item=_.get(this,v)
-      if item.__type=='channel'
+      if item instanceof Channel
         @__channels[k]=Channel.create(v)
       else
         for [name,inst] in toFlatten(item,'channel')
@@ -160,7 +160,7 @@ class Module
   _monitor: (obj) ->
     for k,v of obj
       item=_.get(this,v)
-      if item.__type=='channel'
+      if item instanceof Channel
         @__channels[k]=Channel.create(v).setMonitor()
       else
         for [name,inst] in toFlatten(item,'channel')
@@ -486,13 +486,11 @@ class Module
             to: net.getName()
           })
 
-    for i in @__bindChannels
-      i.channel.portList.length=0
-      i.channel.bindPort(this,i.portName)
-
   _postElaboration: ->
     for i in @__postProcess
       @_channelExpand(i.type,i.elName,i.bindChannel)
+    for i in @__bindChannels
+      i.channel.bindPort(this,i.portName)
 
   _elaboration: ->
     if global.getInfo()
@@ -512,10 +510,6 @@ class Module
           @__postProcess.push {type:'monitor',elName:toSignal(name),bindChannel:channel.probeChannel}
         else
           @__postProcess.push {type:'channel',elName:toSignal(name),bindChannel:channel.probeChannel}
-
-    for i in @__bindChannels
-      #log 'elaboration bind',this.constructor.name,i.portName
-      i.channel.bindPort(this,i.portName)
 
   _always: (lineno,block)=>
     @__assignEnv = 'always'
@@ -828,9 +822,8 @@ class Module
     pWire.cell=this
     pWire.elName=toSignal(_id(global.getPrefix()+'__'+name))
     pWire.hier=pWire.elName
-    ret = packEl('vec',pWire)
-    @__local_vecs.push(ret)
-    return ret
+    @__local_vecs.push(pWire)
+    return pWire
 
   _localWire: (arg=1,name='t')->
     list=null

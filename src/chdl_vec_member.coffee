@@ -8,7 +8,6 @@ class VecMember extends CircuitEl
     @width=width
     @index=index
     @vec=vec
-    @__type='vec_member'
 
   @create: (vec,index)-> new VecMember(vec,index,vec.getWidth())
 

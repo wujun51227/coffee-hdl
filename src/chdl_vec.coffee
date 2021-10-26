@@ -9,7 +9,6 @@ class Vec extends CircuitEl
     super()
     @width=width
     @depth=depth
-    @__type='vec'
     @__annotate=annotate
 
   set: (n,expr)=>

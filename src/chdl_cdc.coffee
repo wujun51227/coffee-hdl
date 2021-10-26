@@ -1,8 +1,8 @@
-{toSignal,toFlatten,syncType} = require('chdl_utils')
-log    = require 'fancy-log'
-global  = require('chdl_global')
+{toSignal,toFlatten,syncType} = require 'chdl_utils'
+log     = require 'fancy-log'
+global  = require 'chdl_global'
 {table} = require 'table'
-_ = require 'lodash'
+_       = require 'lodash'
 
 cdcError=[]
 
@@ -131,7 +131,7 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
       return true
     else if sig.sync.type==syncType.stable
       return true
-    else if sig.sync.type==syncType.sync
+    else if sig.sync.type==syncType.sync || sig.sync.type==syncType.capture
       if syncObj.type==syncType.sync || syncObj.type==syncType.ignore
         if not isSameClkGroup(sig.sync.id,syncObj.id,clkGroup)
           cdcError.push({
@@ -153,10 +153,10 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
           sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
         })
         return false
-      else if syncObj.type==syncType.stable
+      else if syncObj.type==syncType.stable || syncObj.type==syncType.capture
         return true
       else if syncObj==null
-        console.log "Error",sig.obj.refName(),sig.sync,'<--',driveSig,syncObj
+        console.log "Error: drive signal sync obj is null",driveSig
         return false
 
 findDriveWire=(sig,list)->
@@ -273,68 +273,6 @@ cdcAnalysis=(driven_tree,clkGroup,first=true)->
             {key:instPort.getId(),checkPoint:true,obj:instPort,driven:[wireObj.getId()],conds:[]}
           )
 
-  #channelNames = Object.keys(driven_tree.inst.__channels)
-  #for channelName in channelNames
-  #  channel = driven_tree.inst.__channels[channelName]
-  #  if channel.__type=='channel'
-  #    channelPortList.push(channel.getPortList()...)
-
-  #for moldChannel in driven_tree.inst.__moldChannel
-  #  channelPortList.push(moldChannel.getPortList()...)
-
-  #for item in channelPortList
-  #  instPort= item.port
-  #  wireObj = _.get(driven_tree.inst,toSignal(item.pin))
-  #  if instPort.getType()=='output'
-  #    driven_tree.list.push(
-  #      {key:wireObj.getId(),checkPoint:false,obj:wireObj,driven:[instPort.getId()],conds:[]}
-  #    )
-  #  else if instPort.getType()=='input'
-  #    if instPort.getCell().__isCombModule
-  #      driven_tree.list.push(
-  #        {key:instPort.getId(),checkPoint:false,obj:instPort,driven:[wireObj.getId()],conds:[]}
-  #      )
-  #    else
-  #      #console.log '>>>>',wireObj.getName(),item.pin
-  #      if !instPort.isClock
-  #        driven_tree.list.push(
-  #          {key:instPort.getId(),checkPoint:true,obj:instPort,driven:[wireObj.getId()],conds:[]}
-  #        )
-
-
-#  for [name,channel] in toFlatten(driven_tree.inst.__channels)
-#    if channel.constructor.name=='Channel'
-#      portList=channel.getPortList()
-#    else if channel.constructor.name=='Wire'
-#      portList=channel.bindChannel.getPortList()
-#      console.log '=============',name,'uuuuuu',Object.keys(driven_tree.inst.__channels)
-#      console.log '=============',channel.bindChannel.bindPortPath,channel.bindChannel.getName(),channel,portList
-#    else
-#      throw new Error("Can not get portList from ",channel.constructor.name)
-#    #console.log driven_tree.list,'.....',channel.getName()
-#    console.log '>>>>>>>',channel.getName(),channel.constructor.name,portList.length
-#    for item in portList
-#      instPort= item.port
-#      wireObj = _.get(driven_tree.inst,toSignal(item.pin))
-#      #console.log '++++++++++',item,wireObj,_.get(driven_tree.inst,toSignal(item.pin))
-#      #console.log wireObj.getName()
-#      if instPort.getType()=='output'
-#        driven_tree.list.push(
-#          #{key:wireObj.getId(),checkPoint:false,obj:wireObj,driven:[instPort.getId()],conds:[],sync:getSyncId(instPort)}
-#          {key:wireObj.getId(),checkPoint:false,obj:wireObj,driven:[instPort.getId()],conds:[]}
-#        )
-#      else if instPort.getType()=='input'
-#        if instPort.getCell().__isCombModule
-#          driven_tree.list.push(
-#            {key:instPort.getId(),checkPoint:false,obj:instPort,driven:[wireObj.getId()],conds:[]}
-#          )
-#        else
-#          #console.log '>>>>',wireObj.getName(),item.pin
-#          if !instPort.isClock
-#            driven_tree.list.push(
-#              {key:instPort.getId(),checkPoint:true,obj:instPort,driven:[wireObj.getId()],conds:[]}
-#            )
-#
   wireList=(i for i in driven_tree.list when !i.checkPoint)
   for i in wireList
     cdcCheck(i,driven_tree.list,clkGroup)

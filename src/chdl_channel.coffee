@@ -12,7 +12,6 @@ class Channel extends CircuitEl
     @portMap={}
     @wireMap=null
     @portList= []
-    @__type='channel'
     @monitor=false
     @probeChannel=path ? null
     global.setId(@uuid,this)
@@ -50,16 +49,28 @@ class Channel extends CircuitEl
     if @probeChannel?
       throw new Error('This channel has been aliased '+@probeChannel)
     else
-      portBundle=_.get(moduleInst.__ports,bindPortPath)
-      @bindPortPath=bindPortPath
-      list=toFlatten(portBundle,null,bindPortPath)
-      for [portPath,port] in list
-        pathList=_.toPath(bindPortPath)
-        pinPath=_.toPath(portPath)
-        #pinPath[0]=@elName
-        node=pinPath[pathList.length..]
-        pinPath.splice(0,pathList.length,@elName)
-        @portList.push {port:port,node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
+      if @portList.length>0
+        portBundle=_.get(moduleInst.__ports,bindPortPath)
+        list=toFlatten(portBundle,null,bindPortPath)
+        for [portPath,port] in list
+          pathList=_.toPath(bindPortPath)
+          pinPath=_.toPath(portPath)
+          node=pinPath[pathList.length..]
+          pinPath.splice(0,pathList.length,@elName)
+          hit=_.find(@portList,{node:node,path:portPath,pin:pinPath.join('.')})
+          unless hit?
+            throw new Error('Channel connect directly miss match '+node)
+      else
+        portBundle=_.get(moduleInst.__ports,bindPortPath)
+        @bindPortPath=bindPortPath
+        list=toFlatten(portBundle,null,bindPortPath)
+        for [portPath,port] in list
+          pathList=_.toPath(bindPortPath)
+          pinPath=_.toPath(portPath)
+          #pinPath[0]=@elName
+          node=pinPath[pathList.length..]
+          pinPath.splice(0,pathList.length,@elName)
+          @portList.push {port:port,node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
 
   getPortList: => @portList
 
