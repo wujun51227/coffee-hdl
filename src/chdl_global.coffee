@@ -1,5 +1,7 @@
 prefix = ''
 
+indexTable={}
+
 simMode=false
 
 force=false
@@ -78,6 +80,12 @@ module.exports.getIdCnt= -> idCnt
 module.exports.setIfdefProtect= -> ifdefProtect=true
 
 module.exports.getIfdefProtect= -> ifdefProtect
+
+module.exports.setId = (id,inst)->
+  indexTable[id]=inst
+
+module.exports.queryId = (id)->
+  return indexTable[id]
 
 module.exports.setCdcCheck = -> cdcCheck=true
 

@@ -2,6 +2,7 @@ CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
 _ = require 'lodash'
 {packEl,toSignal,toFlatten} = require 'chdl_utils'
+global = require 'chdl_global'
 
 class Channel extends CircuitEl
 
@@ -16,6 +17,7 @@ class Channel extends CircuitEl
       @probeChannel=path
     else
       @probeChannel=null
+    global.setId(@uuid,this)
 
   @create: (path)-> new Channel(path)
 

@@ -1,16 +1,21 @@
 {toSignal} = require('chdl_utils')
-global= require 'chdl_global'
+uuid  = require 'uuid/v1'
 class CircuitEl
 
   constructor: ->
     @cell=null
     @elName=''
     @hier=''
+    @uuid=uuid()
+
+  getId: => @uuid
 
   link: (cell,name)->
     @cell=cell
     @elName=toSignal(name)  # this name is flatten name
     @hier=name
+
+  getCell:=> @cell
 
   toString: ->
     @hier+'(...)'

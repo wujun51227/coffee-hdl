@@ -1,6 +1,7 @@
 Wire=require 'chdl_wire'
 Reg=require 'chdl_reg'
 {toSignal,packEl,toNumber}=require 'chdl_utils'
+global = require 'chdl_global'
 _ = require 'lodash'
 
 class Port extends Wire
@@ -49,6 +50,7 @@ class Port extends Wire
     @isClock=false
     @isReset=false
 
+    global.setId(@uuid,this)
   getSpace: ->
     if @cell.__indent>0
       indent=@cell.__indent+1

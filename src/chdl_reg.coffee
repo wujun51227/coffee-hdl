@@ -35,6 +35,7 @@ class Reg extends CircuitEl
       assignBits:{}
       pendingValue:null
     }
+    global.setId(@uuid,this)
 
   isLocal: => @local
 

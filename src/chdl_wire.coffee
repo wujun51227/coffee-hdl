@@ -33,6 +33,7 @@ class Wire extends CircuitEl
     }
     @type=null
     @attached = false
+    global.setId(@uuid,this)
 
   setType: (t)=> @type=t
   getType: => @type
