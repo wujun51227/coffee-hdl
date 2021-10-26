@@ -44,25 +44,35 @@ class Module
 
   __instName: ''
 
+  _checkCombModule:(inst)->
+    if @__isCombModule and inst.__isCombModule
+      throw new Error("Combination module can not instance in combination module")
+
   _cellmap: (v) ->
     if _.isArray(v)
       for item in v
         @__cells.push({name:item.name,inst:item.inst})
         @[item.name]=item.inst
+        @_checkCombModule(item.inst)
     else if _.isPlainObject(v)
       for name,inst of v
         @__cells.push({name:name,inst:inst})
         @[name]=inst
+        @_checkCombModule(inst)
 
   _celllist: (v...) ->
     if _.isArray(v[0]) and v.length==1
       for item in v[0]
-        @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item})
-        @[item.name]=item.inst
+        name=_id('inst__'+item.getModuleName())
+        @__cells.push({name:name,inst:item})
+        @[name]=item
+        @_checkCombModule(item)
     else
       for item in v
-        @__cells.push({name:_id('inst__'+item.getModuleName()),inst:item})
-        @[item.name]=item.inst
+        name = _id('inst__'+item.getModuleName())
+        @__cells.push({name:name,inst:item})
+        @[name]=item
+        @_checkCombModule(item)
 
   _getCell: (name)=>
     p=Object.getPrototypeOf(this)
