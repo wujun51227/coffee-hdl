@@ -29,7 +29,6 @@ class Reg extends CircuitEl
     @stallSignal=null
     @stallValue=null
     @fieldList={}
-    @ignoreSyncCheck=false
     @local=false
     @signed=false
     @origin=null
@@ -161,7 +160,10 @@ class Reg extends CircuitEl
       @negClock=data.negedge
 
     if data.asyncLatch
-      @ignoreSyncCheck = true
+      @syncType=syncType.ignore
+
+    if data.stable
+      @syncType=syncType.stable
 
   pending: (v)=> @share.pendingValue=v
 
@@ -631,6 +633,10 @@ class Reg extends CircuitEl
       fields: _.sortBy(@fieldList,['lsb'])
     }
 
-  getSync: => {type:@syncType,value:@getClock()}
+  getSync: =>
+    if this.origin?
+      return this.origin.getSync()
+    else
+      return {type:@syncType,value:@getClock()}
     
 module.exports=Reg
