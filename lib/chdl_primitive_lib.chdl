@@ -252,17 +252,17 @@ module.exports={
 
   $doubleSync: (sigIn,clock='',reset='')->
     width=sigIn.getWidth()
-    d1 = reg(width,'sync').clock(clock).reset(reset)
-    d2 = reg(width,'sync').clock(clock).reset(reset)
+    d1 = reg(width,'sync').clock(clock).reset(reset).asyncLatch()
+    d2 = reg(width,'sync').clock(clock).reset(reset).asyncLatch()
     consign(d1) = sigIn
     consign(d2) = d1
     return $ d2
 
   $tripleSync: (sigIn,clock='',reset='')->
     width=sigIn.getWidth()
-    d1 = reg(width,'sync').clock(clock).reset(reset)
-    d2 = reg(width,'sync').clock(clock).reset(reset)
-    d3 = reg(width,'sync').clock(clock).reset(reset)
+    d1 = reg(width,'sync').clock(clock).reset(reset).asyncLatch()
+    d2 = reg(width,'sync').clock(clock).reset(reset).asyncLatch()
+    d3 = reg(width,'sync').clock(clock).reset(reset).asyncLatch()
     consign(d1) = sigIn
     consign(d2) = d1
     consign(d3) = d2

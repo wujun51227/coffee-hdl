@@ -308,3 +308,9 @@ module.exports.toEventList=(initSegmentList,list=[])=>
       ifToCond(item.list,0,block)
       list.push {type:'init',e:item.signal,block:block}
 
+module.exports.syncType={
+  sync   : 'sync'   # check by clock, send with clock
+  async  : 'async'  # dont check, send width no clock
+  stable : 'stable' # dont check, send stable
+  ignore : 'ignore' # dont check, send with clock
+}

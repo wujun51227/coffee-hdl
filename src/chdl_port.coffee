@@ -1,6 +1,6 @@
 Wire=require 'chdl_wire'
 Reg=require 'chdl_reg'
-{toSignal,packEl,toNumber}=require 'chdl_utils'
+{toSignal,packEl,toNumber,syncType}=require 'chdl_utils'
 global = require 'chdl_global'
 _ = require 'lodash'
 
@@ -24,6 +24,18 @@ class Port extends Wire
   setBindChannel: (c)=> @bindChannel=c
   setBindSignal: (c)=> @bindSignal=c
   isBinded: => @bindChannel? or @bindSignal?
+  sync: (t)=>
+    @syncClock = t
+    @syncType= syncType.sync
+    return packEl('port',this)
+
+  async: ()=>
+    @syncType = syncType.async
+    return packEl('port',this)
+
+  stable: ()=>
+    @syncType = syncType.stable
+    return packEl('port',this)
 
  #   ret={}
  #   list=toFlatten(@cell[channel_name])
@@ -42,8 +54,9 @@ class Port extends Wire
     @isVec=false
     @depth=0
     @shadowReg=null
-    @isRegConfig={}
     @bindChannel=null
+    @syncType=null
+    @syncClock=null
     @bindSignal=null
     @bindClock=null
 
@@ -51,6 +64,27 @@ class Port extends Wire
     @isReset=false
 
     global.setId(@uuid,this)
+
+  getSync: =>
+    if @isClock
+      throw new Error("clock can not getSync")
+    if @isReset
+      return { type:syncType.stable,value:null}
+    if @syncType==syncType.stable
+      return {type:@syncType,value:null}
+    else if @syncType==syncType.async
+      return {type:@syncType,value:null}
+    else if @syncType==syncType.sync
+      if _.isString(@syncClock)
+        return {type:@syncType,value:@syncClock}
+      else
+        return {type:@syncType,value:@syncClock.getName()}
+    else
+      if @cell.__isCombModule or @cell.__isBlackBox
+        return null
+      else
+        return {type:syncType.sync,value:@cell._clock()}
+
   getSpace: ->
     if @cell.__indent>0
       indent=@cell.__indent+1
@@ -185,9 +219,47 @@ class Port extends Wire
   asReg: (config={})=>
     if @type=='output'
       @isReg=true
-      @isRegConfig=config
+      createReg=new Reg(@width)
+      createReg.config(config)
+      @shadowReg=createReg
     else
       throw new Error('Only output port can be treat as a register')
+    return packEl('port',this)
+
+  noSyncCheck: =>
+    @shadowReg.noSyncCheck()
+    return packEl('port',this)
+
+  setAddr: (addr)=>
+    @shadowReg.setAddr(addr)
+    return packEl('port',this)
+
+  init: (v)=>
+    @shadowReg.init(v)
+    return packEl('port',this)
+
+  clock: (clock)=>
+    @shadowReg.clock(clock)
+    return packEl('port',this)
+
+  reset:(reset,mode='async',assertValue=false)=>
+    @shadowReg.reset(reset,mode,assertValue)
+    return packEl('port',this)
+
+  negedge: =>
+    @shadowReg.negedge()
+    return packEl('port',this)
+
+  setSign: =>
+    @shadowReg.setSign()
+    return packEl('port',this)
+
+  syncReset: =>
+    @shadowReg.syncReset()
+    return packEl('port',this)
+
+  highReset: =>
+    @shadowReg.highReset()
     return packEl('port',this)
 
   asVec: (depth)=>

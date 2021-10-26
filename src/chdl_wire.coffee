@@ -1,6 +1,6 @@
 CircuitEl=require 'chdl_el'
 _ = require 'lodash'
-{_expr,packEl,toNumber}=require 'chdl_utils'
+{_expr,packEl,toNumber,syncType}=require 'chdl_utils'
 {cat} = require 'chdl_operator'
 Vnumber = require 'chdl_number'
 Expr    = require('chdl_expr')
@@ -27,6 +27,8 @@ class Wire extends CircuitEl
     @resetName=null
     @virtual=false
     @signed=false
+    @syncType=null
+    @syncClock=null
     @share={
       assignBits:{}
       pendingValue:null
@@ -37,6 +39,19 @@ class Wire extends CircuitEl
 
   setType: (t)=> @type=t
   getType: => @type
+
+  sync: (t)=>
+    @syncClock = t
+    @syncType= syncType.sync
+    return packEl('wire',this)
+
+  async: ()=>
+    @syncType = syncType.async
+    return packEl('wire',this)
+
+  stable: ()=>
+    @syncType = syncType.stable
+    return packEl('wire',this)
 
   attach:(clock,reset=null)=>
     unless clock?
@@ -378,5 +393,19 @@ class Wire extends CircuitEl
     tempWire=@cell._localWire(list.length,'select')
     tempWire.assign((=> _expr(Expr.start().next(cat(list)))))
     return tempWire
+
+  getSync: =>
+    if @syncType?
+      if @syncType==syncType.stable
+        return {type:@syncType,value:null}
+      else if @syncType==syncType.async
+        return {type:@syncType,value:null}
+      else if @syncType==syncType.sync
+        if _.isString(@syncClock)
+          return {type:@syncType,value:@syncClock}
+        else
+          return {type:@syncType,value:@syncClock.getName()}
+    else
+      return null
 
 module.exports=Wire

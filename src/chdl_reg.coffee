@@ -2,7 +2,7 @@ CircuitEl = require 'chdl_el'
 Wire = require 'chdl_wire'
 Expr = require 'chdl_expr'
 _ = require 'lodash'
-{_expr,packEl,toNumber}=require 'chdl_utils'
+{_expr,packEl,toNumber,syncType}=require 'chdl_utils'
 {cat} = require 'chdl_operator'
 Vnumber = require 'chdl_number'
 global  = require('chdl_global')
@@ -29,13 +29,20 @@ class Reg extends CircuitEl
     @stallSignal=null
     @stallValue=null
     @fieldList={}
+    @ignoreSyncCheck=false
     @local=false
     @signed=false
+    @origin=null
+    @syncType=syncType.sync
     @share={
       assignBits:{}
       pendingValue:null
     }
     global.setId(@uuid,this)
+
+  asyncLatch: =>
+    @syncType=syncType.ignore
+    return packEl('reg',this)
 
   isLocal: => @local
 
@@ -73,7 +80,7 @@ class Reg extends CircuitEl
         @bindClockName=clock.getName()
     return packEl('reg',this)
 
-  reset:(reset,mode='async',assertValue=false)=>
+  reset:(reset=null,mode='async',assertValue=false)=>
     if reset==null
       @resetMode=null
       @resetName=null
@@ -84,6 +91,10 @@ class Reg extends CircuitEl
         @resetName=reset.getName()
       @resetMode=mode
       @assertHigh= assertValue
+    return packEl('reg',this)
+
+  stable: =>
+    @syncType=syncType.stable
     return packEl('reg',this)
 
   negedge: =>
@@ -131,9 +142,9 @@ class Reg extends CircuitEl
       console.log 'Deprecated, use reset:null'
       console.log '=========================='
 
-    if data.asyncReset?
+    if data.asyncReset
       @resetMode='async'
-    if data.syncReset?
+    if data.syncReset
       @resetMode='sync'
 
     if data.reset?
@@ -148,6 +159,9 @@ class Reg extends CircuitEl
       @resetValue= data.init
     if data.negedge?
       @negClock=data.negedge
+
+    if data.asyncLatch
+      @ignoreSyncCheck = true
 
   pending: (v)=> @share.pendingValue=v
 
@@ -203,10 +217,13 @@ class Reg extends CircuitEl
       return null
 
   getClock: =>
-    if @bindClockName?
-      @bindClockName
+    if this.origin?
+      this.origin.getClock()
     else
-      @cell.__defaultClock
+      if @bindClockName?
+        @bindClockName
+      else
+        @cell.__defaultClock
 
   getReset: =>
     if @resetMode?
@@ -235,11 +252,13 @@ class Reg extends CircuitEl
       reg.setLsb(n.str)
       reg.setMsb(n.str)
       reg.share=@share
+      reg.origin=this.origin ? this
       return packEl('reg',reg)
     else
       reg.setLsb(n)
       reg.setMsb(n)
       reg.share=@share
+      reg.origin=this.origin ? this
       return packEl('reg',reg)
 
   fromMsb: (n)=>
@@ -282,6 +301,7 @@ class Reg extends CircuitEl
       reg.setMsb(n.str)
       reg.setLsb(m.str)
       reg.share=@share
+      reg.origin=this.origin ? this
       return packEl('reg',reg)
     else
       width=toNumber(n)-toNumber(m)+1
@@ -292,6 +312,7 @@ class Reg extends CircuitEl
       reg.setMsb(n)
       reg.setLsb(m)
       reg.share=@share
+      reg.origin=this.origin ? this
       return packEl('reg',reg)
 
   ext: (n)=>
@@ -300,6 +321,7 @@ class Reg extends CircuitEl
     reg.setLsb(@msb)
     reg.setMsb(@lsb)
     reg.share=@share
+    reg.origin=this.origin ? this
     return packEl('reg',reg)
 
   refName: =>
@@ -609,4 +631,6 @@ class Reg extends CircuitEl
       fields: _.sortBy(@fieldList,['lsb'])
     }
 
+  getSync: => {type:@syncType,value:@getClock()}
+    
 module.exports=Reg
