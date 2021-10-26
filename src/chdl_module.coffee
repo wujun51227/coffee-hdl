@@ -183,16 +183,14 @@ class Module
           if inst.isReset
             @_setDefaultReset(sigName)
           if inst.isReg
-            createReg=new Reg(inst.getWidth())
-            createReg.config(inst.isRegConfig)
-            @__regs[sigName]=createReg
-            createReg.link(this,sigName)
-            inst.setShadowReg(createReg)
+            shadowReg=inst.shadowReg
+            @__regs[sigName]=shadowReg
+            shadowReg.link(this,sigName)
 
   _overrideModuleName: (name)-> @__moduleName=name
   setUniq: -> @__uniq=true
   notUniq: -> @__uniq=false
-  getModuleName: -> @__moduleName
+  getModuleName: -> @__moduleName ? this.constructor.name
   setCombModule: -> @__isCombModule=true
   specifyModuleName: (name)->
     @__specifyModuleName=name
@@ -253,6 +251,7 @@ class Module
     @__company    = false
 
     @__bindChannels=[]
+    @__pinPortPair=[]
     @__defaultClock=null
     @__defaultReset=null
 
@@ -365,6 +364,7 @@ class Module
       port.link(this,name)
       @__ports[name]=port
       @__wires[name]=port
+      this[name]=port
       return port
 
   _dragPort: (inst,dir,width,pathList,portName)->
@@ -575,19 +575,19 @@ class Module
         return (block)=>
           @__regAssignList.push ["if",cond,lineno]
           block()
-          @__regAssignList.push ["end"]
+          @__regAssignList.push ["cond_end"]
           return @_regProcess()
       _elseif: (cond,lineno=-1)=>
         return (block)=>
           @__regAssignList.push ["elseif",cond,lineno]
           block()
-          @__regAssignList.push ["end"]
+          @__regAssignList.push ["cond_end"]
           return @_regProcess()
       _else: (lineno)=>
         return (block)=>
           @__regAssignList.push ["else",lineno]
           block()
-          @__regAssignList.push ["end"]
+          @__regAssignList.push ["cond_end"]
           return @_regProcess()
       _endif: =>
           @__regAssignList.push ["endif"]
@@ -742,11 +742,19 @@ class Module
               netEl=packEl('wire',net)
               netEl.setType(sig.getType())
               _.set(channel.Port,name,netEl)
+              @__pinPortPair.push({
+                pin: netEl
+                port: sig
+              })
             else
               net.link(channel.cell,channel.hier)
               netEl=packEl('wire',net)
               netEl.setType(sig.getType())
               channel.Port=netEl
+              @__pinPortPair.push({
+                pin: netEl
+                port: sig
+              })
           else
             channelInst = _.get(this,sig.bindChannel)
             throw new Error("Can find bindChannel #{sig.bindChannel}") unless channelInst
@@ -758,11 +766,19 @@ class Module
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
                 _.set(channel.Port,name,netEl)
+                @__pinPortPair.push({
+                  pin: netEl
+                  port: sig
+                })
               else
                 net.link(channel.cell,toHier(channel.hier))
                 netEl=packEl('wire',net)
                 netEl.setType(v.getType())
                 channel.Port=netEl
+                @__pinPortPair.push({
+                  pin: netEl
+                  port: sig
+                })
             else
               for [k,v] in toFlatten(channelInst.Port,'wire')
                 net=Wire.create(v.getWidth())
@@ -771,11 +787,19 @@ class Module
                   netEl=packEl('wire',net)
                   netEl.setType(v.getType())
                   _.set(channel.Port,name+'.'+k,netEl)
+                  @__pinPortPair.push({
+                    pin: netEl
+                    port: v
+                  })
                 else
                   net.link(channel.cell,toHier(channel.hier,k))
                   netEl=packEl('wire',net)
                   netEl.setType(v.getType())
                   _.set(channel.Port,k,netEl)
+                  @__pinPortPair.push({
+                    pin: netEl
+                    port: v
+                  })
 
   _link: (name)-> @__instName=name
 

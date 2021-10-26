@@ -15,7 +15,8 @@ Verilog  = require('verilog')
 {table} = require 'table'
 global  = require('chdl_global')
 {stringifyTree} = require "stringify-tree"
-{getValue,packEl,simBuffer,printBuffer,dumpBuffer,toSignal,toFlatten} = require('chdl_utils')
+{getValue,packEl,simBuffer,printBuffer,dumpBuffer,toSignal,toFlatten,syncType} = require('chdl_utils')
+{cdcAnalysis,buildClkTree}= require 'chdl_cdc'
 
 moduleIndex=0
 
@@ -78,17 +79,21 @@ cell_build = (inst) =>
       if i.inst.__defaultClock==null
         if inst.__defaultClock
           i.inst._setDefaultClock(inst.__defaultClock)
-          i.inst._addPort(inst.__defaultClock,'input',1)
+          clkPort=i.inst._addPort(inst.__defaultClock,'input',1)
+          clkPort.asClock()
         else if config.autoClock
           i.inst._setDefaultClock(global.getPrefix()+'__clock')
-          i.inst._addPort(global.getPrefix()+'__clock','input',1)
+          clkPort=i.inst._addPort(global.getPrefix()+'__clock','input',1)
+          clkPort.asClock()
       if i.inst.__defaultReset==null
         if inst.__defaultReset
           i.inst._setDefaultReset(inst.__defaultReset)
-          i.inst._addPort(inst.__defaultReset,'input',1)
+          rstPort=i.inst._addPort(inst.__defaultReset,'input',1)
+          rstPort.asReset()
         else if config.autoClock
           i.inst._setDefaultReset(global.getPrefix()+'__resetn')
-          i.inst._addPort(global.getPrefix()+'__resetn','input',1)
+          rstPort=i.inst._addPort(global.getPrefix()+'__resetn','input',1)
+          rstPort.asReset()
     cell_build(i.inst)
   inst._postElaboration()
 
@@ -111,10 +116,12 @@ rhsExpand=(expandItem)->
     return {
       code: sharpToDot(expandItem.e.str)+expandItem.append
       w: expandItem.e.wstr
+      driven: _.clone(expandItem.e.driven)
     }
   else if _.isArray(expandItem)
     str=''
     w=''
+    driven=[]
     cntCond(expandItem.length)
     for item,index in expandItem
       anno= do->
@@ -128,17 +135,23 @@ rhsExpand=(expandItem)->
         throw new Error("assign expr is undefined #{anno}")
       if index==0
         str="(#{item.cond.str}#{anno})?(#{v.code}):"
+        dList=_.clone(item.cond.driven)
+        driven.push(dList...)
       else if item.cond?
         str+="(#{item.cond.str}#{anno})?(#{v.code}):"
+        dList=_.clone(item.cond.driven)
+        driven.push(dList...)
       else
         str+="#{v.code}#{anno}"
       if index==0
         w=v.w
       else
         w=w+'|'+v.w
+      driven.push(_.clone(v.driven)...)
     return {
       code:str
       w: w
+      driven: driven
     }
 
 checkAssignWidth=(lhs,rhsInfo,lineno)->
@@ -160,39 +173,52 @@ checkAssignWidth=(lhs,rhsInfo,lineno)->
     console.log e
 
 
-statementGen=(buffer,statement)->
+statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
   stateType=statement[0]
   if stateType=='assign'
     lhs=statement[1]
     rhs=statement[2]
     lineno=statement[3]
     lhsName=''
+    checkPoint=false
     if lhs.constructor?.name is 'Reg'
       lhsName=lhs.getDwire().refName()
+      checkPoint=true
     else if lhs.constructor?.name is 'Wire'
       lhsName=lhs.refName()
+      if lhs.getSync()?
+        checkPoint=true
     else if lhs.constructor?.name is 'Port'
       lhsName=lhs.refName()
+      if lhs.getType()=='output'
+        checkPoint=true
       if lhs.isReg
         lhsName=lhs.shadowReg.getDwire().refName()
     else if lhs.constructor?.name is 'VecMember'
       lhsName=lhs.refName()
     else
       throw new Error("Unknown lhs type")
+    space="  ".repeat(cond_stack.length+1)
+    conds= if cond_stack.length>0 then _.last(cond_stack) else []
     if lineno? and lineno>=0
       rhsInfo=rhsExpand(rhs)
+      sig_driven_list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:conds})
       if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
         throw new Error("assign to #{lhsName} code is null at #{lineno}".red)
-      buffer.add "  #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
+      buffer.add space+"#{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
       checkAssignWidth(lhs,rhsInfo,lineno)
     else
       rhsInfo=rhsExpand(rhs)
+      sig_driven_list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:conds})
       if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
         throw new Error("assign to #{lhsName} code is null".red)
-      buffer.add "  #{toSignal lhsName} = #{rhsInfo.code};"
+      buffer.add space+"#{toSignal lhsName} = #{rhsInfo.code};"
       checkAssignWidth(lhs,rhsInfo,lineno)
   else if stateType=='end'
     buffer.add "  end"
+  else if stateType=='cond_end'
+    space="  ".repeat(cond_stack.length)
+    buffer.add space+"end"
   else if stateType=='verilog'
     buffer.add statement[1]
   else if stateType=='while'
@@ -204,27 +230,38 @@ statementGen=(buffer,statement)->
       buffer.add "  while(#{toSignal cond.str}) begin"
   else if stateType=='if'
     cond=statement[1]
+    cond_driven = []
+    if cond_stack.length>0
+      cond_driven.push(_.last(cond_stack)...)
+    cond_driven.push(_.clone(cond.driven))
+    cond_stack.push(cond_driven)
+    space="  ".repeat(cond_stack.length)
     lineno=statement[2]
     cntCond(1)
     if lineno? and lineno>=0
-      buffer.add "  if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
+      buffer.add space+"if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
-      buffer.add "  if(#{toSignal cond.str}) begin"
+      buffer.add space+"if(#{toSignal cond.str}) begin"
   else if stateType=='elseif'
     cntCond(1)
     cond=statement[1]
+    cond_driven = _.last(cond_stack)
+    dList=_.last(cond_driven)
+    dList.push(cond.driven...)
+    space="  ".repeat(cond_stack.length)
     lineno=statement[2]
     if lineno? and lineno>=0
-      buffer.add "  else if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
+      buffer.add space+"else if(#{toSignal cond.str}) begin #{lineComment(lineno)}"
     else
-      buffer.add "  else if(#{toSignal cond.str}) begin"
+      buffer.add space+"else if(#{toSignal cond.str}) begin"
   else if stateType=='else'
     cntCond(1)
     lineno=statement[1]
+    space="  ".repeat(cond_stack.length)
     if lineno? and lineno>=0
-      buffer.add "  else begin #{lineComment(lineno)}"
+      buffer.add space+"else begin #{lineComment(lineno)}"
     else
-      buffer.add "  else begin"
+      buffer.add space+"else begin"
   else if stateType=='delay'
     item = statement[1]
     if _.isNumber(item.delay)
@@ -279,7 +316,7 @@ statementGen=(buffer,statement)->
     else
       throw new Error("arrays init format #{file_type} undefined".red)
   else if stateType=='endif'
-    1
+    cond_stack.pop()
   else
     throw new Error("can not find type #{stateType}")
 
@@ -332,8 +369,10 @@ code_gen= (inst,allInst,first=false)=>
   else
     moduleCache[buildName]=true
 
+  sig_driven={inst:inst,list:[],children:[]}
   for i in getCellList(inst)
-    code_gen(i.inst,allInst)
+    inst_sig_driven=code_gen(i.inst,allInst)
+    sig_driven.children.push(inst_sig_driven)
 
   if inst.dump?
     dumpBuffer.setName(buildName,null)
@@ -462,24 +501,36 @@ code_gen= (inst,allInst,first=false)=>
       rhs=statement[2]
       lineno=statement[3]
       lhsName=''
+      checkPoint=false
       if lhs.constructor?.name is 'Reg'
         lhsName=lhs.getDwire().refName()
+        checkPoint=true
       else if lhs.constructor?.name is 'Wire'
         lhsName=lhs.refName()
       else if lhs.constructor?.name is 'Port'
         lhsName=lhs.refName()
+        if lhs.getType()=='output'
+          checkPoint=true
         if lhs.isReg
           lhsName=lhs.shadowReg.getDwire().refName()
       else
         throw new Error('Unknown lhs type')
       if lineno? and lineno>=0
         rhsInfo=rhsExpand(rhs)
+        if inst.__isCombModule
+          sig_driven.list.push({key:lhs.getId(),checkPoint:false,obj:lhs,driven:rhsInfo.driven,conds:[]})
+        else
+          sig_driven.list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:[]})
         if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
           throw new Error("assign to #{lhsName} is null at #{lineno}".red)
         printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
         checkAssignWidth(lhs,rhsInfo,lineno)
       else
         rhsInfo=rhsExpand(rhs)
+        if inst.__isCombModule
+          sig_driven.list.push({key:lhs.getId(),checkPoint:false,obj:lhs,driven:rhsInfo.driven,conds:[]})
+        else
+          sig_driven.list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:[]})
         if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
           throw new Error("assign to #{lhsName} is null".red)
         printBuffer.add "assign #{toSignal lhsName} = #{rhsInfo.code};"
@@ -586,8 +637,9 @@ code_gen= (inst,allInst,first=false)=>
       else if (i.constructor?.name is 'Wire') or (i.constructor?.name is 'Port')
         printBuffer.add '  '+i.getName()+'='+getValue(i.getPending())+';'
     if assignList
+      cond_stack=[]
       for statement in assignList
-        statementGen(printBuffer,statement)
+        statementGen(printBuffer,statement,cond_stack,sig_driven.list)
     printBuffer.add 'end'
     printBuffer.blank()
 
@@ -630,6 +682,7 @@ code_gen= (inst,allInst,first=false)=>
     printBuffer.add '`endif'
   printBuffer.blank()
   printBuffer.flush()
+  return sig_driven
 
 getVerilogParameter=(inst)->
   if inst.__instParameter==null
@@ -662,13 +715,18 @@ toVerilog=(inst)->
   if (not inst.__isCombModule) and config.autoClock
     if inst.__defaultClock==null
       inst._setDefaultClock(global.getPrefix()+'__clock')
-      inst._addPort(global.getPrefix()+'__clock','input',1)
+      clkPort=inst._addPort(global.getPrefix()+'__clock','input',1)
+      clkPort.asClock()
     if inst.__defaultReset==null
       inst._setDefaultReset(global.getPrefix()+'__resetn')
-      inst._addPort(global.getPrefix()+'__resetn','input',1)
+      rstPort=inst._addPort(global.getPrefix()+'__resetn','input',1)
+      rstPort.asReset()
   cell_build(inst)
   instList=[]
-  code_gen(inst,instList,true)
+  inst_sig_driven=code_gen(inst,instList,true)
+  if global.isCdcCheck()
+    clkGroup=buildClkTree(inst_sig_driven)
+    cdcAnalysis(inst_sig_driven,clkGroup)
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
   if global.getInfo()
