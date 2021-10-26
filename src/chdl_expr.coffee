@@ -27,56 +27,56 @@ class Expr
       n=s.refName()
       @str+= n
       @wstr+= 'w'+s.getWidth()
-      @driven.push(s)
+      @driven.push(s.getId())
     else if s.__type? and s.__type=='wire'
       n=s.refName()
       @str+= n
       @wstr+= 'w'+s.getWidth()
-      @driven.push(s)
+      @driven.push(s.getId())
     else if s.__type? and s.__type=='port'
       n=s.refName()
       @str+= n
       @wstr+= 'w'+s.getWidth()
-      @driven.push(s)
+      @driven.push(s.getId())
     else if s.__type? and s.__type=='op_all1'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(&('+getValue(s.sig)+'))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_all0'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(!(|('+getValue(s.sig)+')))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_has1'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(|('+getValue(s.sig)+'))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_has0'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(!(&('+getValue(s.sig)+')))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_hasOdd1'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(^('+getValue(s.sig)+'))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_hasEven1'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '(!(^('+getValue(s.sig)+')))'
       @wstr+= '( w1 )'
     else if s.__type? and s.__type=='op_cat'
       for i in s.list
         if i.__type? and ['reg','wire','port'].includes(i.__type)
-          @driven.push(i)
+          @driven.push(i.getId())
       @str+= '{ '+_.map(s.list,(i)=>getValue(i)).join(',')+' }'
       @wstr+= '( '+_.map(s.list,(i)=>'w'+i.getWidth()).join('*')+' )'
     else if s.__type? and s.__type=='op_expand'
       if s.sig.__type? and ['reg','wire','port'].includes(s.sig.__type)
-        @driven.push(s.sig)
+        @driven.push(s.sig.getId())
       @str+= '{ '+getValue(s.num)+'{'+getValue(s.sig)+'}'+' }'
       @wstr+= '( '+getValue(s.num)+'**'+s.sig.getWidth()+' )'
     else if s.constructor?.name == 'Vnumber'

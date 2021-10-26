@@ -45,6 +45,7 @@ class Channel extends CircuitEl
       if not cache[sigName]?
         cache[sigName]=true
         if not _.get(@cell.__wires,sigName)
+          @cell._addWire(sigName,port.width)
           if port.width==1
             list.push 'logic '+sigName+';'
           else if port.width>1
@@ -67,6 +68,8 @@ class Channel extends CircuitEl
         node=pinPath[pathList.length..]
         pinPath.splice(0,pathList.length,@elName)
         @portList.push {port:port,node:node,path:portPath,cell:moduleInst,pin:pinPath.join('.')}
+
+  getPortList: => @portList
 
   wireList: ->
     out=[]
