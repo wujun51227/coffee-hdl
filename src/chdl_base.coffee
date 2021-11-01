@@ -25,7 +25,7 @@ moduleCache={}
 globalModuleCache={}
 
 config={
-  autoClock: false
+  #autoClock: false
   tree: false
   noAlwaysComb: false
   lint: false
@@ -75,25 +75,25 @@ cell_build = (inst) =>
     i.inst._link(i.name)
     #log 'Link cell',i.name
     i.inst._setParentNode(inst)
-    if (not i.inst.__isCombModule)
-      if i.inst.__defaultClock==null
-        if inst.__defaultClock
-          i.inst._setDefaultClock(inst.__defaultClock)
-          clkPort=i.inst._addPort(inst.__defaultClock,'input',1)
-          clkPort.asClock()
-        else if config.autoClock
-          i.inst._setDefaultClock(global.getPrefix()+'__clock')
-          clkPort=i.inst._addPort(global.getPrefix()+'__clock','input',1)
-          clkPort.asClock()
-      if i.inst.__defaultReset==null
-        if inst.__defaultReset
-          i.inst._setDefaultReset(inst.__defaultReset)
-          rstPort=i.inst._addPort(inst.__defaultReset,'input',1)
-          rstPort.asReset()
-        else if config.autoClock
-          i.inst._setDefaultReset(global.getPrefix()+'__resetn')
-          rstPort=i.inst._addPort(global.getPrefix()+'__resetn','input',1)
-          rstPort.asReset()
+    #if (not i.inst.__isCombModule)
+    #  if i.inst.__defaultClock==null
+    #    if inst.__defaultClock
+    #      i.inst._setDefaultClock(inst.__defaultClock)
+    #      clkPort=i.inst._addPort(inst.__defaultClock,'input',1)
+    #      clkPort.asClock()
+    #    #else if config.autoClock
+    #    #  i.inst._setDefaultClock(global.getPrefix()+'__clock')
+    #    #  clkPort=i.inst._addPort(global.getPrefix()+'__clock','input',1)
+    #    #  clkPort.asClock()
+    #  if i.inst.__defaultReset==null
+    #    if inst.__defaultReset
+    #      i.inst._setDefaultReset(inst.__defaultReset)
+    #      rstPort=i.inst._addPort(inst.__defaultReset,'input',1)
+    #      rstPort.asReset()
+    #    #else if config.autoClock
+    #    #  i.inst._setDefaultReset(global.getPrefix()+'__resetn')
+    #    #  rstPort=i.inst._addPort(global.getPrefix()+'__resetn','input',1)
+    #    #  rstPort.asReset()
     cell_build(i.inst)
   inst._postElaboration()
 
@@ -715,15 +715,15 @@ module.exports.buildGlobalModule=(globalModule,params...)->
   return globalModuleCache[name]
 
 toVerilog=(inst)->
-  if (not inst.__isCombModule) and config.autoClock
-    if inst.__defaultClock==null
-      inst._setDefaultClock(global.getPrefix()+'__clock')
-      clkPort=inst._addPort(global.getPrefix()+'__clock','input',1)
-      clkPort.asClock()
-    if inst.__defaultReset==null
-      inst._setDefaultReset(global.getPrefix()+'__resetn')
-      rstPort=inst._addPort(global.getPrefix()+'__resetn','input',1)
-      rstPort.asReset()
+  #if (not inst.__isCombModule) and config.autoClock
+  #  if inst.__defaultClock==null
+  #    inst._setDefaultClock(global.getPrefix()+'__clock')
+  #    clkPort=inst._addPort(global.getPrefix()+'__clock','input',1)
+  #    clkPort.asClock()
+  #  if inst.__defaultReset==null
+  #    inst._setDefaultReset(global.getPrefix()+'__resetn')
+  #    rstPort=inst._addPort(global.getPrefix()+'__resetn','input',1)
+  #    rstPort.asReset()
   cell_build(inst)
   instList=[]
   inst_sig_driven=code_gen(inst,instList,true)

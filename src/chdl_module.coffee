@@ -45,8 +45,8 @@ class Module
   __instName: ''
 
   _checkCombModule:(inst)->
-    if @__isCombModule and inst.__isCombModule
-      throw new Error("Combination module can not instance in combination module")
+    #if @__isCombModule and inst.__isCombModule
+    #  throw new Error("Combination module can not instance in combination module")
 
   _cellmap: (v) ->
     if _.isArray(v)
@@ -180,6 +180,7 @@ class Module
           inst.link(this,hierName)
           if inst.isClock
             @_setDefaultClock(sigName)
+            @__isCombModule=false
           if inst.isReset
             @_setDefaultReset(sigName)
           if inst.isReg
@@ -220,7 +221,7 @@ class Module
     @__id = uuid()
     #@moduleName=this.constructor.name
     @__moduleName=null
-    @__isCombModule=false
+    @__isCombModule=true
     @__instParameter=null
     @__moduleParameter=[]
 

@@ -31,7 +31,7 @@ program
   .option('-o, --output <dir name>')
   .option('-w, --watch')
   .option('-p, --param_file <file name>')
-  .option('-a, --autoClock')
+  #.option('-a, --autoClock')
   .option('-t, --tree')
   .option('-i, --info')
   .option('-n, --new <module name>')
@@ -58,6 +58,7 @@ program
   .option('--ifdef_protect')
   .option('--debug')
   .option('--cdc')
+  .option('--cdc_report <report name>')
   .parse(process.argv)
 
 debug = program.debug ? false
@@ -175,14 +176,14 @@ module.exports=tb_#{moduleName}
   process.exit()
 
 cfg={
-  autoClock: program.autoClock ? false
+  #autoClock: program.autoClock ? false
   tree: program.tree ? false
   noAlwaysComb: program.no_always_comb ? false
   lint: program.lint ? false
 }
 
 if program.cdc
-  global.setCdcCheck()
+  global.setCdcCheck(program.cdc_report)
 
 if program.obfuscate
   global.setObfuscate()
@@ -342,6 +343,8 @@ fileName = program.args[0]
 outDir= program.output ? './'
 if not fs.existsSync(outDir)
   mkdirp.sync(outDir)
+
+global.setOutDir(outDir)
 
 #if not fs.existsSync('./build')
 #  mkdirp.sync('./build')

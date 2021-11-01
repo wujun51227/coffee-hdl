@@ -25,6 +25,9 @@ idCnt=0
 ifdefProtect=false
 
 cdcCheck=false
+cdcReportFile=null
+
+outDir='./'
 
 module.exports.setPrefix = (s)-> prefix=s
 
@@ -87,6 +90,17 @@ module.exports.setId = (id,inst)->
 module.exports.queryId = (id)->
   return indexTable[id]
 
-module.exports.setCdcCheck = -> cdcCheck=true
+module.exports.dumpId= ->
+  for k,v of indexTable
+    console.log k,v.getPath()
+
+module.exports.setCdcCheck = (file)->
+  cdcCheck=true
+  cdcReportFile = file ? null
 
 module.exports.isCdcCheck = -> cdcCheck
+
+module.exports.getCdcReportFile = -> cdcReportFile
+
+module.exports.setOutDir=(v)->outDir=v
+module.exports.getOutDir=->outDir
