@@ -1,0 +1,55 @@
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk1: input().asClock()
+      clk2: input().asClock()
+      din: input()
+      enable: input().async()
+      dout: output().asReg().asyncLatch()
+    )
+
+  build: ->
+    ddd = reg(1,'ddd').clock(@clk2).asyncLatch()
+    eee = reg(1,'eee').clock(@clk2).stable()
+    fff = reg(1,'fff').clock(@clk2).capture()
+
+    consign @dout
+      $if(@enable) => $ @din
+      $else => $ @dout
+
+    consign ddd = @dout
+    consign eee = @dout
+    consign fff = @dout
+
+
+class async_ignore extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      clk2: input().asClock()
+      rstn: input().asReset()
+      enable: input().async()
+    )
+
+    @u0=new cell1()
+
+    CellList(
+      @u0
+    )
+
+
+    Channel(
+      ch0: @mold(@u0)
+    )
+
+  build: ->
+    Dff aaa
+    assign @ch0.din = @ch0.dout
+    assign @ch0.clk1 = @clk
+    assign @ch0.clk2 = @clk2
+    assign @ch0.enable = @enable
+
+module.exports=async_ignore
+

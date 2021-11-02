@@ -1,0 +1,92 @@
+class comb_add extends Module
+  constructor: ->
+    super()
+    Port(
+      add1: input()
+      add2: input()
+      result: output()
+    )
+
+  build: ->
+    assign @result = @add1 + @add2
+
+class comb_inv extends Module
+  constructor: ->
+    super()
+    Port(
+      din: input()
+      dout: output()
+    )
+
+  build: ->
+    assign @dout = ~@din
+
+
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      din: input().stable()
+      dout: output().asReg()
+    )
+
+  build: ->
+    consign @dout=@din
+
+class cell2 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      din: input().stable()
+      dout: output().asReg()
+    )
+
+  build: ->
+    consign @dout=@din
+
+class comb_cell extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      clkx: input().asClock()
+      rstn: input().asReset()
+      dout: output().stable()
+    )
+
+    @u0=new cell1()
+    @u1=new cell2()
+    @u2=new comb_add()
+    @u3=new comb_inv()
+    CellList(
+      @u0
+      @u1
+      @u2
+      @u3
+    )
+
+
+    Channel(
+      ch0: @mold(@u0)
+      ch1: @mold(@u1)
+      ch2: @mold(@u2)
+      ch3: @mold(@u3)
+    )
+
+  build: ->
+    assign @ch0.din = @ch1.dout
+    assign @ch1.din = @ch0.dout
+
+    assign @ch0.clk = @clk
+    assign @ch1.clk = @clkx
+
+    assign @ch2.add1 = @ch0.dout
+    assign @ch2.add2 = @ch1.dout
+
+    assign @ch3.din  = @ch2.result
+    assign @dout = @ch3.dout
+
+module.exports=comb_cell
+

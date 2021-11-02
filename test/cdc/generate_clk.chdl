@@ -1,0 +1,72 @@
+
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      rstn: input().asReset()
+      din: input(16)
+      dout: output(16).asReg()
+    )
+
+  build: ->
+    consign @dout=@din
+
+class cell2 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      rstn: input().asReset()
+      clk2: input().asClock()
+      clk_div2: output().asReg().asGenerateClock()
+      clk2_div2: output().asReg().clock('clk2').asGenerateClock()
+      dout : output(16).asReg()
+    )
+
+  build: ->
+    consign @clk_div2=!@clk_div2
+    consign @clk2_div2=!@clk2_div2
+
+    consign @dout = @dout + 1
+
+
+class generate_clk extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      clk2: input().asClock()
+      rstn: input().asReset()
+      dout: output(16)
+    )
+
+    @u0=new cell1()
+    @u1=new cell2()
+    @u2=new cell1()
+    CellList(
+      @u0
+      @u1
+      @u2
+    )
+
+    Channel(
+      ch0: @mold(@u0)
+      ch1: @mold(@u1)
+      ch2: @mold(@u2)
+    )
+
+  build: ->
+    assign @ch0.clk = @ch1.clk_div2
+    assign @ch0.din = @ch1.dout
+    assign @dout = @u0.dout
+
+    assign @ch2.clk = @ch1.clk2_div2
+    assign @ch2.din = @ch1.dout
+
+    assign @ch1.clk = @clk
+    assign @ch1.clk2 = @clk
+
+
+module.exports=generate_clk
+

@@ -1,0 +1,43 @@
+class cell1 extends Module
+  constructor: ->
+    super()
+    Port(
+      clk1: input().asClock()
+      din: input()
+      enable: input()
+      dout: output().asReg()
+    )
+
+  build: ->
+    consign @dout
+      $if(@enable) => $ @din
+      $else => $ @dout
+
+
+class async_data extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      rstn: input().asReset()
+      enable: input().async()
+    )
+
+    @u0=new cell1()
+
+    CellList(
+      @u0
+    )
+
+
+    Channel(
+      ch0: @mold(@u0)
+    )
+
+  build: ->
+    assign @ch0.din = @ch0.dout
+    assign @ch0.clk1 = @clk
+    assign @ch0.enable = @enable
+
+module.exports=async_data
+
