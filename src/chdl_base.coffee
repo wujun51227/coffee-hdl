@@ -202,14 +202,14 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
     conds= if cond_stack.length>0 then _.last(cond_stack) else []
     if lineno? and lineno>=0
       rhsInfo=rhsExpand(rhs)
-      sig_driven_list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:conds})
+      sig_driven_list.push({key:lhs.getElId(),checkPoint:checkPoint,inst:lhs,driven:rhsInfo.driven,conds:conds})
       if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
         throw new Error("assign to #{lhsName} code is null at #{lineno}".red)
       buffer.add space+"#{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
       checkAssignWidth(lhs,rhsInfo,lineno)
     else
       rhsInfo=rhsExpand(rhs)
-      sig_driven_list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:conds})
+      sig_driven_list.push({key:lhs.getElId(),checkPoint:checkPoint,inst:lhs,driven:rhsInfo.driven,conds:conds})
       if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
         throw new Error("assign to #{lhsName} code is null".red)
       buffer.add space+"#{toSignal lhsName} = #{rhsInfo.code};"
@@ -369,10 +369,12 @@ code_gen= (inst,allInst,first=false)=>
   else
     moduleCache[buildName]=true
 
-  sig_driven={inst:inst,list:[],children:[]}
+  sig_driven_tree={inst:inst,list:[],children:[]}
   for i in getCellList(inst)
     inst_sig_driven=code_gen(i.inst,allInst)
-    sig_driven.children.push(inst_sig_driven)
+    sig_driven_tree.children.push(inst_sig_driven)
+
+  driven_list=sig_driven_tree.list
 
   if inst.dump?
     dumpBuffer.setName(buildName,null)
@@ -510,6 +512,8 @@ code_gen= (inst,allInst,first=false)=>
         checkPoint=true
       else if lhs.constructor?.name is 'Wire'
         lhsName=lhs.refName()
+        if lhs.getSync()?
+          checkPoint=true
       else if lhs.constructor?.name is 'Port'
         lhsName=lhs.refName()
         if lhs.getType()=='output'
@@ -521,9 +525,9 @@ code_gen= (inst,allInst,first=false)=>
       if lineno? and lineno>=0
         rhsInfo=rhsExpand(rhs)
         if inst.__isCombModule
-          sig_driven.list.push({key:lhs.getId(),checkPoint:false,obj:lhs,driven:rhsInfo.driven,conds:[]})
+          driven_list.push({key:lhs.getElId(),checkPoint:false,inst:lhs,driven:rhsInfo.driven,conds:[]})
         else
-          sig_driven.list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:[]})
+          driven_list.push({key:lhs.getElId(),checkPoint:checkPoint,inst:lhs,driven:rhsInfo.driven,conds:[]})
         if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
           throw new Error("assign to #{lhsName} is null at #{lineno}".red)
         printBuffer.add "assign #{toSignal lhsName}#{lineComment(lineno)}= #{rhsInfo.code};"
@@ -531,9 +535,9 @@ code_gen= (inst,allInst,first=false)=>
       else
         rhsInfo=rhsExpand(rhs)
         if inst.__isCombModule
-          sig_driven.list.push({key:lhs.getId(),checkPoint:false,obj:lhs,driven:rhsInfo.driven,conds:[]})
+          driven_list.push({key:lhs.getElId(),checkPoint:false,inst:lhs,driven:rhsInfo.driven,conds:[]})
         else
-          sig_driven.list.push({key:lhs.getId(),checkPoint:checkPoint,obj:lhs,driven:rhsInfo.driven,conds:[]})
+          driven_list.push({key:lhs.getElId(),checkPoint:checkPoint,inst:lhs,driven:rhsInfo.driven,conds:[]})
         if _.isNil(rhsInfo) or _.isNil(rhsInfo.code)
           throw new Error("assign to #{lhsName} is null".red)
         printBuffer.add "assign #{toSignal lhsName} = #{rhsInfo.code};"
@@ -642,7 +646,7 @@ code_gen= (inst,allInst,first=false)=>
     if assignList
       cond_stack=[]
       for statement in assignList
-        statementGen(printBuffer,statement,cond_stack,sig_driven.list)
+        statementGen(printBuffer,statement,cond_stack,driven_list)
     printBuffer.add 'end'
     printBuffer.blank()
 
@@ -685,7 +689,7 @@ code_gen= (inst,allInst,first=false)=>
     printBuffer.add '`endif'
   printBuffer.blank()
   printBuffer.flush()
-  return sig_driven
+  return sig_driven_tree
 
 getVerilogParameter=(inst)->
   if inst.__instParameter==null

@@ -23,6 +23,7 @@ class Wire extends CircuitEl
     @resetName=null
     @virtual=false
     @signed=false
+    @origin=null
     @syncType=null
     @syncClock=null
     @share={
@@ -32,6 +33,12 @@ class Wire extends CircuitEl
     @type=null
     @attached = false
     global.setId(@uuid,this)
+
+  getElId: =>
+    if @origin?
+      @origin.getId()
+    else
+      @getId()
 
   setType: (t)=> @type=t
   getType: => @type
@@ -153,11 +160,13 @@ class Wire extends CircuitEl
       wire.setLsb(n.str)
       wire.setMsb(n.str)
       wire.share=@share
+      wire.origin=this.origin ? this
       return packEl('wire',wire)
     else
       wire.setLsb(n)
       wire.setMsb(n)
       wire.share=@share
+      wire.origin=this.origin ? this
       return packEl('wire',wire)
 
   fromMsb: (n)=>
@@ -200,6 +209,7 @@ class Wire extends CircuitEl
       wire.setLsb(m.str)
       wire.setMsb(n.str)
       wire.share=@share
+      wire.origin=this.origin ? this
       return packEl('wire',wire)
     else
       width=toNumber(n)-toNumber(m)+1
@@ -210,6 +220,7 @@ class Wire extends CircuitEl
       wire.setLsb(m)
       wire.setMsb(n)
       wire.share=@share
+      wire.origin=this.origin ? this
       return packEl('wire',wire)
 
   ext: (n)=>
@@ -218,6 +229,7 @@ class Wire extends CircuitEl
     wire.setLsb(@msb)
     wire.setMsb(@lsb)
     wire.share=@share
+    wire.origin=this.origin ? this
     return packEl('wire',wire)
 
   refName: =>

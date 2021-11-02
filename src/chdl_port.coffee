@@ -36,7 +36,24 @@ class Port extends Wire
 
   stable: ()=>
     @syncType = syncType.stable
+    if @isReg
+      @shadowReg.stable()
     return packEl('port',this)
+
+  capture: ()=>
+    if @isReg
+      @syncType = syncType.capture
+      @shadowReg.capture()
+      return packEl('port',this)
+    else
+      throw new Error("Only register can set capture")
+
+  asyncLatch: ()=>
+    if @isReg
+      @syncType = syncType.ignore
+      @shadowReg.asyncLatch()
+      return packEl('port',this)
+      throw new Error("Only register can set asyncLatch")
 
  #   ret={}
  #   list=toFlatten(@cell[channel_name])
@@ -62,9 +79,17 @@ class Port extends Wire
     @bindClock=null
 
     @isClock=false
+    @isGenerateClock=false
     @isReset=false
+    @origin=null
 
     global.setId(@uuid,this)
+
+  getElId: =>
+    if @origin?
+      @origin.getId()
+    else
+      @getId()
 
   getSync: =>
     if @isClock
@@ -109,6 +134,10 @@ class Port extends Wire
     @isClock=true
     return packEl('port',this)
 
+  asGenerateClock: =>
+    @isGenerateClock=true
+    return packEl('port',this)
+
   asReset: =>
     @isReset=true
     return packEl('port',this)
@@ -138,11 +167,13 @@ class Port extends Wire
         wire.setLsb(n.str)
         wire.setMsb(n.str)
         wire.share=@share
+        wire.origin=this.origin ? this
         return packEl('wire',wire)
       else
         wire.setLsb(n)
         wire.setMsb(n)
         wire.share=@share
+        wire.origin=this.origin ? this
         return packEl('wire',wire)
 
   slice: (n,m)=>
@@ -158,6 +189,7 @@ class Port extends Wire
         wire.setLsb(m.str)
         wire.setMsb(n.str)
         wire.share=@share
+        wire.origin=this.origin ? this
         return packEl('wire',wire)
       else
         width=toNumber(n)-toNumber(m)+1
@@ -168,6 +200,7 @@ class Port extends Wire
         wire.setLsb(m)
         wire.setMsb(n)
         wire.share=@share
+        wire.origin=this.origin ? this
         return packEl('wire',wire)
 
   ext: (n)=>
@@ -176,6 +209,7 @@ class Port extends Wire
     wire.setLsb(@msb)
     wire.setMsb(@lsb)
     wire.share=@share
+    wire.origin=this.origin ? this
     return packEl('wire',wire)
 
   assign: (assignFunc,lineno)=>

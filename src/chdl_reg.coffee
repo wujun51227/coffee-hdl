@@ -39,6 +39,12 @@ class Reg extends CircuitEl
     }
     global.setId(@uuid,this)
 
+  getElId: =>
+    if @origin?
+      @origin.getId()
+    else
+      @getId()
+
   asyncLatch: =>
     @syncType=syncType.ignore
     return packEl('reg',this)
@@ -94,6 +100,10 @@ class Reg extends CircuitEl
 
   stable: =>
     @syncType=syncType.stable
+    return packEl('reg',this)
+
+  capture: =>
+    @syncType=syncType.capture
     return packEl('reg',this)
 
   negedge: =>
@@ -164,6 +174,9 @@ class Reg extends CircuitEl
 
     if data.stable
       @syncType=syncType.stable
+
+    if data.capture
+      @syncType=syncType.capture
 
   pending: (v)=> @share.pendingValue=v
 
