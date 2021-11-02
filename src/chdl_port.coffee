@@ -96,20 +96,25 @@ class Port extends Wire
       throw new Error("clock can not getSync")
     if @isReset
       return { type:syncType.stable,value:null}
-    if @syncType==syncType.stable
-      return {type:@syncType,value:null}
-    else if @syncType==syncType.async
-      return {type:@syncType,value:null}
-    else if @syncType==syncType.sync
-      if _.isString(@syncClock)
-        return {type:@syncType,value:@syncClock}
-      else
-        return {type:@syncType,value:@syncClock.getName()}
+    if @isReg
+      return @shadowReg.getSync()
     else
-      if @cell.__isCombModule or @cell.__isBlackBox
-        return null
+      if @syncType==syncType.stable
+        return {type:@syncType,value:null}
+      else if @syncType==syncType.async
+        return {type:@syncType,value:null}
+      else if @syncType==syncType.sync
+        ret= do ->
+          if _.isString(@syncClock)
+            return @syncClock
+          else
+            return @syncClock.getName()
+          return {type:@syncType,value:ret}
       else
-        return {type:syncType.sync,value:@cell._clock()}
+        if @cell.__isCombModule or @cell.__isBlackBox
+          return null
+        else
+          return {type:syncType.sync,value:@cell._clock()}
 
   getSpace: ->
     if @cell.__indent>0

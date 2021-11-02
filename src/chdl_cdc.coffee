@@ -23,27 +23,55 @@ getClkGroup=(key,group)->
     return k
   return null
 
-traceClock=(id,sigDrivenList,clkGroup)->
-  el = global.queryId(id)
+findSync=(sig,list)->
+  elSync=sig.getSync()
+  if elSync?
+    return elSync
+  else
+    ret = findDriveItems(sig,list)
+    if ret.length==1
+      driveInst=global.queryId(ret[0].driven[0])
+      return findSync(driveInst,list)
+    else
+      throw new Error("sync is not uniq "+ret)
+
+traceClock=(el,drivenList,clkGroup,genClkList)->
+  id = el.getId()
+  elId = el.getElId()
   unless el?
     throw new Error('can not query global id '+id)
   if el.isClock
     ret=getClkGroup(id,clkGroup)
     return ret if ret?
-
-  for i in sigDrivenList when i.key==id
-    driveKey=i.driven[0]
-    ret=traceClock(driveKey,sigDrivenList,clkGroup)
+  genClkObj=_.find(genClkList,{genClkId:id})
+  if genClkObj?
+    genClk = global.queryId(genClkObj.clkId)
+    ret=traceClock(genClk,drivenList,clkGroup,genClkList)
     if ret?
       clkGroup[ret][id]=1
       return ret
     else
+      throw new Error("trace gen clock failed "+genClkObj.clkId)
+
+  driveClkObj=_.find(drivenList,{key:elId})
+  if driveClkObj?
+    driveObj= global.queryId(driveClkObj.driven[0])
+    ret=traceClock(driveObj,drivenList,clkGroup,genClkList)
+    if ret?
+      clkGroup[ret][id]=1
+      return ret
+    else
+      elSync= findSync(el,drivenList)
+      if elSync.syncType==syncType.sync
+        ret=getClkGroup(id,clkGroup)
+        return ret if ret?
       throw new Error('can not find clock group '+el.getName())
+
   return null
 
 getKeyByName=(name,list)->
   for i in list
-    if i.obj.getName()==name
+    if i.inst.getName()==name
       return i.key
    throw new Error('can not find key by name '+name)
 
@@ -51,37 +79,53 @@ buildClkTree=(driven_tree,clkGroup={},first=true)->
   inst=driven_tree.inst
   if inst.__parentNode==null
     for [name,port] in toFlatten(inst.__ports) when port.isClock
-      clkGroup[port.getName()]={[port.getId()]:1}
+      clkGroup[port.getName()]={[port.getElId()]:1} # find root clock
 
-  for [name,channel] in toFlatten(inst.__channels)
-    if channel.constructor.name=='Channel'
-      portList=channel.getPortList()
-    else if channel.constructor.name=='Wire'
-      portList=channel.bindChannel.getPortList()
-    else
-      throw new Error("Can not get portList from ",channel.constructor.name)
-    for i in portList when i.port.isClock
-      #console.log "find clock",i.port.getName()
-      pinKey = getKeyByName(i.pin,driven_tree.list)
-      ret=traceClock(pinKey,driven_tree.list,clkGroup)
-      #console.log "check 2",i.port.getId(),i.port.getName(),ret
-      if ret?
-        clkGroup[ret][i.port.getId()]=1
+  subModuleClkList=[]
+  generateClockList=[]
+  for i in driven_tree.children
+    for pair in i.inst.__pinPortPair
+      instPort= pair.port
+      wireObj = pair.pin
+      if instPort.getType()=='output' and instPort.isGenerateClock
+        syncInfo = instPort.getSync()
+        clkInst=instPort.getCell().__ports[syncInfo.value]
+        generateClockList.push(
+          {genClkId: instPort.getElId(), clkId: clkInst.getElId()}
+        )
+        subModuleClkList.push(
+          {key:wireObj.getElId(),checkPoint:false,inst:wireObj,driven:[instPort.getId()],conds:[]}
+        )
+      if instPort.getType()=='input'  and instPort.isClock
+        subModuleClkList.push(
+          {key:instPort.getElId(),checkPoint:false,inst:instPort,driven:[wireObj.getId()],conds:[]}
+        )
+
+  driven_list=[driven_tree.list...,subModuleClkList...]
+
+  for i in driven_tree.children # scan all module's clock input
+    for pair in i.inst.__pinPortPair
+      instPort= pair.port
+      wireObj = pair.pin
+      if instPort.isClock
+        ret=traceClock(wireObj,driven_list,clkGroup,generateClockList)  # trace module clock to root clock or generate clock
+        if ret?
+          clkGroup[ret][instPort.getElId()]=1
+        else
+          global.dumpId()
+          throw new Error("trace clock failed "+wireObj.getPath()+' '+wireObj.getId())
 
   for i in driven_tree.children when !i.inst.__isCombModule
     for [name,port] in toFlatten(i.inst.__ports) when port.isClock and port.bindSignal?
-      portKey=port.getId()
+      portKey=port.getElId()
       ret=getClkGroup(portKey,clkGroup)
       if not ret?
-        pinKey = _.get(inst,port.bindSignal).getId()
-        ret=traceClock(pinKey,driven_tree.list,clkGroup)
+        pinObj= _.get(inst,port.bindSignal)
+        ret=traceClock(pinObj,driven_list,clkGroup)
         if ret?
-          #xxx= _.get(inst,port.bindSignal)
-          #console.log "check 1",port.getId(),xxx.getName(),ret,port.bindSignal
-          clkGroup[ret][port.getId()]=1
+          clkGroup[ret][port.getElId()]=1
         else
           throw new Error("can not find clock group of "+port.bindSignal)
-
 
   for i in driven_tree.children
     buildClkTree(i,clkGroup,false)
@@ -136,7 +180,7 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
         if not isSameClkGroup(sig.sync.id,syncObj.id,clkGroup)
           cdcError.push({
             msg:"clock crossing",
-            targetSig:sig.obj.getPath(),
+            targetSig:sig.inst.getPath(),
             targetClk:getClkGroup(sig.sync.id,clkGroup) ? ''
             sourceSig:driveSig
             sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
@@ -147,7 +191,7 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
       else if syncObj.type==syncType.async
         cdcError.push({
           msg:"async signal latch",
-          targetSig:sig.obj.getPath()
+          targetSig:sig.inst.getPath()
           targetClk:getClkGroup(sig.sync.id,clkGroup) ? ''
           sourceSig:driveSig
           sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
@@ -156,18 +200,18 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
       else if syncObj.type==syncType.stable || syncObj.type==syncType.capture
         return true
       else if syncObj==null
-        console.log "Error: drive signal sync obj is null",driveSig
+        console.log "Error: drive signal sync inst is null",driveSig
         return false
 
-findDriveWire=(sig,list)->
+findDriveItems=(sig,list)->
   ret=[]
   if sig.getLsb()==-1
-    ret = _.filter(list,(i)=>i.obj.getName()==sig.getName())
+    ret = _.filter(list,(i)=>i.key==sig.getElId())
   else
     for i in list
-      if i.obj.getName()==sig.getName()
-        msb = i.obj.getMsb()
-        lsb = i.obj.getLsb()
+      if i.key==sig.getElId()
+        msb = i.inst.getMsb()
+        lsb = i.inst.getLsb()
         if lsb==-1
           ret.push(i)
         else if not(sig.getLsb()>msb or sig.getMsb()<lsb)
@@ -204,26 +248,27 @@ cdcCheck=(driveObj,list,clkGroup)->
       else
         syncObj = getSyncId(el)
         if syncObj==null
-          driveWireList=findDriveWire(el,list)
+          driveWireList=findDriveItems(el,list)
           for driveWire in driveWireList
             unless driveWire.sync?
               cdcCheck(driveWire,list,clkGroup)
             if driveWire.sync? #net maybe connect a const value
-              ret=markSync(driveObj,driveWire.obj.getPath(),driveWire.sync,clkGroup)
+              ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
         else
           ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
     else
       if el.getSync()?
         ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
       else
-        driveWireList=findDriveWire(el,list)
+        #console.log "find drive wire",el.getName(),el.getId()
+        driveWireList=findDriveItems(el,list)
         for driveWire in driveWireList
           #console.log driveWire
-          #console.log driveWire.key,driveWire.sync,driveWire.obj.refName()
+          #console.log ">>",driveWire.key,driveWire.sync,driveWire.obj.refName()
           unless driveWire.sync?
             cdcCheck(driveWire,list,clkGroup)
           if driveWire.sync? #net maybe connect a const value
-            ret=markSync(driveObj,driveWire.obj.getPath(),driveWire.sync,clkGroup)
+            ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
 
   for id in _.flatten(driveObj.conds)
     condWire=global.queryId(id)
@@ -234,14 +279,14 @@ cdcCheck=(driveObj,list,clkGroup)->
     else if condType=='Port' and condWire.getType()=='input'
       ret=markSync(driveObj,condWire.getPath(),getSyncId(condWire),clkGroup)
     else
-      driveWireList=findDriveWire(condWire,list)
+      driveWireList=findDriveItems(condWire,list)
       for driveWire in driveWireList
         unless driveWire.sync?
           cdcCheck(driveWire,list,clkGroup)
         if driveWire.sync? #net maybe connect a const value
-          ret=markSync(driveObj,driveWire.obj.getPath(),driveWire.sync,clkGroup)
+          ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
 
-cdcAnalysis=(driven_tree,clkGroup,first=true)->
+cdcAnalysis=(driven_tree,clkGroup,first=true,result=[])->
 
   channelPortList=[]
   for i in driven_tree.children
@@ -250,7 +295,7 @@ cdcAnalysis=(driven_tree,clkGroup,first=true)->
     if i.inst.__isCombModule
       driven_tree.list.push(i.list...)
     else
-      cdcAnalysis(i,clkGroup,false)
+      cdcAnalysis(i,clkGroup,false,result)
 
   log ("Clock Domain Crossing Checking, Module: "+driven_tree.inst.getModuleName()).yellow
 
@@ -259,18 +304,18 @@ cdcAnalysis=(driven_tree,clkGroup,first=true)->
     wireObj = pin
     if instPort.getType()=='output'
       driven_tree.list.push(
-        {key:wireObj.getId(),checkPoint:false,obj:wireObj,driven:[instPort.getId()],conds:[]}
+        {key:wireObj.getElId(),checkPoint:false,inst:wireObj,driven:[instPort.getId()],conds:[]}
       )
     else if instPort.getType()=='input'
       if instPort.getCell().__isCombModule
         driven_tree.list.push(
-          {key:instPort.getId(),checkPoint:false,obj:instPort,driven:[wireObj.getId()],conds:[]}
+          {key:instPort.getElId(),checkPoint:false,inst:instPort,driven:[wireObj.getId()],conds:[]}
         )
       else
         #console.log '>>>>',wireObj.getName(),item.pin
         if !instPort.isClock
           driven_tree.list.push(
-            {key:instPort.getId(),checkPoint:true,obj:instPort,driven:[wireObj.getId()],conds:[]}
+            {key:instPort.getElId(),checkPoint:true,inst:instPort,driven:[wireObj.getId()],conds:[]}
           )
 
   wireList=(i for i in driven_tree.list when !i.checkPoint)
@@ -279,28 +324,31 @@ cdcAnalysis=(driven_tree,clkGroup,first=true)->
 
   syncList=(i for i in driven_tree.list when i.checkPoint)
   for i in syncList
-    if i.obj.constructor.name=='Reg'
+    if i.inst.constructor.name=='Reg'
       #log "check reg:",i.obj.getName()
-      i.sync=getSyncId(i.obj)
-    else if i.obj.constructor.name=='Wire'
-      i.sync=getSyncId(i.obj)
-    else if i.obj.constructor.name=='Port'
-      if i.obj.getType()=='output'
-        if i.obj.isReg
+      i.sync=getSyncId(i.inst)
+    else if i.inst.constructor.name=='Wire'
+      i.sync=getSyncId(i.inst)
+    else if i.inst.constructor.name=='Port'
+      if i.inst.getType()=='output'
+        if i.inst.isReg
           #log "check output reg:",i.obj.getName()
-          i.sync=getSyncId(i.obj.shadowReg)
+          i.sync=getSyncId(i.inst.shadowReg)
         else
           #log "check output port:",i.obj.getName()
-          i.sync=getSyncId(i.obj)
-      else if i.obj.getType()=='input'
-        i.sync=getSyncId(i.obj)
+          i.sync=getSyncId(i.inst)
+      else if i.inst.getType()=='input'
+        i.sync=getSyncId(i.inst)
         #throw new Error("Can not check input port "+ i.obj.getName())
     else
-      throw new Error("unknown type "+i.obj.constructor.name)
-    if not i.obj.isClock
+      throw new Error("unknown type "+i.inst.constructor.name)
+    if not i.inst.isClock
       #console.log "checking",i.obj.getName()
       cdcCheck(i,driven_tree.list,clkGroup)
+  result.push({instance:driven_tree.inst.getHierarchy(),report:cdcError})
   cdcReport()
+    
+  return result
 
 module.exports.buildClkTree = buildClkTree
 module.exports.cdcAnalysis  = cdcAnalysis
