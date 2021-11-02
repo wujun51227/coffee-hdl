@@ -6,6 +6,8 @@ class cell1 extends Module
     super()
 
     Port(
+      clk: input().asClock()
+      rstn: input().asReset()
       dout: output(10)
     )
 
@@ -22,8 +24,6 @@ class cell1 extends Module
 class cell2 extends Module
   constructor: ->
     super()
-
-    @setCombModule()
 
     Port(
       dout: output(10)
