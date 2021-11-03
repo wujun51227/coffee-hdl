@@ -180,10 +180,10 @@ mergeSync=(sig,syncObj,clkGroup)->
       else if syncObj.type==syncType.sync || syncObj.type==syncType.ignore
         if not isSameClkGroup(sig.sync.id,syncObj.id,clkGroup)
           sig.sync.type = syncType.async
-          console.log "mergeSync as async",sig.inst.getName(),syncObj
+          #console.log "mergeSync as async",sig.inst.getName(),syncObj
       else if syncObj.type==syncType.async
         sig.sync.type = syncType.async
-        console.log "mergeSync as async",sig.inst.getName(),syncObj
+        #console.log "mergeSync as async",sig.inst.getName(),syncObj
 
 markSync=(sig,driveSigPath,syncObj,clkGroup)->
   if not sig.sync?
@@ -192,13 +192,13 @@ markSync=(sig,driveSigPath,syncObj,clkGroup)->
     return true
   else
     if sig.sync.type==syncType.async
-      console.log "markSync async"
+      #console.log "markSync async"
       return true
     else if sig.sync.type==syncType.ignore
-      console.log "markSync ignore"
+      #console.log "markSync ignore"
       return true
     else if sig.sync.type==syncType.stable
-      console.log "markSync stable"
+      #console.log "markSync stable"
       return true
     else if sig.sync.type==syncType.sync || sig.sync.type==syncType.capture
       if syncObj.type==syncType.sync || syncObj.type==syncType.ignore
