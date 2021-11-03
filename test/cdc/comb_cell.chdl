@@ -27,6 +27,7 @@ class cell1 extends Module
     super()
     Port(
       clk: input().asClock()
+      rstn: input().asReset()
       din: input().stable()
       dout: output().asReg()
     )
@@ -39,6 +40,7 @@ class cell2 extends Module
     super()
     Port(
       clk: input().asClock()
+      rstn: input().asReset()
       din: input().stable()
       dout: output().asReg()
     )
