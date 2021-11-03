@@ -46,7 +46,7 @@ class Reg extends CircuitEl
       @getId()
 
   asyncLatch: =>
-    @syncType=syncType.ignore
+    @syncType=syncType.trans
     return packEl('reg',this)
 
   isLocal: => @local
@@ -170,7 +170,7 @@ class Reg extends CircuitEl
       @negClock=data.negedge
 
     if data.asyncLatch
-      @syncType=syncType.ignore
+      @syncType=syncType.trans
 
     if data.stable
       @syncType=syncType.stable
