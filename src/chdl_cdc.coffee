@@ -7,6 +7,11 @@ _       = require 'lodash'
 cdcError=[]
 
 getSyncId=(el)->
+  if el.isClock
+    return {
+      type: syncType.sync
+      id: el.getId()
+    }
   sync = el.getSync()
   return null unless sync?
   cell = el.getCell()
@@ -138,9 +143,9 @@ buildClkTree=(driven_tree,clkGroup={},first=true)->
       for id,index in Object.keys(ids)
         inst=global.queryId(id)
         if index==0
-          data.push([clkName,inst.getPath().join(".")])
+          data.push([clkName,inst.getPath().join(".")+' '+id])
         else
-          data.push(["",inst.getPath().join(".")])
+          data.push(["",inst.getPath().join(".")+' '+id])
     console.log table(data,{singleLine:true})
   return clkGroup
 
@@ -163,17 +168,37 @@ isSameClkGroup=(a,b,clkGroup)->
       return aGroup==bGroup
   return false
 
-markSync=(sig,driveSig,syncObj,clkGroup)->
+mergeSync=(sig,syncObj,clkGroup)->
   if not sig.sync?
     sig.sync = _.clone(syncObj)
-    #console.log "markSync",sig.obj.getName(),syncObj
+    #console.log "mergeSync",sig.inst.getName(),syncObj
+  else
+    if sig.sync.type==syncType.sync || sig.sync.type==syncType.capture
+      if syncObj==null
+        console.log "Error: drive signal sync inst is null",driveSig
+        return false
+      else if syncObj.type==syncType.sync || syncObj.type==syncType.ignore
+        if not isSameClkGroup(sig.sync.id,syncObj.id,clkGroup)
+          sig.sync.type = syncType.async
+          console.log "mergeSync as async",sig.inst.getName(),syncObj
+      else if syncObj.type==syncType.async
+        sig.sync.type = syncType.async
+        console.log "mergeSync as async",sig.inst.getName(),syncObj
+
+markSync=(sig,driveSigPath,syncObj,clkGroup)->
+  if not sig.sync?
+    sig.sync = _.clone(syncObj)
+    #console.log "markSync",sig.inst.getName(),syncObj
     return true
   else
     if sig.sync.type==syncType.async
+      console.log "markSync async"
       return true
     else if sig.sync.type==syncType.ignore
+      console.log "markSync ignore"
       return true
     else if sig.sync.type==syncType.stable
+      console.log "markSync stable"
       return true
     else if sig.sync.type==syncType.sync || sig.sync.type==syncType.capture
       if syncObj.type==syncType.sync || syncObj.type==syncType.ignore
@@ -182,7 +207,7 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
             msg:"clock crossing",
             targetSig:sig.inst.getPath(),
             targetClk:getClkGroup(sig.sync.id,clkGroup) ? ''
-            sourceSig:driveSig
+            sourceSig:driveSigPath
             sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
           })
           return false
@@ -193,7 +218,7 @@ markSync=(sig,driveSig,syncObj,clkGroup)->
           msg:"async signal latch",
           targetSig:sig.inst.getPath()
           targetClk:getClkGroup(sig.sync.id,clkGroup) ? ''
-          sourceSig:driveSig
+          sourceSig:driveSigPath
           sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
         })
         return false
@@ -235,56 +260,56 @@ cdcReport= ->
     console.log "CDC Pass!!!".green
   cdcError=[]
 
-cdcCheck=(driveObj,list,clkGroup)->
-  #console.log 'check obj',driveObj.obj.getName(),driveObj.driven,driveObj.sync
+syncMerge=(driveObj,el,list,clkGroup)->
+  if el.isClock or el.getSync()?
+    ret=mergeSync(driveObj,getSyncId(el),clkGroup)
+  else
+    driveWireList=findDriveItems(el,list)
+    if driveWireList.length==0
+      throw new Error("can not find drive items "+el.getPath())
+    for driveWire in driveWireList
+      unless driveWire.sync?
+        cdcWireMark(driveWire,list,clkGroup)
+      if driveWire.sync? #net maybe connect a const value
+        ret=mergeSync(driveObj,driveWire.sync,clkGroup)
+      else
+        throw new Error("can not mark wire sync")
+
+cdcWireMark=(driveObj,list,clkGroup)->
+  #console.log 'wire mark',driveObj.inst.getPath(),driveObj.driven,driveObj.sync
   for id in driveObj.driven
     el=global.queryId(id)
-    elType=el.constructor.name
-    if elType=='Reg'
-      ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
-    else if elType=='Port' and el.getType()=='input'
-      if el.isClock
-        ret=getClkGroup(el.getId(),clkGroup)
-      else
-        syncObj = getSyncId(el)
-        if syncObj==null
-          driveWireList=findDriveItems(el,list)
-          for driveWire in driveWireList
-            unless driveWire.sync?
-              cdcCheck(driveWire,list,clkGroup)
-            if driveWire.sync? #net maybe connect a const value
-              ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
-        else
-          ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
-    else
-      if el.getSync()?
-        ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
-      else
-        #console.log "find drive wire",el.getName(),el.getId()
-        driveWireList=findDriveItems(el,list)
-        for driveWire in driveWireList
-          #console.log driveWire
-          #console.log ">>",driveWire.key,driveWire.sync,driveWire.obj.refName()
-          unless driveWire.sync?
-            cdcCheck(driveWire,list,clkGroup)
-          if driveWire.sync? #net maybe connect a const value
-            ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
+    syncMerge(driveObj,el,list,clkGroup)
 
   for id in _.flatten(driveObj.conds)
     condWire=global.queryId(id)
-    condType=condWire.constructor.name
-    #console.log 'cond',condWire.getSync(),condType,condWire.getType()
-    if condType=='Reg'
-      ret=markSync(driveObj,condWire.getPath(),getSyncId(condWire),clkGroup)
-    else if condType=='Port' and condWire.getType()=='input'
-      ret=markSync(driveObj,condWire.getPath(),getSyncId(condWire),clkGroup)
-    else
-      driveWireList=findDriveItems(condWire,list)
-      for driveWire in driveWireList
-        unless driveWire.sync?
-          cdcCheck(driveWire,list,clkGroup)
-        if driveWire.sync? #net maybe connect a const value
-          ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
+    syncMerge(driveObj,condWire,list,clkGroup)
+  #console.log "--end wire mark"
+
+syncCheck=(driveObj,el,list,clkGroup)->
+  if el.isClock or el.getSync()?
+    ret=markSync(driveObj,el.getPath(),getSyncId(el),clkGroup)
+  else
+    driveWireList=findDriveItems(el,list)
+    for driveWire in driveWireList
+      unless driveWire.sync?
+        cdcWireMark(driveWire,list,clkGroup)
+      if driveWire.sync? #net maybe connect a const value
+        ret=markSync(driveObj,driveWire.inst.getPath(),driveWire.sync,clkGroup)
+      else
+        throw new Error("can not check sync")
+
+cdcCheck=(driveObj,list,clkGroup)->
+  #console.log 'check',driveObj.inst.getPath(),driveObj.driven,driveObj.sync
+  for id in driveObj.driven
+    el=global.queryId(id)
+    syncCheck(driveObj,el,list,clkGroup)
+
+  for id in _.flatten(driveObj.conds)
+    condWire=global.queryId(id)
+    console.log "condition",id
+    syncCheck(driveObj,condWire,list,clkGroup)
+  #console.log "--end check"
 
 cdcAnalysis=(driven_tree,clkGroup,first=true,result=[])->
 
@@ -303,9 +328,14 @@ cdcAnalysis=(driven_tree,clkGroup,first=true,result=[])->
     instPort= port
     wireObj = pin
     if instPort.getType()=='output'
-      driven_tree.list.push(
-        {key:wireObj.getElId(),checkPoint:false,inst:wireObj,driven:[instPort.getId()],conds:[]}
-      )
+      if instPort.getCell().__isCombModule
+        driven_tree.list.push(
+          {key:wireObj.getElId(),checkPoint:false,inst:wireObj,driven:[instPort.getId()],conds:[]}
+        )
+      else
+        driven_tree.list.push(
+          {key:wireObj.getElId(),checkPoint:false,inst:wireObj,driven:[instPort.getId()],conds:[]}
+        )
     else if instPort.getType()=='input'
       if instPort.getCell().__isCombModule
         driven_tree.list.push(
@@ -320,31 +350,15 @@ cdcAnalysis=(driven_tree,clkGroup,first=true,result=[])->
 
   wireList=(i for i in driven_tree.list when !i.checkPoint)
   for i in wireList
-    cdcCheck(i,driven_tree.list,clkGroup)
+    cdcWireMark(i,driven_tree.list,clkGroup)
 
   syncList=(i for i in driven_tree.list when i.checkPoint)
   for i in syncList
-    if i.inst.constructor.name=='Reg'
-      #log "check reg:",i.obj.getName()
-      i.sync=getSyncId(i.inst)
-    else if i.inst.constructor.name=='Wire'
-      i.sync=getSyncId(i.inst)
-    else if i.inst.constructor.name=='Port'
-      if i.inst.getType()=='output'
-        if i.inst.isReg
-          #log "check output reg:",i.obj.getName()
-          i.sync=getSyncId(i.inst.shadowReg)
-        else
-          #log "check output port:",i.obj.getName()
-          i.sync=getSyncId(i.inst)
-      else if i.inst.getType()=='input'
-        i.sync=getSyncId(i.inst)
-        #throw new Error("Can not check input port "+ i.obj.getName())
-    else
-      throw new Error("unknown type "+i.inst.constructor.name)
-    if not i.inst.isClock
-      #console.log "checking",i.obj.getName()
-      cdcCheck(i,driven_tree.list,clkGroup)
+    i.sync=getSyncId(i.inst)
+
+  for i in syncList when not i.inst.isClock
+    #console.log "checking",i.obj.getName()
+    cdcCheck(i,driven_tree.list,clkGroup)
   result.push({instance:driven_tree.inst.getHierarchy(),report:cdcError})
   cdcReport()
     
