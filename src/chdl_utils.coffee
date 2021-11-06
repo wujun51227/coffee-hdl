@@ -305,9 +305,10 @@ module.exports.toEventList=(initSegmentList,list=[])=>
       list.push {type:'init',e:item.signal,block:block}
 
 module.exports.syncType={
-  sync   : 'sync'   # check by clock, send with clock
-  capture: 'capture'# check by clock, send stable
-  ignore : 'ignore' # dont check, send with clock
-  stable : 'stable' # dont check, send stable
-  async  : 'async'  # dont check, send width no clock
+  sync     : 'sync'     # check by clock, send with clock
+  capture  : 'capture'  # check by clock, send stable
+  unstable : 'unstable' # check by clock, send with no clock
+  trans    : 'trans'  # dont check, send with clock
+  stable   : 'stable' # dont check, send stable
+  async    : 'async'  # dont check, send with no clock
 }

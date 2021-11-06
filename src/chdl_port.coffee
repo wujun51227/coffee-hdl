@@ -50,7 +50,7 @@ class Port extends Wire
 
   asyncLatch: ()=>
     if @isReg
-      @syncType = syncType.ignore
+      @syncType = syncType.trans
       @shadowReg.asyncLatch()
       return packEl('port',this)
       throw new Error("Only register can set asyncLatch")
