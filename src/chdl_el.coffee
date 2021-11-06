@@ -1,12 +1,12 @@
 {toSignal} = require('chdl_utils')
-uuid  = require 'uuid/v1'
+global = require 'chdl_global'
 class CircuitEl
 
   constructor: ->
     @cell=null
     @elName=''
     @hier=''
-    @uuid=uuid()
+    @uuid=global.getObjId()
 
   getId: => @uuid
 

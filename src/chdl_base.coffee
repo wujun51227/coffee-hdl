@@ -665,6 +665,19 @@ code_gen= (inst,allInst,first=false)=>
       )
       printBuffer.blank()
 
+    defaultClk = _.get(inst.__ports,inst._clock())
+    defaultRst = _.get(inst.__ports,inst._reset())
+    for {pin,port} in i.inst.__pinPortPair when port.getType()=='input'
+      item = _.find(driven_list,{key:pin.getId()})
+      if not item?
+        if port.isClock
+          printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultClock};"
+          driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultClk.getId()],conds:[]})
+        if port.isReset
+          printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultReset};"
+          driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultRst.getId()],conds:[]})
+    printBuffer.blank()
+
   printBuffer.add 'endmodule'
   if global.getIfdefProtect()
     printBuffer.add '`endif'

@@ -22,6 +22,8 @@ topName = null
 
 idCnt=0
 
+objId=1000
+
 ifdefProtect=false
 
 cdcCheck=false
@@ -104,3 +106,7 @@ module.exports.getCdcReportFile = -> cdcReportFile
 
 module.exports.setOutDir=(v)->outDir=v
 module.exports.getOutDir=->outDir
+
+module.exports.getObjId=->
+  objId+=1
+  return objId

@@ -143,9 +143,9 @@ buildClkTree=(driven_tree,clkGroup={},first=true)->
       for id,index in Object.keys(ids)
         inst=global.queryId(id)
         if index==0
-          data.push([clkName,inst.getPath().join(".")+' '+id])
+          data.push([clkName,inst.getPath().join(".")])
         else
-          data.push(["",inst.getPath().join(".")+' '+id])
+          data.push(["",inst.getPath().join(".")])
     console.log table(data,{singleLine:true})
   return clkGroup
 
@@ -246,7 +246,7 @@ findDriveItems=(sig,list)->
 
 cdcReport= ->
   if cdcError.length>0
-    console.log "CDC Issue Found !!!".red
+    console.log "CDC Issue Found".red
     data=[]
     for i in cdcError
       data.push(["Type",i.msg])
@@ -257,7 +257,7 @@ cdcReport= ->
           return lineIndex%3 == 0
     })
   else
-    console.log "CDC Pass!!!".green
+    console.log "CDC Pass".green
   cdcError=[]
 
 syncMerge=(driveObj,el,list,clkGroup)->

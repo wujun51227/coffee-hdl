@@ -55,7 +55,7 @@ class comb_cell extends Module
       clk: input().asClock()
       clkx: input().asClock()
       rstn: input().asReset()
-      dout: output().stable()
+      dout: output()
     )
 
     @u0=new cell1()
