@@ -4,14 +4,23 @@
 
 ##  介绍
 
-本文档是Coffee-HDL(CoffeeScript hardware description language)的使用手册.Coffee-HDL是嵌入在CoffeeScript编程语言中的硬件构造语言,是一种对CoffeeScript语言做了词法编译的改造扩充后的DSL,所以当您编写Coffee-HDL时,实际上是在编写构造硬件电路的CoffeeScript程序.
+本文档是Coffee-HDL(CoffeeScript hardware description language)的使用手册.Coffee-HDL是嵌入在
+CoffeeScript编程语言中的硬件构造语言,是一种对CoffeeScript语言做了词法编译的改造扩充后的DSL,
+所以当您编写Coffee-HDL时,实际上是在编写构造硬件电路的CoffeeScript程序.
 
-作者并不假定您是否了解如何在CoffeeScript中编程,我们将通过给出的例子指出必要的Coffee-HDL语法特性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，所以不保证后继版本向下兼容.
+作者并不假定您是否了解如何在CoffeeScript中编程,我们将通过给出的例子指出必要的Coffee-HDL语法特
+性,大多数的硬件设计可以使用本文中包含的语法来完成.在1.0版本到来之前,还会有功能增加和语法修改，
+所以不保证后继版本向下兼容.
 
-对于宿主语言CoffeeScript 我们建议您花费几个小时浏览[coffeescript.org](https://coffeescript.org)来学习CoffeeScript的基本语法,CoffeeScript是一门表达能力很强但是又非常简单的动态语言,最终编译器会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的CoffeeScript书籍 ["CoffeeScript in action"](https://www.manning.com/books/CoffeeScript-in-action).
+对于宿主语言CoffeeScript 我们建议您花费几个小时浏览[coffeescript.org](https://coffeescript.org)
+来学习CoffeeScript的基本语法,CoffeeScript是一门表达能力很强但是又非常简单的动态语言,最终编译器
+会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的CoffeeScript书籍 
+["CoffeeScript in action"](https://www.manning.com/books/CoffeeScript-in-action).
 
 ##  安装
-Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的CoffeeScript编译器支持,如果操作系统没有自带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目录的bin目录就可以了.
+Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的CoffeeScript编译器支持,如果操作系统没有自
+带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目
+录的bin目录就可以了.
 
 Coffee-HDL安装步骤
 
@@ -22,7 +31,10 @@ Coffee-HDL安装步骤
 		./setup.sh
 
 ##  设计目标
-Coffee-HDL关注二进制逻辑设计,能表达所有的verilog时序电路和组合电路,包括多时钟,同步异步复位,带延迟的非阻塞赋值,时钟门控结构,请把Coffee-HDL当作语义化的rtl描述语言,而不是高级抽象描述语言.Coffee-HDL的设计目标按优先级排列如下:
+Coffee-HDL关注二进制逻辑设计,能表达所有的verilog时序电路和组合电路,包括多时钟,同步异步复位,带延
+迟的非阻塞赋值,时钟门控结构,请把Coffee-HDL当作语义化的rtl描述语言,而不是高级抽象描述语言.
+
+Coffee-HDL的设计目标按优先级排列如下:
 
 * 语义化表达电路结构
 
@@ -54,26 +66,32 @@ Coffee-HDL的未来要实现的功能
 
 ## 文件类型和模块
 Coffee-HDL模块描述文件以.chdl作为文件后缀名,一个模块一个文件,导入模块
-使用importDesign("file-name"),  其中file-name可以省略.chdl后缀名,如果导入普通CoffeeScript模块,使用标准的require方式导入.
+使用importDesign("design"),  其中design可以省略.chdl后缀名,
+如果导入普通CoffeeScript模块,使用标准的require方式导入.
 
 Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
 
 1.	模块设计文件：每个文件包含一个硬件设计模块，对应verilog语言的Module，需要使在模块顶部
 
-> module_name=importDesign(“module-file-path”)
+> module_name=importDesign(“design”)
 
    的方式导入以后才能使用。
 
 
-2.	函数库文件：每个文件包含一些能生成硬件电路的函数，这些函数将会展开成数字逻辑电路，在构造函数通过
+2.	函数库文件：每个文件包含一些能生成硬件电路的函数，这些函数将会展开成数字逻辑电路，
+在构造函数通过
 
-> Mixin importLib(“library-path”)
+> Mixin importLib(“lib”)
 
 或者通过绑定对象
 
-> @lib = MixinAs importLib("library-path")
+> @lib = MixinAs importLib("lib")
 
-语句引入函数库。函数库分为系统自带的库和第三方库，系统自带库只需要给出名字，第三方库需要提供路径(绝对路径或者相对路径)。通过Mixin方式导入的函数可以当作类成员函数来使用，如果绑定了对象，则当作对象的成员函数来使用，库函数约定凡是返回硬件电路的函数名都需要使用$前缀，编程人员可以通过函数名清晰的知道该函数会生成电路。编译器缺省会导入自带的chdl_primitive_lib函数库，该函数库提供了一些常用电路生成函数。
+语句引入函数库。函数库分为系统自带的库和第三方库，系统自带库只需要给出名字，
+第三方库需要提供路径(绝对路径或者相对路径)。通过Mixin方式导入的函数可以当作类成员函数来使用，
+如果绑定了对象，则当作对象的成员函数来使用，库函数约定凡是返回硬件电路的函数名都需要使用$前缀，
+编程人员可以通过函数名清晰的知道该函数会生成电路。编译器缺省会导入自带的chdl_primitive_lib函数库，
+该函数库提供了一些常用电路生成函数。
 
 
 
@@ -186,7 +204,9 @@ endmodule
 ## 语言要素
 
 1.	 标识符
-     Coffee-HDL语言标识符可以是任意字母，数字，$符号和 _ 符号的组合，但是标识符的第一个字母不可以是数字或者 _ ,标识符中不可以出现 _ _ (连续两个下划线)。标识符的区分大小写的。以下标识符都是合法的：
+     Coffee-HDL语言标识符可以是任意字母，数字，$符号和 _ 符号的组合，但是标识符的第一个字母
+     不可以是数字或者 _ ,标识符中不可以出现 _ _ (连续两个下划线)。标识符的区分大小写的。
+     以下标识符都是合法的：
      
 * add
 * ADD
@@ -206,13 +226,15 @@ endmodule
    
 
 3. 格式
-   Coffee-HDL的标识符区分大小写。Coffee-HDL语句块使用缩进代表作用域范围，具体规则请参见CoffeeScript语言手册。
+   Coffee-HDL的标识符区分大小写。Coffee-HDL语句块使用缩进代表作用域范围，
+   具体规则请参见CoffeeScript语言手册。
 
    
 
 4. 数值字面量
 
-   Coffee-HDL数值字面量指保存在wire或者reg的bit值,在Coffee-HDL里面不支持X态和Z态,只有0和1两种状态,数值字面量一般带有宽度信息.,字面量类型沿用verilog的表达形式
+   Coffee-HDL数值字面量指保存在wire或者reg的bit值,在Coffee-HDL里面不支持X态和Z态,
+   只有0和1两种状态,数值字面量一般带有宽度信息.,字面量类型沿用verilog的表达形式
 
    有三种表达形式:
 ```
@@ -251,9 +273,11 @@ endmodule
 
 ## 组合电路表达
 
-Coffee-HDL采用“$”符号作为verilog组合电路表达式的前导符,如果电路表达式是单行跟在assign(signal-name) = 或者 consign(signal-name) = 后面可以省略$符号，电路表达式会产生相应的的verilog组合电路表达式,其中有几点需要注意
+Coffee-HDL采用“$”符号作为verilog组合电路表达式的前导符,如果电路表达式是单行跟在assign
+(signal) = 或者 consign(signal) = 后面可以省略$符号，电路表达式会产生相应的的v
+erilog组合电路表达式,其中有几点需要注意
 
-* 可以用 @signal-name的方式直接引用模块内部使用Wire,Reg等资源
+* 可以用 @signal的方式直接引用模块内部使用Wire,Reg等资源
 * 需有求值的部分必须放在{}中,比如局部变量,原生数据计算等等
 * 除此以外的符号都按照字面量生成在verilog表达式当中
 * 三目运算符的: 通过$if $else 结构代替
@@ -273,11 +297,14 @@ assign out = 101+5'h1f;
 ## assign/consign
 Coffee-HDL的组合电路通过assign/consign语句生成,被赋值对象可以是reg或者wire，
 
-如果被赋值对象是reg类型变量，赋值动作生成连接到D Flip-flop输入端的组合电路，reg会等到相应的时钟边沿更新到寄存器输出端。
+如果被赋值对象是reg类型变量，赋值动作生成连接到D Flip-flop输入端的组合电路，
+reg会等到相应的时钟边沿更新到寄存器输出端。
 
 赋值的右手边可以是等号后面的单行$表达式，也可以是缩进语句块的返回值，返回值必须是$表达式
 
-Coffee-HDL的组合电路信号传递通过assign/consign语句生成,两者的区别在于assign是对wire传递信号，consign是对reg的d端传递信号，如果用assign对reg传递信号，功能正确但是编译会提出警告，consign对wire传递信号，编译会报错，表达方式为
+Coffee-HDL的组合电路信号传递通过assign/consign语句生成,两者的区别在于assign是对wire传递
+信号，consign是对reg的d端传递信号，如果用assign对reg传递信号，功能正确但是编译会提出警告，
+consign对wire传递信号，编译会报错，表达方式为
 
 ```coffeescript
 assign signal  = expression 
@@ -310,7 +337,10 @@ assign @dout
 dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 ```
 
-区分assign/consign的主要原因是在代码上可以直观的知道当前获得值的信号是组合逻辑还是寄存器，被assign的信号，获得值当前可以继续运算，被consign的的信号，传递生效时间是下一个相关寄存器时钟有效沿发生的时候，寄存器当前的值没有立即改变，如果需要获得寄存器d端的当前值可以使用寄存器成员函数.next()获得，示例代码:
+区分assign/consign的主要原因是在代码上可以直观的知道当前获得值的信号是组合逻辑还是寄存器，
+被assign的信号，获得值当前可以继续运算，被consign的的信号，传递生效时间是下一个相关寄存器时钟
+有效沿发生的时候，寄存器当前的值没有立即改变，如果需要获得寄存器d端的当前值可以使用寄存器成员
+函数.next()获得，示例代码:
 
 ```coffeescript
 consign dout1 = a + b
@@ -348,14 +378,16 @@ end
 
 ## always
 
-always后面跟随一个语句块，语句块由$if-$elseif-$else分支语句和assign/consign赋值语句组成，在always语句块内assign/consign的对象可以是wire，也可以是reg。
+always后面跟随一个语句块，语句块由$if-$elseif-$else分支语句和assign/consign赋值语句组成，在always语句
+块内assign/consign的对象可以是wire，也可以是reg。
 
 ```coffeescript
 	always
 	  语句块
 ```
 
-如果assign对象是wire类型，编译器会通过给被赋值wire加上pending值（缺省是0）确保不会生成意外的latch，如果assign对象是reg类型，编译器会自动把reg的输出端当成被赋值对象的pending值。wire和reg的pending的值可以显式的指定。
+如果assign对象是wire类型，编译器会通过给被赋值wire加上pending值（缺省是0）确保不会生成意外的latch，如果
+assign对象是reg类型，编译器会自动把reg的输出端当成被赋值对象的pending值。wire和reg的pending的值可以显式的指定。
 
 示例代码:
 
@@ -464,7 +496,8 @@ Wire wire_struct: {
 
 map数据结构可以通过@wire_struct.aaa.bbb的方式引用.
 
-wire类型通过()操作符获取bit或者切片,data(1)取bit1,data(2:0)或者data(0,3)取bit[3:0],对于slice或者bit可以设置字段名(setField)使其语义化,
+wire类型通过()操作符获取bit或者切片,data(1)取bit1,data(2:0)或者data(0,3)取bit[3:0],对于slice或者bit
+可以设置字段名(setField)使其语义化,
 
 示例代码
 ```coffeescript
@@ -485,7 +518,8 @@ build:->
 assign result[32] = 1'b1;
 assign result[31:0] = 32'h12345678;
 ```
-如果参数是一个列表的话，列表里面是带有宽度信息的信号或者常量，生成的wire宽度是列表内宽度的总和，这个wire会被assign成所有列表信号的拼接.
+如果参数是一个列表的话，列表里面是带有宽度信息的信号或者常量，生成的wire宽度是列表内宽度的总和，
+这个wire会被assign成所有列表信号的拼接.
 
 示例代码
 
@@ -562,7 +596,8 @@ assign dout = {w3[4],w3[2],w3[0]};
 
 **wire的另外一种申明**
 
-wire声明还有前缀表达形式Net wire-name/ Net(wire-name,width)/ SignNet(wire-name,width), 以在后面直接加等号或者语句块赋值
+wire声明还有前缀表达形式Net signal/ Net(signal,width)/ SignNet(signal,width), 
+以在后面直接加等号或者语句块赋值
 
 > Net foo = bar 
 
@@ -574,7 +609,9 @@ wire声明还有前缀表达形式Net wire-name/ Net(wire-name,width)/ SignNet(w
 的缩略形式
 
 ## port
-在 Coffee-HDL中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,端口也可以组织成数组,对象,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为协议给chdl模块共享
+在 Coffee-HDL中,端口被定义为附加在wire上的一种属性,使得wire对模块外部拥有output/input方向属性,
+端口也可以组织成数组,对象,或者复杂数据结构,还可以把端口数据结构单独存放在coffee模块当中,作为
+协议给chdl模块共享
 
 示例代码
 
@@ -652,7 +689,8 @@ endmodule
 * ext(n): 
 
 
-除了标准的input/output以外,还可以用bind("channel-name")的方式来连接通道,其方向和宽度由通道对接的端口的属性来决定,具体含义见“通道”相关章节.
+除了标准的input/output以外,还可以用bind("channel")的方式来连接通道,其方向和宽度
+由通道对接的端口的属性来决定,具体含义见“通道”相关章节.
 
 
 ## reg,clock,reset
@@ -676,7 +714,9 @@ Reg ff_simple: reg(16)
 Reg ff_full: reg(16).clock('clock').init(0).reset('rstn')
 ```
 
-Coffee-HDL中reg是一个大幅度增强语义的类型元素,在声明的时候可以指定相关时钟信号名字,复位信号名和复位值,还可以指定式异步复位还是同步复位,编译器会产生对应的verilog代码来表现这些特性,Coffee-HDL编程的时候可以过滤这些特性获取reg列表.
+Coffee-HDL中reg是一个大幅度增强语义的类型元素,在声明的时候可以指定相关时钟信号名字,
+复位信号名和复位值,还可以指定式异步复位还是同步复位,编译器会产生对应的verilog代码来
+表现这些特性,Coffee-HDL编程的时候可以过滤这些特性获取reg列表.
 
 reg可以组织成数组,对象类型或者复合类型数据结构.在生成verilog
 代码的时候会产生一个伴生的d端信号,用"_"作前缀.比如上述就寄存器会自动产生如下代码
@@ -729,7 +769,8 @@ end
 
 **reg的另外一种申明**
 
-reg声明还有前缀表达形式Dff dff-name/ Dff(dff-name,width)/ SignDff(dff-name,width), 可以在后面直接加等号或者语句块赋值
+reg声明还有前缀表达形式Dff dff-name/ Dff(dff-name,width)/ SignDff(dff-name,width), 可以
+在后面直接加等号或者语句块赋值
 
 
 
@@ -778,7 +819,9 @@ Coffee-HDL连接，复制，规约操作符通过函数实现
   - fromLsb(n:number): 从低位选择n位信号，如果n是负数，则选择选择从低位开始的总宽度减去abs(n)的宽度
 
 ## 分支
-在verilog语言中，mux电路可以通过两种写法生成，一种是?:表达式，一种if-else语句块，在Coffee-HDL语言中，这两种方式都被统一到$if-$elseif-$else语句，编译器自动根据上下文生成相应的 ? :操作符，或者if else语句。
+在verilog语言中，mux电路可以通过两种写法生成，一种是?:表达式，一种if-else语句块，
+在Coffee-HDL语言中，这两种方式都被统一到$if-$elseif-$else语句，编译器自动根据上下文生成相应的 ? :操作符，
+或者if else语句。
 
 Coffee-HDL的数字逻辑分支形式如下
 
@@ -892,10 +935,13 @@ end
 
 ## 函数抽象
 
-Coffee-HDL支持用函数生成电路以增强代码复用,生成电路函数返回值必须为$表达式，在函数内部可以声明局部wire和reg,编译器会确保在函数内部的wire和reg的变量名全局唯一，函数可以嵌套调用。
+Coffee-HDL支持用函数生成电路以增强代码复用,生成电路函数返回值必须为$表达式，
+在函数内部可以声明局部wire和reg,编译器会确保在函数内部的wire和reg的变量名全局唯一，
+函数可以嵌套调用。
 
 Coffee-HDL支持函数抽象表达以增强代码复用,函数声明方式是普通
-CoffeeScript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,函数的输出为$表达式,表现形式如下
+CoffeeScript函数,在$表达式内需要求值的时候使需要{}符号对包含在内部的表达式求值,
+函数的输出为$表达式,表现形式如下
 	
 示例代码
 
@@ -1022,7 +1068,8 @@ end
 ```
 
 ## 实例化模块
-在构造函数中使用CellMap或者CellList两种方式实例化子模块，实例化的子模块是无法直接组织成数据来使用的。
+在构造函数中使用CellMap或者CellList两种方式实例化子模块，实例化的子模块是无法
+直接组织成数据来使用的。
 
 CellMap有两种模式,一种是对象模式
 ```coffeescript
@@ -1038,9 +1085,12 @@ constructor: ->
     	{name:'cell_name', inst: new cell()}
 	])
 ```
-在CellMap实例化的子模块名字都是程序员编程决定，这些名字都会作为当前模块的成员变量存在，后面需要使用的时候通过@符号引用，比如@cell_name
+在CellMap实例化的子模块名字都是程序员编程决定，这些名字都会作为当前模块的成员
+变量存在，后面需要使用的时候通过@符号引用，比如@cell_name
 
-如果不关心子模块的实例化名字，可以使用CellList来实例化这些子模块，编译器会自动生成这些子模块的实例化名字，模块的引用需要程序员自己赋值给成员变量来使用
+如果不关心子模块的实例化名字，可以使用CellList来实例化这些子模块，编译器会自动
+生成这些子模块的实例化名字，模块的引用需要程序员自己赋值给成员变量来使用
+:w2
 ```coffeescript
 constructor: ->
 	list = (new cell() for i in [0...12])
@@ -1050,7 +1100,9 @@ constructor: ->
 
 ## 通道
 
-通道是对连接的抽象,在Coffee-HDL中,channel的作用是取代verilog例化cell时候的port-pin连接的方式.和port-pin连接主要的区别channel是运行时确定宽度信息并检查,channel可以通过传统的port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
+通道是对连接的抽象,在Coffee-HDL中,channel的作用是取代verilog例化cell时候的port-pin连接
+的方式.和port-pin连接主要的区别channel是运行时确定宽度信息并检查,channel可以通过传统的
+port-pin方式逐步穿越层次,也可以跨层次互联自动生成端口.声明语句如下:
 ```coffeescript
 constructor: ->
     CellMap(
@@ -1115,8 +1167,12 @@ assign @dout = $ @cell1_ch.din(3:0)+@cell2_probe.din
 assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```
 
+## CDC检查
+
 ## 序列
-为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，序列分为可综合序列和行为序列，在initial中出现的是行为序列，操作对象是vreg类型变量，在sequenace_always中出现的是可综合序列，操作对象是reg,port,wire.
+为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，
+序列分为可综合序列和行为序列，在initial中出现的是行为序列，操作对象是vreg类型变量，
+在sequenace_always中出现的是可综合序列，操作对象是reg,port,wire.
 
 可综合序列触发条件和回调函数形式
 
@@ -1140,7 +1196,8 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 * polling(signal:string|object,expr:$expr) =>
 * end()
 
-可综合事件对应的回调函数带有两个参数，第一个参数trans是进入状态的的信号,第二个参数next是退出状态时候的信号
+可综合事件对应的回调函数带有两个参数，第一个参数trans是进入状态的的信号,第二个参数next
+是退出状态时候的信号
 
 示例代码
 		
@@ -1162,7 +1219,8 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```
 在initial当中的sequence，编译结果是verilog行为语句，目的在于描述testbench行为。
 
-在always当中如果使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是直接进入第一个状态.
+在always当中如果使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是
+直接进入第一个状态.
 
 
 ##  集成
@@ -1172,7 +1230,8 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```coffeescript
 $channelPortHub(channel1,channel2,...)
 ```
-当前层会产生一套互联列表中的所有channel所关联的信号名字,根据名字和方向匹配,完成互联.互联完成以后如果有浮空的input会报错.
+当前层会产生一套互联列表中的所有channel所关联的信号名字,根据名字和方向匹配,完成互联.
+互联完成以后如果有浮空的input会报错.
 
 示例代码
 ```coffeescript
