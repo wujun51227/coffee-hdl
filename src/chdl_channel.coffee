@@ -57,7 +57,7 @@ class Channel extends CircuitEl
           pinPath=_.toPath(portPath)
           node=pinPath[pathList.length..]
           pinPath.splice(0,pathList.length,@elName)
-          hit=_.find(@portList,{node:node,path:portPath,pin:pinPath.join('.')})
+          hit=_.find(@portList,{node:node,pin:pinPath.join('.')})
           unless hit?
             throw new Error('Channel connect directly miss match '+node)
       else

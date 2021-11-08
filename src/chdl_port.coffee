@@ -266,10 +266,6 @@ class Port extends Wire
       throw new Error('Only output port can be treat as a register')
     return packEl('port',this)
 
-  noSyncCheck: =>
-    @shadowReg.noSyncCheck()
-    return packEl('port',this)
-
   setAddr: (addr)=>
     @shadowReg.setAddr(addr)
     return packEl('port',this)

@@ -414,6 +414,9 @@ class Wire extends CircuitEl
         else
           return {type:@syncType,value:@syncClock.getName()}
     else
-      return null
+      if @origin?
+        return @origin.getSync()
+      else
+        return null
 
 module.exports=Wire

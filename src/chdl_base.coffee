@@ -722,7 +722,7 @@ toVerilog=(inst)->
     reportFile=global.getCdcReportFile()
     if reportFile?
       outFile=global.getOutDir()+'/'+reportFile
-      fs.writeFileSync(outFile,JSON.stringify(result,null,'  '),'utf8')
+      fs.writeFileSync(outFile,JSON.stringify(cdcResult,null,'  '),'utf8')
 
   if config.tree
     console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))

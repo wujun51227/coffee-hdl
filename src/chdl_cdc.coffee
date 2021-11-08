@@ -126,7 +126,9 @@ buildClkTree=(driven_tree,clkGroup={},first=true)->
       ret=getClkGroup(portKey,clkGroup)
       if not ret?
         pinObj= _.get(inst,port.bindSignal)
-        ret=traceClock(pinObj,driven_list,clkGroup)
+        pinId=pinObj.getId()
+        pinInst=global.queryId(pinId)
+        ret=traceClock(pinInst,driven_list,clkGroup)
         if ret?
           clkGroup[ret][port.getElId()]=1
         else
@@ -251,6 +253,7 @@ cdcReport= ->
   cdcError=[]
 
 traceWireSync=(checkObj,driveEl,list,clkGroup)->
+  #console.log ">>>",checkObj.inst.getPath(),driveEl.getPath()
   if driveEl.isClock or driveEl.getSync()?
     mergeSync(checkObj,getSyncObj(driveEl),clkGroup)
   else
@@ -263,10 +266,13 @@ traceWireSync=(checkObj,driveEl,list,clkGroup)->
       if item.sync? #net maybe connect a const value
         mergeSync(checkObj,item.sync,clkGroup)
       else
-        throw new Error("can not mark wire sync")
+        throw new Error("can not mark wire sync "+checkObj.inst.getPath()+item.inst.getPath())
 
 cdcWireMark=(checkObj,list,clkGroup)->
   #console.log 'wire mark',checkObj.inst.getPath(),checkObj.driven,checkObj.sync
+  if checkObj.driven.length==0 and checkObj.conds.length==0
+    mergeSync(checkObj,{type:syncType.stable},clkGroup)
+
   for id in checkObj.driven
     el=global.queryId(id)
     traceWireSync(checkObj,el,list,clkGroup)
