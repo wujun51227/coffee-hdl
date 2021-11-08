@@ -303,7 +303,7 @@ reg会等到相应的时钟边沿更新到寄存器输出端。
 赋值的右手边可以是等号后面的单行$表达式，也可以是缩进语句块的返回值，返回值必须是$表达式
 
 Coffee-HDL的组合电路信号传递通过assign/consign语句生成,两者的区别在于assign是对wire传递
-信号，consign是对reg的d端传递信号，如果用assign对reg传递信号，功能正确但是编译会提出警告，
+信号，consign是对reg的D端传递信号，如果用assign对reg传递信号，功能正确但是编译会提出警告，
 consign对wire传递信号，编译会报错，表达方式为
 
 ```coffeescript
@@ -339,7 +339,7 @@ dout = (sel1)?din+1:(sel2)?din+2:(sel3)?din+3:din;
 
 区分assign/consign的主要原因是在代码上可以直观的知道当前获得值的信号是组合逻辑还是寄存器，
 被assign的信号，获得值当前可以继续运算，被consign的的信号，传递生效时间是下一个相关寄存器时钟
-有效沿发生的时候，寄存器当前的值没有立即改变，如果需要获得寄存器d端的当前值可以使用寄存器成员
+有效沿发生的时候，寄存器当前的值没有立即改变，如果需要获得寄存器D端的当前值可以使用寄存器成员
 函数.next()获得，示例代码:
 
 ```coffeescript
@@ -372,7 +372,7 @@ end
 
 
 
-这里dout2传递的是dout1的d端，所以dout1和dout2的值始终是一样的
+这里dout2传递的是dout1的D端，所以dout1和dout2的值始终是一样的
 
 
 
@@ -431,7 +431,7 @@ always
 ```verilog
 reg [7:0] dout;
 wire [7:0] _dout;
-always @(negedge _clock or negedge _reset) begin
+always @(negedge clock or negedge resetn) begin
   if(!_reset) begin
     dout <= #`UDLY 0;
   end
@@ -660,13 +660,13 @@ module PortComplex(
   output [4:0] bus__0__dout,
   input bus__1__enable,
   input [4:0] bus__1__din,
-  input _clock,
-  input _resetn
+  input clock,
+  input resetn
 );
 endmodule
 ```
 端口进一步加强的语义包括如下一些方法：
-* asReg(): 当前output端口为reg的q端,port拥有reg的所有能力
+* asReg(): 当前output端口为reg的Q端,port拥有reg的所有能力
 
 * noSyncCheck(): 
 
@@ -694,11 +694,13 @@ endmodule
 
 
 ## reg,clock,reset
-Coffee-HDL中的reg类型元素和verilog中d-flipflop存储类型对应,寄存器相关的有时钟
+Coffee-HDL中的reg类型元素和verilog中D-flipflop存储类型对应,寄存器相关的有时钟
 和复位信号可以来自于以下几处定义,靠前的定义优先级更高.
 
-1. 申明reg时候指定的clock/reset信号,如果没有指定,选择defaultClock,defaultReset
-2. 当前模块指定的第一个clock和reset属性的input作为defaultClock,defaultReset
+1. 含有寄存器的模块必须有时钟端口的输入，第一个申明的时钟输入信号是defaultClock,第一个声明的
+复位输入信号是defaultReset
+1. 如果声明reg时候指定clock/reset信号,使用指定的时钟和复位信号
+1. 如果声明reg时候没有指定clock/reset信号,选择defaultClock,defaultReset
 
 clock相关示例代码请参见(test/basic/reg_simple.chdl)
 
@@ -719,7 +721,7 @@ Coffee-HDL中reg是一个大幅度增强语义的类型元素,在声明的时候
 表现这些特性,Coffee-HDL编程的时候可以过滤这些特性获取reg列表.
 
 reg可以组织成数组,对象类型或者复合类型数据结构.在生成verilog
-代码的时候会产生一个伴生的d端信号,用"_"作前缀.比如上述就寄存器会自动产生如下代码
+代码的时候会产生一个伴生的D端信号,用"_"作前缀.比如上述就寄存器会自动产生如下代码
 	
 ```verilog
 reg [15:0] ff_full;
@@ -742,7 +744,7 @@ end
 
 * negedge() 时钟下降沿有效
 
-* reset(reset-name) 指定reset信号名,如果reset-name是null,则这个寄存器没有reset
+* reset(signal) 指定reset信号名,如果signal是null,则这个寄存器没有reset
 
 * syncReset()  同步复位
 
@@ -758,7 +760,7 @@ end
 
 * reverse() 生成同等宽度高低位逆序排列的wire
 
-* select(select-function) 根据函数式取得相应bit组成新的wire
+* select(function) 根据函数式取得相应bit组成新的wire
 
 * toList() 把多比特寄存器按bit次序，变成一个list,例如3bit寄存器a,a.toList() 生成 [a(0),a(1),a(2)]
 
@@ -769,7 +771,7 @@ end
 
 **reg的另外一种申明**
 
-reg声明还有前缀表达形式Dff dff-name/ Dff(dff-name,width)/ SignDff(dff-name,width), 可以
+reg声明还有前缀表达形式Dff signal/ Dff(signal,width)/ SignDff(signal,width), 可以
 在后面直接加等号或者语句块赋值
 
 
@@ -827,11 +829,11 @@ Coffee-HDL的数字逻辑分支形式如下
 
 ```coffeescript
 $if(cond)
-  block-code1
+  block1
 $elseif(cond)
-  block-code2
+  block2
 $else
-  block-code3
+  block3
 ```
 在assign环境下,分支语句块的返回值自动生成?:表达式,在always环境下,分支语句生成if elseif形式的组合逻辑.
 示例代码
@@ -997,7 +999,7 @@ localparam ff2__send=200;
 localparam ff2__peding=300;	
 ```
 
-* isState("state-name"...)
+* isState("state"...)
 
   判定寄存器值是某个状态或者若干个状态之一,比如
 		
@@ -1010,11 +1012,11 @@ localparam ff2__peding=300;
 ff1==ff1__idle||ff1__write
 ```
 
-* notState("state-name")
+* notState("state")
 
   判定寄存器值不是某个状态,等价于isState取反
 
-* setState("state-name")
+* setState("state")
 
   设置状态,比如
 		
@@ -1025,7 +1027,7 @@ ff1==ff1__idle||ff1__write
 ```verilog
 _ff1 = ff1_write
 ```
-其中  _ ff 是寄存器d端,ff_write是localparam
+其中  _ ff 是寄存器D端,ff_write是localparam
 
 * $stateSwitch
 
@@ -1168,6 +1170,82 @@ assign dout = cell1_ch__din[3:0]+cell2_probe__din;
 ```
 
 ## CDC检查
+
+Coffee-HDL语言按有时序逻辑的模块分别作CDC检查，凡是带有时钟的模块，所有的输入，输出信号
+都有同步关系(缺省和defaultClock同步)，如果是纯组合逻辑模块，输入输出同步关系不做假设。
+输入时钟有两种来源，一种
+是来自于设计顶层的带asClock()声明的输入信号，一种是内部模块带asGenerateClock()声明的输出
+信号，Coffee-HDL在编译期间，会追踪所有到输出端口的信号和到寄存器D端的信号，判定是否有跨
+时钟域的信号抓取行为。
+
+所有的信号的时钟域属性分为6类
+```csv-text
+ 属性, 作为接受端, 作为发送端, 应用场景
+ sync, 检查是否和当前信号相关时钟同步,要求接受端用同样时钟抓取, 寄存器到寄存器检查
+ capture, 检查是否和当前信号相关时钟同步,发送稳态信号，任何接受端都可以抓取，并同步到接受端时钟, 无时序要求的状态设定寄存器
+ unstable,检查是否和当前信号相关时钟同步,发送异步信号，要求接受端声明忽略时钟同步关系, 强制发送异步信号
+ stable, 不检查同步关系,送稳态信号，任何接受端都可以抓取，并同步到接受端时钟, 传递稳态信号
+ trans, 不检查同步关系,要求接受端用同样时钟抓取, 跨时钟域同步第一级寄存器
+ async, 不检查同步关系,发送异步信号，要求接受端声明忽略时钟同步关系,传递异步信号
+```
+对于port的时钟域声明(缺省同步到模块缺省时钟)
+```csv-text
+,
+sync(clock), 设置sync属性 同步到clock
+async(),设置async属性
+stable(),设置stable属性
+capture(),设置capture属性
+asyncLatch(),设置trans属性
+asGenerateClock(), 设置当前信号为分频时钟 仅对输出信号有效
+```
+
+对于reg时钟域声明(缺省为同步到寄存器相关时钟)
+```csv-text
+,
+stable(),设置stable属性
+capture(),设置capture属性
+asyncLatch(),设置trans属性
+```
+对于wire的时钟域声明(一般无需声明)
+```csv-text
+,
+sync(clock), 设置sync属性 同步到clock
+async(),设置async属性
+stable(),设置stable属性
+```
+
+CDC静态检查使用：
+```
+chdl_compiler.coffee design.chdl --cdc --cdc_report file --output directory
+```
+
+编译完成以后会把CDC检查结果输出到指定目录的指定文件当中，如果不指定cdc_report则打印到屏幕。
+
+CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有时钟被认为是异步关系，按顶层的输入
+时钟分成多个时钟域，例如
+```
+╔═══════╤═══════════════════════════════════╗
+║ hclks │ ahb_to_ahb_async.hclks            ║
+║       │ ahb_to_ahb_async.slave_side.hclk  ║
+║       │ ahb_to_ahb_async.slave_ch__hclk   ║
+║ hclkm │ ahb_to_ahb_async.hclkm            ║
+║       │ ahb_to_ahb_async.master_side.hclk ║
+║       │ ahb_to_ahb_async.master_ch__hclk  ║
+╚═══════╧═══════════════════════════════════╝
+```
+
+报告结果如下图所示
+```
+╔════════╤════════════════════════════════════════════════════════════╗
+║ Type   │ clock crossing                                             ║
+║ Target │ ahb_to_ahb_async.hactivem(hclks)                           ║
+║ Source │ ahb_to_ahb_async.master_ch__m_hactive(hclkm)               ║
+╟────────┼────────────────────────────────────────────────────────────╢
+```
+
+表格里面会打印错误类型，源信号和时钟，以及目标信号和时钟。
+
+
 
 ## 序列
 为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，
