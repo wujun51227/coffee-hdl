@@ -382,8 +382,6 @@ class Wire extends CircuitEl
     item = _.find(@states,(i)=> i.label==name)
     return Expr.start().next(item)
 
-  traceDomain: =>
-
   reverse: ()=>
     tempWire=@cell._localWire(@width,'reverse')
     list=[]

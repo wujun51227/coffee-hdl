@@ -147,10 +147,6 @@ class Port extends Wire
     @isReset=true
     return packEl('port',this)
 
-  domain: (clockName)=>
-    @bindClock=clockName
-    return packEl('port',this)
-
   toList: =>
     list=[]
     for i in [0...@width]
