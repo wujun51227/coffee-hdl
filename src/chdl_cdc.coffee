@@ -175,6 +175,9 @@ mergeSync=(checkObj,syncObj,clkGroup)->
     throw new Error("Error: drive signal sync inst is null "+checkObj)
   if not checkObj.sync?
     checkObj.sync = _.clone(syncObj)
+    if checkObj.sync.type==syncType.trans
+      checkObj.sync.type=syncType.sync
+      checkObj.sync.dirty=true
     #console.log "mergeSync",checkObj.inst.getName(),syncObj
   else
     if checkObj.sync.type==syncType.sync || checkObj.sync.type==syncType.capture ||checkObj.sync.type==syncType.unstable
@@ -200,8 +203,10 @@ syncJudge=(checkObj,driveSigPath,syncObj,clkGroup)->
     return false
   if not checkObj.sync?
     checkObj.sync = _.clone(syncObj)
+    if checkObj.sync.type==syncType.trans
+      checkObj.sync.type=syncType.sync
+      checkObj.sync.dirty=true
     #console.log "markSync",checkObj.inst.getName(),syncObj
-    return true
   else
     if checkObj.sync.type==syncType.sync || checkObj.sync.type==syncType.capture ||checkObj.sync.type==syncType.unstable
       if syncObj.type==syncType.sync || syncObj.type==syncType.trans
@@ -213,9 +218,30 @@ syncJudge=(checkObj,driveSigPath,syncObj,clkGroup)->
             sourceSig:driveSigPath
             sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
           })
-          return false
         else
-          return true
+          if syncObj.type==syncType.trans
+            if checkObj.sync.dirty==true
+              cdcError.push({
+                msg:"async converge",
+                targetSig:checkObj.inst.getPath(),
+                targetClk:getClkGroup(checkObj.sync.id,clkGroup) ? ''
+                sourceSig:driveSigPath
+                sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
+              })
+            else
+              checkObj.sync.dirty=true
+          else if syncObj.type==syncType.sync and syncObj.sync.dirty==true
+            if checkObj.sync.dirty==true
+              cdcError.push({
+                msg:"async converge",
+                targetSig:checkObj.inst.getPath(),
+                targetClk:getClkGroup(checkObj.sync.id,clkGroup) ? ''
+                sourceSig:driveSigPath
+                sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
+              })
+              checkObj.sync.type = syncType.async
+            else
+              checkObj.sync.dirty=true
       else if syncObj.type==syncType.async || syncObj.type==syncType.unstable
         cdcError.push({
           msg:"async signal latch",
@@ -224,9 +250,6 @@ syncJudge=(checkObj,driveSigPath,syncObj,clkGroup)->
           sourceSig:driveSigPath
           sourceClk:getClkGroup(syncObj.id,clkGroup) ? ''
         })
-        return false
-      else if syncObj.type==syncType.stable || syncObj.type==syncType.capture
-        return true
 
 findDriveCheckObjs=(el,list)->
   ret=[]
