@@ -182,6 +182,14 @@ mergeSync=(checkObj,syncObj,clkGroup)->
         if not isSameClkGroup(checkObj.sync.id,syncObj.id,clkGroup)
           checkObj.sync.type = syncType.async
           #console.log "mergeSync as async",checkObj.inst.getName(),syncObj
+        else
+          if syncObj.type==syncType.trans
+            if checkObj.sync.dirty==true
+              checkObj.sync.type = syncType.async
+            else
+              checkObj.sync.dirty=true
+          else if syncObj.type==syncType.sync and syncObj.sync.dirty==true
+            checkObj.sync.dirty=true
       else if syncObj.type==syncType.async || syncObj.type==syncType.unstable
         checkObj.sync.type = syncType.async
         #console.log "mergeSync as async",checkObj.inst.getName(),syncObj

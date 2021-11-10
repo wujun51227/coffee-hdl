@@ -1,0 +1,21 @@
+class async_converge extends Module
+  constructor: ->
+    super()
+    Port(
+      clk: input().asClock()
+      rstn: input().asReset()
+      din: input().async()
+      dout: output()
+    )
+
+  build: ->
+    latch1=reg(1,'latch1').clock('clk').asyncLatch()
+    latch2=reg(1,'latch2').clock('clk').asyncLatch()
+
+    consign latch1 = @din
+    consign latch2 = @din
+
+    assign @dout = latch1 && latch2
+
+module.exports=async_converge
+

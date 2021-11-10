@@ -1242,23 +1242,23 @@ chdl_compiler.coffee design.chdl --cdc --cdc_report file --output directory
 CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有时钟被认为是异步关系，按顶层的输入
 时钟分成多个时钟域，例如
 ```
-╔═══╤══════════════════╗
+╔═══════╤═══════════════════════════════════╗
 ║ hclks │ ahb_to_ahb_async.hclks            ║
 ║       │ ahb_to_ahb_async.slave_side.hclk  ║
 ║       │ ahb_to_ahb_async.slave_ch__hclk   ║
 ║ hclkm │ ahb_to_ahb_async.hclkm            ║
 ║       │ ahb_to_ahb_async.master_side.hclk ║
 ║       │ ahb_to_ahb_async.master_ch__hclk  ║
-╚═══╧══════════════════╝
+╚═══════╧═══════════════════════════════════╝
 ```
 
 报告结果如下图所示
 ```
-╔════╤══════════════════════════════╗
+╔════════╤════════════════════════════════════════════════════════════╗
 ║ Type   │ clock crossing                                             ║
 ║ Target │ ahb_to_ahb_async.hactivem(hclks)                           ║
 ║ Source │ ahb_to_ahb_async.master_ch__m_hactive(hclkm)               ║
-╟────┼──────────────────────────────╢
+╟────────┼────────────────────────────────────────────────────────────╢
 ```
 
 表格里面会打印错误类型，源信号和时钟，以及目标信号和时钟。
@@ -1594,7 +1594,6 @@ class top extends Module
 
 * @setBlackBox()
 * @specifyModuleName(name:string)
-* @setCombModule()
 * @moduleParameter(parameter_list)
 * @instParameter(parameter_list)
 * @verilog(verilog_string:string)
