@@ -303,13 +303,15 @@ class Module
     if @__defaultClock?
       @__defaultClock
     else
-      throw new Error("Can not find default clock")
+      log("Can not find default clock".yellow)
+      return null
 
   _reset: =>
     if @__defaultReset?
       @__defaultReset
     else
-      throw new Error("Can not find default reset")
+      log("Can not find default reset".yello)
+      return null
 
   setBlackBox: ()=> @__isBlackBox=true
 
