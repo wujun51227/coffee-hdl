@@ -1265,47 +1265,7 @@ CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有�
 
 当前CDC检查可以发现以下情况的错误
 
-```ascii-draw
-=block1
-   .... ""@s4#8
-   .... "Dff"@s4#8
-   clk1#2 =>#2  ""@s4#8
-
-=block2
-   .... ""@s4#8
-   -+3"Dff"@s4#8
-   clk2#2 =>#2  ""@s4#8
-
-=root
-0.2 
-2    . *block1#2  - ["logic"@s5#2] -*block2#2
-0.2 
-```
-
-<br>
-
-```ascii-draw
-=block1
-   .
-   .... "Async Signal"#8
-   .... =>@s4#8
-   .
-   .... "Sync Signal"#8
-   .... =>@s4#8
-   .
-   .
-
-=block2
-   .... ""@s4#8
-   -+3"Dff"@s4#8
-   clk#2 =>#2  ""@s4#8
-
-=root
-0.2 
-2    *block1#2   ["logic"@s5#2] -*block2#2
-0.2 
-```
-<br>
+* 信号跨时钟域
 
 ```ascii-draw
 =block1
@@ -1331,6 +1291,34 @@ CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有�
 0.2 
 ```
 <br>
+
+* 采样到异步信号
+
+```ascii-draw
+=block1
+   .
+   .... "Async Signal"#8
+   .... =>@s4#8
+   .
+   .... "Sync Signal"#8
+   .... =>@s4#8
+   .
+   .
+
+=block2
+   .... ""@s4#8
+   -+3"Dff"@s4#8
+   clk#2 =>#2  ""@s4#8
+
+=root
+0.2 
+2    *block1#2   ["logic"@s5#2] -*block2#2
+0.2 
+```
+<br>
+
+
+* 生成时钟的跨时钟域
 
 ```ascii-draw
 =clkgen
@@ -1359,6 +1347,8 @@ CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有�
 ```
 
 <br>
+
+* 被同步的异步信号汇聚
 
 ```ascii-draw
 =block1
