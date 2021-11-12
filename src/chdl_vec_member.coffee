@@ -15,4 +15,6 @@ class VecMember extends CircuitEl
 
   refName: -> @vec.getName()+'['+@index+']'
 
+  getElId: => @vec.getElId()
+
 module.exports=VecMember

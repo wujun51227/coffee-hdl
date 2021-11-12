@@ -3,6 +3,8 @@ class DoubleSyncTest extends Module
     super()
 
     Port(
+      clk: input().asClock()
+      rstn: input().asReset()
       io: {
         din: input()
         dout1: output()

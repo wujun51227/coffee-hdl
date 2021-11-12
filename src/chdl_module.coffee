@@ -310,7 +310,7 @@ class Module
     if @__defaultReset?
       @__defaultReset
     else
-      log("Can not find default reset".yello)
+      log("Can not find default reset".yellow)
       return null
 
   setBlackBox: ()=> @__isBlackBox=true

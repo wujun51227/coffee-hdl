@@ -2,6 +2,7 @@ CircuitEl = require 'chdl_el'
 VecMember = require 'chdl_vec_member'
 {getValue} = require 'chdl_utils'
 _ = require 'lodash'
+global= require 'chdl_global'
 
 class Vec extends CircuitEl
 
@@ -10,6 +11,9 @@ class Vec extends CircuitEl
     @width=width
     @depth=depth
     @__annotate=annotate
+    global.setId(@uuid,this)
+
+  getElId: => @getId()
 
   set: (n,expr)=>
     addr=getValue(n)
