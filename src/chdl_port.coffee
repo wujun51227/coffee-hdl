@@ -79,6 +79,7 @@ class Port extends Wire
     @bindClock=null
 
     @isClock=false
+    @isDefault=false
     @isGenerateClock=false
     @isReset=false
     @origin=null
@@ -135,16 +136,18 @@ class Port extends Wire
     else
       @share.pendingValue ? 0
 
-  asClock: =>
+  asClock: (isDefault=false)=>
     @isClock=true
+    @isDefault=isDefault
     return packEl('port',this)
 
   asGenerateClock: =>
     @isGenerateClock=true
     return packEl('port',this)
 
-  asReset: =>
+  asReset: (isDefault=false)=>
     @isReset=true
+    @isDefault=isDefault
     return packEl('port',this)
 
   toList: =>

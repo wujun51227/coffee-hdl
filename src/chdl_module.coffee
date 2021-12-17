@@ -179,10 +179,10 @@ class Module
           hierName=toHier(k,name)
           inst.link(this,hierName)
           if inst.isClock
-            @_setDefaultClock(sigName)
+            @_setDefaultClock(sigName,inst.isDefault)
             @__isCombModule=false
           if inst.isReset
-            @_setDefaultReset(sigName)
+            @_setDefaultReset(sigName,inst.isDefault)
           if inst.isReg
             shadowReg=inst.shadowReg
             @__regs[sigName]=shadowReg
@@ -285,12 +285,16 @@ class Module
   _setParentNode: (node)->
     @__parentNode=node
 
-  _setDefaultClock: (clock)->
-    if @__defaultClock==null
+  _setDefaultClock: (clock,force=false)->
+    if force
+      @__defaultClock=clock
+    else if @__defaultClock==null
       @__defaultClock=clock
 
-  _setDefaultReset: (reset)->
-    if @__defaultReset==null
+  _setDefaultReset: (reset,force=false)->
+    if force
+      @__defaultReset=reset
+    else if @__defaultReset==null
       @__defaultReset=reset
 
   setDefaultClock: (clock)=>
