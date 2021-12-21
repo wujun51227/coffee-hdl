@@ -678,6 +678,13 @@ code_gen= (inst,allInst,first=false)=>
           driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultRst.getId()],conds:[]})
     printBuffer.blank()
 
+  printBuffer.blank('//Verilog Segment')
+  for plainLines in inst.__verilogSegments
+    lines=plainLines.split(/\n/)
+    for line in lines
+      printBuffer.add line
+    printBuffer.blank()
+
   printBuffer.add 'endmodule'
   if global.getIfdefProtect()
     printBuffer.add '`endif'

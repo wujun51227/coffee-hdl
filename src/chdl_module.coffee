@@ -257,6 +257,7 @@ class Module
     @__defaultReset=null
 
     @__regAssignList=[]
+    @__verilogSegments=[]
     @__trigMap={}
     @__assignWidth=null
     @__assignWaiting=false
@@ -1169,6 +1170,9 @@ class Module
 
   verilog: (s)->
     @__regAssignList.push ['verilog',s]
+
+  verilog_segment: (s)->
+    @__verilogSegments.push s
 
   display: (s,args...)->
     if args.length==0
