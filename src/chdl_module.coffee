@@ -245,6 +245,7 @@ class Module
     @__wireAssignList =  []
     @__initialList=[]
     @__initialMode=false
+    @__flowBlocks = []
     @__sequenceBlock=null
     @__cells      =[]
     @__uniq       = true
@@ -924,23 +925,21 @@ class Module
     return ret
 
   _initial: (lineno,block)->
-    @__sequenceBlock=[]
     @__initialMode=true
+    @__flowBlocks=[]
     block()
-    @__initialList.push(@__sequenceBlock)
+    @__initialList.push(@__flowBlocks)
     @__initialMode=false
-    @__sequenceBlock=null
 
   _forever: (lineno,block)->
-    @__sequenceBlock=[]
     @__initialMode=true
+    @__flowBlocks=[]
     block()
-    @__foreverList.push(@__sequenceBlock)
+    @__foreverList.push(@__flowBlocks)
     @__initialMode=false
-    @__sequenceBlock=null
 
   _sequenceDef: (name='sequence',clock='',reset='')=>
-    if @__sequenceBlock==null
+    if @__sequenceBlock==null && @__initialMode==false
       throw new Error("Sequence only can run in initial or always")
 
     return @_sequence(_id(name+'_'),[],clock,reset)
@@ -959,6 +958,46 @@ class Module
       bin.push(ret)
       @__assignEnv=null
       @__regAssignList=[]
+
+  flow: (func)=>
+    isTop=false
+    if @__assignEnv==null
+      @__assignEnv='always'
+      @__regAssignList=[]
+      isTop=true
+    func()
+    if isTop
+      bin=[{type:'idle',id:'idle',list:@__regAssignList,next:null}]
+      @__flowBlocks.push {name:null,bin:bin}
+
+  delay:(delay_time)->
+    @__regAssignList.push ['flow_delay',null,delay_time,null]
+
+  posedge:(signal)->
+    signalName = do ->
+      if _.isString(signal)
+        signal
+      else
+        signal.getName()
+    @__regAssignList.push ['flow_posedge',null,signalName,null]
+
+  negedge:(signal)->
+    signalName = do ->
+      if _.isString(signal)
+        signal
+      else
+        signal.getName()
+    @__regAssignList.push ['flow_negedge',null,signalName,null]
+
+  wait:(expr)->
+    @__regAssignList.push ['flow_wait',null,expr,null]
+
+  event:(name)->
+    @__trigMap[name]=1
+    @__regAssignList.push ['flow_event',null,name,null]
+
+  trigger:(name)->
+    @__regAssignList.push ['flow_trigger',null,name,null]
 
   _sequence: (name,bin=[],clock,reset)->
     env='always'
@@ -1136,9 +1175,8 @@ class Module
         if bin[0].type!='idle'
           bin.unshift({type:'idle',id:'idle',list:[],next:null,func:null})
         if @__initialMode
-          saveData={name:name,bin:bin,stateReg:null,nextState:null}
-          @__sequenceBlock.push saveData
-          return saveData
+          @__flowBlocks.push {name:name,bin:bin}
+          return {name:name,bin:bin}
         else
           bitWidth=Math.floor(Math.log2(bin.length))+1
           stateReg=@_localReg(bitWidth,name).clock(clock).reset(reset)
@@ -1243,7 +1281,7 @@ class Module
           signal.assign((->block),lineno,self)
 
   _while: (cond,lineno)=>
-    if @__sequenceBlock==null
+    if @__initialMode==false
       throw new Error("while only can run in initial")
 
     return (block)=>
