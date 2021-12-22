@@ -960,7 +960,7 @@ class Module
       @__assignEnv=null
       @__regAssignList=[]
 
-  flow: (func)=>
+  _flow: (func)=>
     isTop=false
     if @__assignEnv==null
       @__assignEnv='always'
@@ -971,10 +971,10 @@ class Module
       bin=[{type:'idle',id:'idle',list:@__regAssignList,next:null}]
       @__flowBlocks.push {name:null,bin:bin}
 
-  delay:(delay_time)->
+  _delay:(delay_time)->
     @__regAssignList.push ['flow_delay',null,delay_time,null]
 
-  posedge:(signal)->
+  _posedge:(signal)->
     signalName = do ->
       if _.isString(signal)
         signal
@@ -982,7 +982,7 @@ class Module
         signal.getName()
     @__regAssignList.push ['flow_posedge',null,signalName,null]
 
-  negedge:(signal)->
+  _negedge:(signal)->
     signalName = do ->
       if _.isString(signal)
         signal
@@ -990,14 +990,14 @@ class Module
         signal.getName()
     @__regAssignList.push ['flow_negedge',null,signalName,null]
 
-  wait:(expr)->
+  _wait:(expr)->
     @__regAssignList.push ['flow_wait',null,expr,null]
 
-  event:(name)->
+  _event:(name)->
     @__trigMap[name]=1
     @__regAssignList.push ['flow_event',null,name,null]
 
-  trigger:(name)->
+  _trigger:(name)->
     @__regAssignList.push ['flow_trigger',null,name,null]
 
   _sequence: (name,bin=[],clock,reset)->

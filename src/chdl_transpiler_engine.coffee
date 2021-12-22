@@ -842,6 +842,55 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='posedge'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_posedge', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='wait'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_wait', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='event'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_event', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='trigger'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_trigger', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='negedge'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_negedge', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='flow'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_flow', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
+    else if token[0] is 'IDENTIFIER' and token[1]=='delay'
+      list =[
+        ['@', '@', {range:[]}]
+        ['PROPERTY', '_delay', {range:[]}]
+      ]
+      tokens.splice i, 1, list...
+      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
       list =[
         ['@', '@', {range:[]}]
