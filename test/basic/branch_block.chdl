@@ -64,34 +64,33 @@ class BranchBlock extends Module
         ]
 
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go(100)
         assign v1 = 0
         assign v2 = 2
         assign v3 = 0x55aa
         assign v4 = 0x2211
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout1,0x2211,'test balance auto width')
         @assert_eq(@dout2,0xaa,'test balance specify width')
         @assert_eq(@dout3,0x2213,'test order mux')
         assign v1 = 3
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout3,0x2211,'test order mux')
         assign v1 = 4
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout4,0x2,'test if blocks')
         assign v1 = 10
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout5,100,'test case')
         assign v1 = 12
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout5,200,'test case')
         assign v1 = 14
-      .delay(100) =>
+        go(100)
         @assert_eq(@dout5,300,'test case')
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=BranchBlock
 

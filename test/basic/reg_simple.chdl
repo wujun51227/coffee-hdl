@@ -200,21 +200,22 @@ class tb extends Module
       neg_init: @neg_init_ch
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    SetProperty(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
   build: ->
     @create_clock(@clk,10)
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign @a_ch= 1
         assign @en_ch.notupdateEnable = 1 #no enable
-      .delay(1000) =>
+        go 1000
         assign @init_ch = 1
-      .delay(1000) =>
+        go 1000
         @assert_eq(@c_ch[0],23,'test init value')
         @assert_eq(@c_ch[1],0xff,'test fromMsb')
         @assert_ne(@c_ch[2],0,'test no reset')
@@ -236,9 +237,8 @@ class tb extends Module
         @assert_eq(@neg_init_ch.ff15,0xffff,'test neg init')
         @assert_eq(@neg_init_ch.ff16,0xfffe,'test neg init')
         @assert_eq(@neg_init_ch.ff17,hex(64,0xffffffffffffffffn),'test neg init')
-      .delay(100) =>
+        go 1000
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=tb

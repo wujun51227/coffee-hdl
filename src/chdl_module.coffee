@@ -945,18 +945,20 @@ class Module
       @__assignEnv=null
       @__regAssignList=[]
 
-  _flow: (func)=>
+  _flow: (func)->
     isTop=false
     if @__assignEnv==null
       @__assignEnv='always'
       @__regAssignList=[]
       isTop=true
-    func()
+    func.call(this)
     if isTop
       bin=[{type:'idle',id:'idle',list:@__regAssignList,next:null}]
       @__flowBlocks.push {name:null,bin:bin}
+      @__assignEnv=null
+      @__regAssignList=[]
 
-  _delay:(delay_time)->
+  _progress:(delay_time)->
     @__regAssignList.push ['flow_delay',null,delay_time,null]
 
   _posedge:(signal)->

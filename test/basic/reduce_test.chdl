@@ -33,13 +33,12 @@ class ReduceTest extends Module
       )
 
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go(100)
         @assert_eq(@dout1,19,'test reduce')
         @assert_eq(@dout2,3,'test reduce')
         @assert_report()
         @sim_finish()
-      .end()
 
 
 module.exports=ReduceTest

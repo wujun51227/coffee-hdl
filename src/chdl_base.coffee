@@ -251,9 +251,8 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
       for i in item.list
         statementGen(buffer,i)
   else if stateType=='flow_delay'
-    if _.isNumber(statement[2])
-      if statement[2]!=null
-        buffer.add "  ##{statement[2]}"
+    if _.isNumber(statement[2]) and statement[2]!=null
+      buffer.add "  ##{statement[2]}"
   else if stateType=='flow_posedge'
     buffer.add "  @(posedge #{statement[2]});"
   else if stateType=='flow_negedge'

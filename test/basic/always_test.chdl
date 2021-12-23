@@ -56,39 +56,38 @@ class AlwaysTest extends Module
         $else => $ 88
 
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go(100)
         assign v1 = 1
         assign v2 = 2
-      .delay(100) =>
+        go(100)
         @assert_eq(@r1,100,'test always')
         @assert_eq(@w1,100,'test always')
-      .delay(100) =>
+        go(100)
         assign v1 = 0
         assign v2 = 2
-      .delay(100) =>
+        go(100)
         @assert_eq(@r1,200,'test always')
         @assert_eq(@w1,200,'test always')
-      .delay(100) =>
+        go(100)
         assign v1 = 0
         assign v2 = 0
-      .delay(100) =>
+        go(100)
         @assert_eq(@r1,200,'test always')
         @assert_eq(@w1,77,'test always')
         @assert_eq(@r2,200,'test always')
         @assert_eq(@w2,200,'test always')
-      .delay(100) =>
+        go(100)
         assign v3 = 1
-      .delay(100) =>
+        go(100)
         @assert_eq(@r2,100,'test always')
         @assert_eq(@w2,88,'test always')
         assign v4 = 1
-      .delay(100) =>
+        go(100)
         @assert_eq(@w2,77,'test always')
-      .delay(100) =>
+        go(100)
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=AlwaysTest
 

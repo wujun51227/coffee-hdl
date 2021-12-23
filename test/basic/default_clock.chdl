@@ -151,8 +151,10 @@ class tb extends Module
       rstn: vreg().init(1)
       )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    SetProperty(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
     @dut.bind(
       dout: @dout_ch
@@ -163,15 +165,14 @@ class tb extends Module
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .delay(10000) =>
+      $flow =>
+        go 10000
         @assert_eq(@dout_ch[0],777,'test auto clock module')
         @assert_eq(@dout_ch[1],0x123,'test combo module')
         @assert_eq(@dout_ch[2],111,'test overwrite auto clock module')
         @assert_eq(@dout_ch[3],333,'test multi clock module')
-      .delay(100) =>
+        go 100
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=tb

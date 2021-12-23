@@ -45,33 +45,32 @@ class OperatorTest extends Module
     Net(out15,6) = expand(3, v3)
 
     initial
-      $sequence()
-        .delay(100) =>
-          assign @sel = 8'h0'
-        .delay(100) =>
-          @assert_eq(@out0,101,'test local calc')
-          @assert_eq(@out1,1,'test has1')
-          @assert_eq(@out2,1,'test has1')
-          @assert_eq(@out3,1,'test has1')
-        .delay(100) =>
-          assign @sel = 8'h10'
-        .delay(100) =>
-          @assert_eq(@out1,2,'test has1')
-          @assert_eq(@out2,2,'test has1')
-          @assert_eq(out5,0,'test all1')
-          @assert_eq(out6,1,'test all1')
-          @assert_eq(out7,0,'test all0')
-          @assert_eq(out8,1,'test all0')
-          @assert_eq(out9,1,'test has0')
-          @assert_eq(out10,0,'test has0')
-          @assert_eq(out11,1,'test hasOdd1')
-          @assert_eq(out12,1,'test hasEven1')
-          @assert_eq(out13,0b111110,'test cat')
-          @assert_eq(out14,0b100100,'test expand')
-          @assert_eq(out15,0b101010,'test expand')
-          @assert_report()
-          @sim_finish()
-        .end()
+      $flow =>
+        go(100)
+        assign @sel = 8'h0'
+        go(100)
+        @assert_eq(@out0,101,'test local calc')
+        @assert_eq(@out1,1,'test has1')
+        @assert_eq(@out2,1,'test has1')
+        @assert_eq(@out3,1,'test has1')
+        go(100)
+        assign @sel = 8'h10'
+        go(100)
+        @assert_eq(@out1,2,'test has1')
+        @assert_eq(@out2,2,'test has1')
+        @assert_eq(out5,0,'test all1')
+        @assert_eq(out6,1,'test all1')
+        @assert_eq(out7,0,'test all0')
+        @assert_eq(out8,1,'test all0')
+        @assert_eq(out9,1,'test has0')
+        @assert_eq(out10,0,'test has0')
+        @assert_eq(out11,1,'test hasOdd1')
+        @assert_eq(out12,1,'test hasEven1')
+        @assert_eq(out13,0b111110,'test cat')
+        @assert_eq(out14,0b100100,'test expand')
+        @assert_eq(out15,0b101010,'test expand')
+        @assert_report()
+        @sim_finish()
 
 module.exports=OperatorTest
 

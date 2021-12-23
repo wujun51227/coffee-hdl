@@ -72,22 +72,21 @@ class tb extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go(10)
         assign @din= 0x1a
         assign @bus.data.din=0x15
         for i in _.range(5)
           assign @din_arr[i] = i
         assign @compose[1].enable=1
         assign @compose[1].din=0xa
-      .delay(10) =>
+        go(10)
         @assert_eq(@dout,0x1a)
         @assert_eq(@bus.data.dout,0b1010)
         for i in _.range(5)
           @assert_eq(@dout_arr[i], i)
         @assert_eq(@compose[0].dout,0xb)
-      .delay(10) =>
+        go(10)
         @assert_report()
-      .end()
 
 module.exports=tb

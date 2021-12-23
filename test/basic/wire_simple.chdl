@@ -142,10 +142,10 @@ class tb extends Module
     assign d = 0x8899aa
 
     initial
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go 10
         assign @din= 0b10011
-      .delay(10) =>
+        go 10
         @assert_eq(@dout[0],0b10011,'test simple assign')
         @assert_eq(@dout[1],0b10100,'test slice')
         @assert_eq(@dout[2],0b10110,'test reverse and fromMsb')
@@ -168,9 +168,8 @@ class tb extends Module
         @assert_eq(f,0x99aa,'test auto unpack wire')
         if(d.getWidth()!=24)
           @assert_fail('auto unpack wire width check failed')
-      .delay(10) =>
+        go 10
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=tb

@@ -94,11 +94,11 @@ class tb extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go(10)
         for i in _.range(Num)
           assign @din[i] = i
-      .delay(10) =>
+        go(10)
         @assert_eq(@dout[0],1)
         @assert_eq(@dout[1],2)
         @assert_eq(@dout[2],3)
@@ -112,8 +112,7 @@ class tb extends Module
         @assert_eq(@dout[10],0x1a)
         @assert_eq(@dout[11],0x1a)
         @assert_eq(@dout[12],0x1a)
-      .delay(10) =>
+        go(10)
         @assert_report()
-      .end()
       
 module.exports=tb

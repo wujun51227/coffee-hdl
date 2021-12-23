@@ -38,7 +38,7 @@ moduleKeyTable={
   wait: '_wait'
   event: '_event'
   trigger: '_trigger'
-  delay: '_delay'
+  go: '_progress'
   mold: '_mold'
   targetWidth: '_targetWidth'
   verilog: '_verilog'
