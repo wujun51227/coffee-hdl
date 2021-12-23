@@ -150,7 +150,7 @@ checkAssignWidth=(lhs,rhsInfo,lineno)->
       if lhsWidth!=rhsWidth
         log "Error: width mismatch at line #{lineno} assign #{rhsWidth} to #{lhs.hier} #{lhs.getWidth()}".red
   catch e
-    console.log 'Parse error:',lineno,lhs.hier,instEnv.get().getModuleName()
+    console.log 'Parse error:',lineno,lhs.hier,instEnv.get()._getModuleName()
     console.log e
 
 
@@ -342,7 +342,7 @@ buildSim= (buildName,inst)=>
 
 code_gen= (inst,allInst,first=false)=>
   if first
-    inst.notUniq()
+    inst._setProperty({uniq:false})
   buildName = inst._getBuildName()
 
   if first and (!inst._isCompany()) and global.getTopName()?
@@ -358,7 +358,7 @@ code_gen= (inst,allInst,first=false)=>
   log ('Build cell '+inst._getPath()+' ( '+buildName+' )').green
   if moduleCache[buildName]?
     return
-  else if inst.isBlackBox()
+  else if inst._isBlackBox()
     log 'Warning:',inst._getPath(),'is blackbox'
     return
   else
@@ -648,7 +648,7 @@ code_gen= (inst,allInst,first=false)=>
   printBuffer.blank('//cell instance')
   for i in getCellList(inst)
     paramDeclare=getVerilogParameter(i.inst)
-    printBuffer.add i.inst.getModuleName()+paramDeclare+blur(i.name)+'('
+    printBuffer.add i.inst._getModuleName()+paramDeclare+blur(i.name)+'('
     if (not i.inst.__isCombModule)
       if i.inst.__defaultClock
         clockPort=i.inst.__ports[i.inst.__defaultClock]
@@ -718,7 +718,7 @@ getVerilogParameter=(inst)->
 module.exports.buildCompanyModule=(companyModule,params...)->
   inst=new companyModule(params...)
   inst._setCompany()
-  name=inst.getModuleName() ? inst.constructor.name
+  name=inst._getModuleName() ? inst.constructor.name
   if not globalModuleCache[name]?
     globalModuleCache[name]=inst
     toVerilog(inst)
@@ -727,7 +727,7 @@ module.exports.buildCompanyModule=(companyModule,params...)->
 module.exports.buildGlobalModule=(globalModule,params...)->
   inst=new globalModule(params...)
   inst._setGlobal()
-  name=inst.getModuleName() ? inst.constructor.name
+  name=inst._getModuleName() ? inst.constructor.name
   if not globalModuleCache[name]?
     globalModuleCache[name]=inst
     toVerilog(inst)
@@ -746,7 +746,7 @@ toVerilog=(inst)->
       fs.writeFileSync(outFile,JSON.stringify(cdcResult,null,'  '),'utf8')
 
   if config.tree
-    console.log(stringifyTree({name:inst.getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst.getModuleName()+')'), ((t) -> getCellList(t.inst))))
+    console.log(stringifyTree({name:inst._getModuleName(),inst:inst}, ((t) -> t.name+' ('+t.inst._getModuleName()+')'), ((t) -> getCellList(t.inst))))
   if global.getInfo()
     list=    [['register name','width']]
     list.push(['-------------','-----'])
@@ -769,7 +769,7 @@ toVerilog=(inst)->
     for i in instList
       condCnt+=i.__lint._cnt.cond
       transferCnt+=i.__lint._cnt.transfer
-      tableList.push([i.getModuleName(),i.__lint._cnt.cond,i.__lint._cnt.transfer])
+      tableList.push([i._getModuleName(),i.__lint._cnt.cond,i.__lint._cnt.transfer])
     tableList.push(['----------','-----','-----'])
     tableList.push(['Summary',condCnt,transferCnt])
     console.log(table(tableList,{singleLine:true,columnDefault: {width:30}}))

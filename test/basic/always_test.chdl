@@ -18,8 +18,10 @@ class AlwaysTest extends Module
       rstn: vreg().init(1)
       )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    SetProperty(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
   build: ->
     @create_clock(@clk,10)

@@ -8,21 +8,21 @@ module.exports={
       $sequence()
       .init ()=>
         if global.getWaveFormat()=='fsdb'
-          @verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
+          verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
           if inst?
-            @verilog("$fsdbDumpvars(#{level},#{inst.getHierarchy()});")
+            verilog("$fsdbDumpvars(#{level},#{inst._getPath()});")
           else
-            @verilog("$fsdbDumpvars;")
+            verilog("$fsdbDumpvars;")
         else if global.getWaveFormat()=='vcd'
-          @verilog("$dumpfile(\"#{fileName}.vcd\");")
+          verilog("$dumpfile(\"#{fileName}.vcd\");")
           if inst?
-            @verilog("$dumpvars(#{level},#{inst.getHierarchy()});")
+            verilog("$dumpvars(#{level},#{inst._getPath()});")
           else
-            @verilog("$dumpvars;")
+            verilog("$dumpvars;")
       .end()
 
   sim_finish: ()->
-    @verilog("$finish;")
+    verilog("$finish;")
 
   random: (seed='')->
     return $("$urandom(#{seed})")
@@ -31,17 +31,17 @@ module.exports={
     return ($(i) for i in list)
 
   set_monitor:(name,inst_list...)->
-    fileName = name ? @getHierarchy()+'.monitor'
+    fileName = name ? @_getPath()+'.monitor'
     assert_module.monitor_handle.noInit()
     handle = assert_module.monitor_handle
     initial
       $sequence()
       .init =>
         assign assert_module.monitor_handle= {"$fopen(\"#{fileName}\")"}
-        @display("#{assert_module.message_prefix} Create file #{fileName}")
+        display("#{assert_module.message_prefix} Create file #{fileName}")
         for inst in inst_list
           for [name,item] in toFlatten(inst.__local_regs)
-            @verilog("$fmonitor(#{handle.oomrName()},\"%0d #{item.oomrName()} 0x%x\",$time,#{item.oomrName()});")
+            verilog("$fmonitor(#{handle.oomrName()},\"%0d #{item.oomrName()} 0x%x\",$time,#{item.oomrName()});")
       .end()
     return assert_module.monitor_handle
 
@@ -51,25 +51,25 @@ module.exports={
       $sequence()
       .delay(0.1) =>
         for [name,item] in toFlatten(inst.__local_regs)
-          @verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
+          verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
       .end()
 
   fopen:(name=null)->
-    fileName = name ? @getHierarchy()+'.dump'
+    fileName = name ? @_getPath()+'.dump'
     handle=vreg(32)
     initial
       $sequence()
       .init =>
         assign handle= {"$fopen(\"#{fileName}\")"}
-        @display("#{assert_module.message_prefix} Create file #{fileName}")
+        display("#{assert_module.message_prefix} Create file #{fileName}")
       .end()
     return handle
 
   fdisplay:(handle,s,args...)->
     if args.length==0
-      @verilog("$fdisplay(#{$(handle)},\"#{s}\");")
+      verilog("$fdisplay(#{$(handle)},\"#{s}\");")
     else
-      @verilog("$fdisplay(#{$(handle)},\"#{s}\",#{args.join(',')});")
+      verilog("$fdisplay(#{$(handle)},\"#{s}\",#{args.join(',')});")
 
   create_clock: (clk,period=10)->
     forever

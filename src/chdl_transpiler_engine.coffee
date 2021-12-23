@@ -14,6 +14,41 @@ headOver=6
 
 debugExpr=''
 
+moduleKeyTable={
+  SetProperty: '_setProperty'
+  GetProperty: '_getProperty'
+  Port: '_port'
+  Channel: '_channel'
+  Probe: '_probe'
+  Monitor: '_monitor'
+  Reg: '_reg'
+  Wire: '_wire'
+  Mem: '_mem'
+  CellMap: '_cellmap'
+  CellList: '_celllist'
+  MixinAs: '_mixinas'
+  Mixin: '_mixin'
+  vec: '_localVec'
+  reg: '_localReg'
+  vreg: '_localVreg'
+  wire: '_localWire'
+  unpack_wire: '_localUnpackWire'
+  posedge: '_posedge'
+  negedge: '_negedge'
+  wait: '_wait'
+  event: '_event'
+  trigger: '_trigger'
+  delay: '_delay'
+  mold: '_mold'
+  targetWidth: '_targetWidth'
+  verilog: '_verilog'
+  verilog_segment: '_verilog_segment'
+  display: '_display'
+  getParameter: '_getParameter'
+  '$flow': '_flow'
+  '$sequence': '_sequenceDef'
+}
+
 printTokens=(tokens)->
   printOut=''
   for token in tokens
@@ -491,41 +526,6 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Port'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_port', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Channel'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_channel', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Probe'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_probe', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Monitor'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_monitor', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Wire'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_wire', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='local_wire'
       throw new Error('local_wire is deprecated,use wire')
     #  list =[
@@ -656,31 +656,11 @@ extractLogic = (tokens)->
     #  ]
     #  tokens.splice i, 1, list...
     #  i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Reg'
+    else if token[0] is 'IDENTIFIER' and Object.keys(moduleKeyTable).includes(token[1])
+      methodName=moduleKeyTable[token[1]]
       list =[
         ['@', '@', {range:[]}]
-        ['PROPERTY', '_reg', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='Mem'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_mem', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='CellMap'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_cellmap', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='CellList'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_celllist', {range:[]}]
+        ['PROPERTY', methodName, {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -715,13 +695,6 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='vec'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_localVec', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='bind'
       list =[
         ['IDENTIFIER', 'chdl_base', {range:[]}]
@@ -730,39 +703,11 @@ extractLogic = (tokens)->
       ]
       tokens.splice i, 1, list...
       i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='reg'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_localReg', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='vreg'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_localVreg', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='channel'
       list =[
         ['IDENTIFIER', 'chdl_base', {range:[]}]
         [ '.',     '.',  {range:[]} ]
         ['PROPERTY', 'channel', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='wire'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_localWire', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='unpack_wire'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_localUnpackWire', {range:[]}]
       ]
       tokens.splice i, 1, list...
       i+=list.length
@@ -828,76 +773,6 @@ extractLogic = (tokens)->
       patchLength=findAlwaysBlock(tokens,i)
       tokens.splice i, 1, list...
       i+=list.length+patchLength
-    else if token[0] is 'IDENTIFIER' and token[1]=='Mixin'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_mixin', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='MixinAs'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_mixinas', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='posedge'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_posedge', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='wait'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_wait', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='event'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_event', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='trigger'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_trigger', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='negedge'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_negedge', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='flow'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_flow', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='delay'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_delay', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
-    else if token[0] is 'IDENTIFIER' and token[1]=='$sequence'
-      list =[
-        ['@', '@', {range:[]}]
-        ['PROPERTY', '_sequenceDef', {range:[]}]
-      ]
-      tokens.splice i, 1, list...
-      i+=list.length
     else if token[0] is 'IDENTIFIER' and token[1]=='$while'
       list =[
         ['@', '@', {range:[]}]

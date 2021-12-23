@@ -44,21 +44,15 @@ class Module
 
   __instName: ''
 
-  _checkCombModule:(inst)->
-    #if @__isCombModule and inst.__isCombModule
-    #  throw new Error("Combination module can not instance in combination module")
-
   _cellmap: (v) ->
     if _.isArray(v)
       for item in v
         @__cells.push({name:item.name,inst:item.inst})
         @[item.name]=item.inst
-        @_checkCombModule(item.inst)
     else if _.isPlainObject(v)
       for name,inst of v
         @__cells.push({name:name,inst:inst})
         @[name]=inst
-        @_checkCombModule(inst)
 
   _celllist: (v...) ->
     if _.isArray(v[0]) and v.length==1
@@ -66,13 +60,11 @@ class Module
         name=_id('inst__'+item.getModuleName())
         @__cells.push({name:name,inst:item})
         @[name]=item
-        @_checkCombModule(item)
     else
       for item in v
         name = _id('inst__'+item.getModuleName())
         @__cells.push({name:name,inst:item})
         @[name]=item
-        @_checkCombModule(item)
 
   _getCell: (name)=>
     p=Object.getPrototypeOf(this)
@@ -189,35 +181,16 @@ class Module
             shadowReg.link(this,sigName)
 
   _overrideModuleName: (name)-> @__moduleName=name
-  setUniq: -> @__uniq=true
-  notUniq: -> @__uniq=false
-  getModuleName: -> @__moduleName ? this.constructor.name
-  setCombModule: -> @__isCombModule=true
-  specifyModuleName: (name)->
-    @__specifyModuleName=name
-    @__specify=true
 
-  instParameter: (s)->  @__instParameter=s
-
-  moduleParameter: (list)->
-    for i in list
-      @__moduleParameter.push @_const(i.value,{noPrefix:true,label:i.key})
-
-  getParameter: (key)->
+  _getParameter: (key)->
     item=_.find(@__moduleParameter,(i)->i.label==key)
     if item?
       return item
     else
       throw new Error("Can not find parameter key #{key}")
 
-  setLint:(key,value)->
-    if @__lint[key]?
-      @__lint[key]=value
-    else
-      log "Error: lint key #{key} not defined"
-
   constructor: (param=null)->
-    @param=param
+    @__param=param
     @__id = uuid()
     #@moduleName=this.constructor.name
     @__moduleName=null
@@ -266,7 +239,6 @@ class Module
     @__parentNode=null
     @__postProcess=[]
     @__isBlackBox=false
-    @__specify=false
     @__specifyModuleName=null
     @__pinAssign=[]
     @__delayBindList=[]
@@ -274,8 +246,8 @@ class Module
 
   _setGlobal: ->
     @__global=true
-    @notUniq()
-    @setCombModule()
+    @__uniq=false
+    @__isCombModule=true
 
   _isGlobal: -> @__global
 
@@ -299,12 +271,6 @@ class Module
     else if @__defaultReset==null
       @__defaultReset=reset
 
-  setDefaultClock: (clock)=>
-    @__defaultClock=clock
-
-  setDefaultReset: (reset)=>
-    @__defaultReset=reset
-
   _clock: =>
     if @__defaultClock?
       @__defaultClock
@@ -319,9 +285,32 @@ class Module
       log("Can not find default reset".yellow)
       return null
 
-  setBlackBox: ()=> @__isBlackBox=true
+  _setProperty: (obj)=>
+    if obj.module_name?
+      @__specifyModuleName = obj.module_name
+    if obj.blackbox?
+      @__isBlackBox=obj.blackbox
+    if obj.comb_module?
+      @__isCombModule=obj.comb_module
+    if obj.default_clock?
+      @__defaultClock=obj.default_clock
+    if obj.default_reset?
+      @__defaultReset=obj.default_reset
+    if obj.uniq?
+      @__uniq=obj.uniq
+    if obj.lint_width_check_overflow?
+      @__lint.widthCheckLevel=1
+    if obj.lint_width_check_mismatch?
+      @__lint.widthCheckLevel=2
+    if obj.lint_width_check_disable?
+      @__lint.widthCheckLevel=0
+    if obj.override_parameter?
+      @__instParameter=obj.override_parameter
+    if obj.module_parameter?
+      for i in obj.parameter
+        @__moduleParameter.push @_const(i.value,{noPrefix:true,label:i.key})
 
-  isBlackBox: ()=> @__isBlackBox
+  _isBlackBox: ()=> @__isBlackBox
 
   _dumpPort: ->
     out=[]
@@ -552,11 +541,7 @@ class Module
       @__assignEnv = null
       @__regAssignList=[]
 
-  eval: =>
-    for evalFunc in @__alwaysList
-      evalFunc()
-
-  targetWidth: => @__assignWidth
+  _targetWidth: => @__assignWidth
 
   build: ->
 
@@ -716,7 +701,7 @@ class Module
 
     return [out,assignList]
 
-  mold: (inst)->
+  _mold: (inst)->
     bindTable={}
     for i in Object.keys(inst.__ports)
       ch=Channel.create(null)
@@ -1206,21 +1191,19 @@ class Module
     }
     return ret
 
-  verilog: (s)->
+  _verilog: (s)->
     @__regAssignList.push ['verilog',s]
 
-  verilog_segment: (s)->
+  _verilog_segment: (s)->
     @__verilogSegments.push s
 
-  display: (s,args...)->
+  _display: (s,args...)->
     if args.length==0
       @__regAssignList.push ['verilog',"$display(\"[%0t] #{s}\",$time);"]
     else
       list = _.map(args,(i)-> sharpToDot(i.e.str))
       @__regAssignList.push ['verilog',"$display(\"[%0t] #{s}\",$time,#{list.join(',')});"]
 
-  getHierarchy: -> @_getPath()
-          
   _getPath:(cell=null,list=[])->
     cell=this if cell==null
     if cell.__parentNode==null
@@ -1242,7 +1225,7 @@ class Module
 
   _assign: (signal,lineno=-1)=>
     if not signal?
-      throw new Error("Module #{this.getModuleName()} assign signal is NULL at line #{lineno}".red)
+      throw new Error("Module #{this._getModuleName()} assign signal is NULL at line #{lineno}".red)
     assign_warn=false
     if signal.__type=='reg' and !signal.isVirtual()
       assign_warn=true
@@ -1330,9 +1313,53 @@ class Module
 
   _getBuildName: ()->
     baseName=@constructor.name
-    if @__specify
+    if @__specifyModuleName?
       baseName=@__specifyModuleName
 
     return baseName
+
+  _getModuleName: -> @__moduleName ? this.constructor.name
+
+  instParameter: (s)->
+    throw new Error("break changes, use SetProperty override_parameter")
+
+  setLint:(key,value)->
+    throw new Error("break changes, use SetProperty lint_width_check_overflow,lint_width_check_mismatch,lint_width_check_disable")
+
+  specifyModuleName: (name)->
+    throw new Error("break changes, use SetProperty module_name")
+
+  setCombModule: ->
+    throw new Error("break changes, use SetProperty comb_module")
+
+  notUniq: ->
+    throw new Error("break changes, use SetProperty uniq")
+
+  moduleParameter: (list)->
+    throw new Error("break changes, use SetProperty parameter")
+
+  setDefaultClock: (clock)=>
+    throw new Error("break changes, use SetProperty default_clock")
+
+  setDefaultReset: (reset)=>
+    throw new Error("break changes, use SetProperty default_reset")
+
+  setBlackBox: ()=>
+    throw new Error("break changes, use SetProperty blackbox")
+
+  display: (s,args...)->
+    throw new Error("break changes, use display literal")
+
+  verilog: (s)->
+    throw new Error("break changes, use verilog literal")
+
+  targetWidth: => 
+    throw new Error("break changes, use targetWidth literal")
+
+  mold: => 
+    throw new Error("break changes, use mold literal")
+
+  getParameter: =>
+    throw new Error("break changes, use getParameter literal")
 
 module.exports=Module

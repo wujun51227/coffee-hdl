@@ -235,7 +235,7 @@ class Wire extends CircuitEl
   refName: =>
     oomr=''
     if @cell._isGlobal()
-      oomr=@cell.getModuleName()+'#'
+      oomr=@cell._getModuleName()+'#'
     if @lsb>=0
       if @width==1
         oomr+@elName+"["+@lsb+"]"

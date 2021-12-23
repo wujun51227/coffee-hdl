@@ -383,7 +383,7 @@ cdcAnalysis=(driven_tree,clkGroup,result=[])->
   for i in syncList when not i.inst.isClock
     #console.log "checking",i.obj.getName()
     cdcCheck(i,driven_tree.list,clkGroup)
-  result.push({instance:driven_tree.inst.getHierarchy(),report:cdcError})
+  result.push({instance:driven_tree.inst._getPath(),report:cdcError})
   cdcReport()
     
   return result
