@@ -17,7 +17,7 @@ class cell2 extends Module
     )
 
     Channel(
-      ch: @mold(@u0)
+      ch: mold(@u0)
     )
 
   build: ->
@@ -33,10 +33,9 @@ class cell3 extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @assert_eq(@bundle.data,0x1234,'test autobind')
-      .end()
 
 class ChannelAutoBind extends Module
   u0_cell1: new cell1()
@@ -48,7 +47,7 @@ class ChannelAutoBind extends Module
     Mixin importLib('verilog_helpers.chdl')
 
     Channel(
-      ch1: @mold(@u0_cell1)
+      ch1: mold(@u0_cell1)
     )
 
     Probe(
@@ -61,13 +60,12 @@ class ChannelAutoBind extends Module
     mold_out = vreg(16,'mold_out')
 
     initial
-      $sequence()
-      .delay(200) =>
+      $flow =>
+        go 200
         assign mold_out = @ch1.bundle.data
         @assert_eq(mold_out,0x1234,'test mold autobind')
         @assert_report('channel autobind')
         @sim_finish()
-      .end()
 
 module.exports=ChannelAutoBind
 

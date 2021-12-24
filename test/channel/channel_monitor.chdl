@@ -32,8 +32,8 @@ class cell2 extends Module
     super()
 
     Channel(
-      ch1: @mold(@u0)
-      ch2: @mold(@u1)
+      ch1: mold(@u0)
+      ch2: mold(@u1)
     )
 
   build: ->
@@ -61,13 +61,12 @@ class tb extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(200) =>
+      $flow =>
+        go 200
         @assert_eq(@ch1.din,0x1234,'test probe')
         @assert_eq(@ch1.dout,0x1234,'test probe')
         @assert_report('channel probe')
         @sim_finish()
-      .end()
 
 module.exports=tb
 

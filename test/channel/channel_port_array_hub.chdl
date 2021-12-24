@@ -35,11 +35,10 @@ class cell2 extends Module
     assign @bundles[1].dout=0x2222
 
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @assert_eq(@bundles[0].din,0x1111,'check cell1 bundle connection')
         @assert_eq(@bundles[1].din,0x2222,'check cell2 bundle connection')
-      .end()
 
 
 class ChannelPortArrayHub extends Module
@@ -74,11 +73,10 @@ class ChannelPortArrayHub extends Module
     $channelPortHub(@conn0[1],@conn2)
 
     initial
-      $sequence()
-      .delay(200) =>
+      $flow =>
+        go 200
         @assert_report('channel port array hub')
         @sim_finish()
-      .end()
 
 module.exports=ChannelPortArrayHub
 

@@ -24,15 +24,13 @@ class cell2 extends Module
     v1 = vreg(16)
     assign @bundle.dout = v1
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         assign v1 = 0x55aa
-      .delay(100) =>
+        go 100
         @assert_eq(@bundle.din,0x55aa,'test connection')
         @assert_report('channel connect')
         @sim_finish()
-      .end()
-
 
 class ChannelConn extends Module
   u0_cell2: new cell2()

@@ -19,11 +19,10 @@ class cell1 extends Module
     assign @bundle.dout=0x1111
     assign @bundle.sub.dout=0x2222
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @assert_eq(@bundle.din,0x4444,'check cell1 bundle din')
         @assert_eq(@bundle.sub.din,0x3333,'check cell1 sub din')
-      .end()
 
 class cell2 extends Module
   constructor: ->
@@ -38,10 +37,9 @@ class cell2 extends Module
   build: ->
     assign @sub.din=0x3333
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @assert_eq(@sub.dout,0x2222,'check cell2 sub dout')
-      .end()
 
 class cell3 extends Module
   constructor: ->
@@ -59,11 +57,10 @@ class cell3 extends Module
   build: ->
     assign @bundle.din= 0x4444
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @assert_eq(@bundle.dout,0x1111,'check cell3 bundle dout')
         @assert_eq(@bundle.sub.din,0x3333,'check cell3 sub din')
-      .end()
 
 
 class ChannelHubConnection extends Module
@@ -99,11 +96,10 @@ class ChannelHubConnection extends Module
     $channelPortHub( @c1_bundle,@c3_bundle)
 
     initial
-      $sequence()
-      .delay(1000) =>
+      $flow =>
+        go 1000
         @assert_report('channel hub connection')
         @sim_finish()
-      .end()
 
 module.exports=ChannelHubConnection
 

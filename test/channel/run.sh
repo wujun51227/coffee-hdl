@@ -7,3 +7,4 @@ chdl_compile.coffee --force --iverilog -o out/channel_hub_connection channel_hub
 chdl_compile.coffee --force --iverilog -o out/channel_port_array_hub channel_port_array_hub.chdl
 chdl_compile.coffee --force --iverilog -o out/channel_probe channel_probe.chdl
 chdl_compile.coffee --force --iverilog -o out/channel_probe channel_mold.chdl
+chdl_compile.coffee --force --iverilog -o out/channel_monitor channel_monitor.chdl

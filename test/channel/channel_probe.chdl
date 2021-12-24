@@ -86,15 +86,14 @@ class tb extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         assign @ch1.din= 0x1111
-      .delay(100) =>
+        go 100
         @assert_eq(@ch1.dout,0x1111,'test connection')
         @assert_eq(@ch2,0x4457,'test connection')
         @assert_report('channel probe')
         @sim_finish()
-      .end()
 
 module.exports=tb
 
