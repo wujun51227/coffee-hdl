@@ -2,40 +2,37 @@
 # Design
 #########################################################3
 class SubModule extends Module
-  constructor: ->
+  constructor: (param=null)->
     super()
     Mixin importLib('verilog_helpers.chdl')
     Port(
       dout: output(16)
     )
-    @moduleParameter([
-      { key:'hello',value:100}
-    ])
+
+    Property(
+      module_parameter: [
+        { key:'hello',value:100}
+      ]
+      override_parameter: param
+    )
 
     Mem(
       mem: vec(10,20)
     )
 
   build: ->
-    assign @dout = @getParameter('hello')
-
-    initial
-      $sequence()
-      .init =>
-        @readmemh(@getParameter('hello'),@mem)
-      .end()
+    value = getParameter('hello')
+    assign @dout =  value
 
 class ParameterTest extends Module
-  u0_cell: new SubModule()
+  u0_cell: new SubModule([
+      { key:'hello',value:200}
+  ])
 
   constructor: ->
     super()
     Mixin importLib('verilog_helpers.chdl')
     Port()
-
-    @u0_cell.instParameter([
-      { key:'hello',value:200}
-    ])
 
     Channel(
       ch: channel()
@@ -47,13 +44,12 @@ class ParameterTest extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(100) =>
+      $flow =>
+        go 100
         @readmemh('hello',@u0_cell.mem)
         @assert_eq(@ch,200,'test parameter')
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=ParameterTest
 

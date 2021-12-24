@@ -45,7 +45,7 @@ class Vec extends CircuitEl
 
   readmemh: (self,path)=>
     oomr=true
-    if @cell.getModuleName()==self.getModuleName()
+    if @cell._getModuleName()==self._getModuleName()
       oomr=false
     if _.isString(path)
       self.__regAssignList.push ["array_init",this,['hex','"'+path+'"',oomr],-1]

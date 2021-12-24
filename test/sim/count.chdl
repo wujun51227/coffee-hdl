@@ -2,6 +2,8 @@ class count extends Module
   constructor: ->
     super()
     Port(
+      clk: input().asClock()
+      rstn: input().asReset()
       enable: input()
       dout: output(32)
     )
@@ -18,20 +20,17 @@ class count extends Module
         $if(@cnt<100)
           $ @cnt+1
         $else
-          $ 0
-        $endif
+          $ 0xff
       $else
         $ @cnt
-      $endif
 
 class bench_top extends Module
   u0_count: new count()
 
   constructor: ->
     super()
-    @setCombModule()
-    Port(
-    )
+
+    Mixin importLib('verilog_helpers.chdl')
 
     Reg(
       rstn: vreg()
@@ -41,44 +40,47 @@ class bench_top extends Module
 
     Channel(
       en_channel: channel()
+      dout: channel()
     )
 
     @u0_count.bind(
       enable: @en_channel
+      dout: @dout_channel
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
   build: ->
     assign(@en_channel) = @en
 
     forever
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go 10
         assign(@clk) = !@clk
-      .end()
 
-    s1= =>
-      $sequence('delay')
-        .init =>
-          assign(@rstn) =  1
-        .delay(10) =>
-          assign(@rstn) =  0
-        .delay(10) =>
-          assign(@rstn) =  1
-        .delay(10) =>
-          assign(@en) = 1
-        .delay(1000) =>
-          assign(@en) = 0
-        .posedge(@clk) =>
-          assign(@en) = 1
-        .wait($ @clk==1) =>
-          assign(@en) = 1
-        .end()
+    s1= ()=>
+      assign(@rstn) =  1
+      go 10
+      assign(@rstn) =  0
+      go 10
+      assign(@rstn) =  1
+      go 10
+      assign(@en) = 1
+      go 1000
+      assign(@en) = 0
+      posedge(@clk)
+      assign(@en) = 1
+      wait($ @clk==1)
+      assign(@en) = 0
+      go 20000
+      display("sim finished %d",$(@dout_channel))
+      @sim_finish()
 
     initial
-      s1()
+      $flow => s1()
 
 module.exports=bench_top
 

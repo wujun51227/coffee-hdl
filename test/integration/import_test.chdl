@@ -49,11 +49,10 @@ class ImportTest extends Module
     $channelPortHub(@aaa,@bbb)
 
     initial
-      $sequence()
-      .delay(1000) =>
+      $flow =>
+        go 1000
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=ImportTest
 

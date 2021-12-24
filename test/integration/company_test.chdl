@@ -4,7 +4,9 @@ class ahb_sram_wrapper extends Module
   constructor: (aw,dw,bn)->
     super()
 
-    @specifyModuleName("ahb_sram_wrapper")
+    Property(
+      module_name: "ahb_sram_wrapper"
+    )
 
     Mixin importLib('verilog_helpers.chdl')
 
@@ -62,11 +64,10 @@ class ahb_sram_wrapper extends Module
     assign @sram.SRAMRDATA = cat(out_data.reverse()...)
 
     initial
-      $sequence()
-      .delay(1000) =>
+      $flow =>
+        go 1000
         @assert_report()
         @sim_finish()
-      .end()
 
 class ahb_to_sram extends Module
   constructor: (aw,bus_width)->

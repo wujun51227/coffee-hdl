@@ -57,12 +57,12 @@ class Module
   _celllist: (v...) ->
     if _.isArray(v[0]) and v.length==1
       for item in v[0]
-        name=_id('inst__'+item.getModuleName())
+        name=_id('inst__'+item._getModuleName())
         @__cells.push({name:name,inst:item})
         @[name]=item
     else
       for item in v
-        name = _id('inst__'+item.getModuleName())
+        name = _id('inst__'+item._getModuleName())
         @__cells.push({name:name,inst:item})
         @[name]=item
 
@@ -307,7 +307,7 @@ class Module
     if obj.override_parameter?
       @__instParameter=obj.override_parameter
     if obj.module_parameter?
-      for i in obj.parameter
+      for i in obj.module_parameter
         @__moduleParameter.push @_const(i.value,{noPrefix:true,label:i.key})
 
   _isBlackBox: ()=> @__isBlackBox
@@ -1304,9 +1304,9 @@ class Module
 
   _dumpCell: =>
     p = Object.getPrototypeOf(this)
-    cellList=({inst:k,module:v.getModuleName()} for k,v of p when typeof(v)=='object' and v instanceof Module)
+    cellList=({inst:k,module:v._getModuleName()} for k,v of p when typeof(v)=='object' and v instanceof Module)
     for i in @__cells
-      cellList.push({inst:i.name,module:i.inst.getModuleName()}) unless _.find(cellList,(n)-> n.inst.__id==i.inst.__id)
+      cellList.push({inst:i.name,module:i.inst._getModuleName()}) unless _.find(cellList,(n)-> n.inst.__id==i.inst.__id)
     for cellInfo in cellList
       cellInst=@_getCell(cellInfo.inst)
       connList=[]
