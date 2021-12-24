@@ -22,8 +22,10 @@ class handshakeTb extends Module
       ack: wire()
     )
 
-    @setDefaultClock('tx_clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'tx_clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -49,29 +51,27 @@ class handshakeTb extends Module
     ]
 
     initial
-      seq = $sequence()
-      seq.delay(500) =>
-      for i in list
-        seq.posedge(@tx_clk) =>
+      $flow =>
+        go 500
+        for i in list
+          posedge(@tx_clk)
           assign @din=i
           assign @push=1
-        .posedge(@tx_clk) =>
+          posedge(@tx_clk)
           assign @push=0
-        .wait($ @tx_done) =>
-      seq.posedge(@tx_clk) =>
+          wait($ @tx_done)
+        posedge(@tx_clk)
         assign @push=0
-      seq.end()
 
     initial
-      seq = $sequence()
-      seq.delay(100) =>
-      for i in list
-        seq.polling(@rx_clk,$(@rx_done==1)) =>
+      $flow =>
+        go 100
+        for i in list
+          polling(@rx_clk,$(@rx_done==1))
           @assert_eq(@rx_data,i)
-      seq.delay(100) =>
+        go 100
         @assert_report('handshake test')
         @sim_finish()
-      .end()
 
     assign({valid:valid,data:data,done:@tx_done})  = $async_handshake_tx(@push,@din,@ack,@tx_clk)
     assign({ack:@ack,data:@rx_data,done:@rx_done}) = $async_handshake_rx(valid,data,@rx_clk)

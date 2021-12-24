@@ -15,8 +15,8 @@ headOver=6
 debugExpr=''
 
 moduleKeyTable={
-  SetProperty: '_setProperty'
-  GetProperty: '_getProperty'
+  Property: '_setProperty'
+  #GetProperty: '_getProperty'
   Port: '_port'
   Channel: '_channel'
   Probe: '_probe'
@@ -38,6 +38,7 @@ moduleKeyTable={
   wait: '_wait'
   event: '_event'
   trigger: '_trigger'
+  polling: '_polling'
   go: '_progress'
   mold: '_mold'
   targetWidth: '_targetWidth'

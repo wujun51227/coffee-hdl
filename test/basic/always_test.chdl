@@ -18,7 +18,7 @@ class AlwaysTest extends Module
       rstn: vreg().init(1)
       )
 
-    SetProperty(
+    Property(
       default_clock: 'clk'
       default_reset: 'rstn'
     )

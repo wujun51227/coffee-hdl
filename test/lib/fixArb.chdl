@@ -15,8 +15,10 @@ class fixArbTb extends Module
       d3:vreg()
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -26,35 +28,34 @@ class fixArbTb extends Module
     Net(dout,2) = $fix_arbiter([@d1,@d2,@d3],2)
 
     initial
-      $sequence()
-      .delay(500) =>
+      $flow =>
+        go 500
         assign @d1=1
         assign @d2=1
         assign @d3=1
-      .delay(10) =>
+        go 10
         @assert_eq(dout,0,'arb select d1')
-      .delay(10) =>
+        go 10
         assign @d1=0
         assign @d2=1
         assign @d3=1
-      .delay(10) =>
+        go 10
         @assert_eq(dout,1,'arb select d2')
-      .delay(10) =>
+        go 10
         assign @d1=0
         assign @d2=0
         assign @d3=1
-      .delay(10) =>
+        go 10
         @assert_eq(dout,2,'arb select d3')
-      .delay(10) =>
+        go 10
         assign @d1=0
         assign @d2=0
         assign @d3=0
-      .delay(10) =>
+        go 10
         @assert_eq(dout,2,'arb select select d3')
-      .delay(100) =>
+        go 100
         @assert_report('fix arb test')
         @sim_finish()
-      .end()
 
 
 module.exports=fixArbTb

@@ -50,8 +50,11 @@ class UsePrimitiveLib extends Module
       clk: vreg()
       rstn: vreg().init(1)
       )
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -85,107 +88,105 @@ class UsePrimitiveLib extends Module
     Net d14 = $isZero(d13) && $isZero(d12)
     
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign v1=0
         assign v2=0x55
         assign v3=0xaa
-      .delay(100) =>
-      .delay(10) =>
+        go 100
+        go 10
         @assert_eq(d1,0xaa,'test sigMux')
         assign v1=1
-      .delay(10) =>
+        go 10
         @assert_eq(d1,0x55,'test sigMux')
         assign v1=0
-      .posedge($clock()) =>
-      .delay(1) =>
+        posedge $clock()
+        go 1
         assign v1=1
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d2,'test rise')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d2,'test rise')
-      .posedge(d3) =>
-      .posedge($clock()) =>
+        posedge d3
+        posedge $clock()
         @assert_1(d3,'test divider')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d3,'test divider')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d3,'test divider')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d3,'test divider')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d3,'test divider')
         assign v2=0x12
         assign v3=0x10
         assign v4=0x11
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d4,'test oneOf')
         assign v2=0x9
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d4,'test oneOf')
         assign v2=0x12
         assign v3=0x10
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d5,'test same')
         assign v3=0x12
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d5,'test same')
         assign v2=0x7f
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d6,7,'test count1')
         assign v2=0x0
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d6,0,'test count1')
         assign v2=0x12
         assign v3=0x10
         assign v4=0x13
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d7,'test inRange')
         assign v2=0x9
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d7,'test inRange')
         assign v2=0xaa
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_ne(d8,0xaa,'test delay')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_ne(d8,0xaa,'test delay')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d8,0xaa,'test delay')
         assign v2=0x12
         assign v3=0x10
         assign v4=0x13
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d9,0x35,'test join')
         assign v2=0x3
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d10,0x2,'test grayNextCode')
         assign v2=0x2
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d10,0x6,'test grayNextCode')
         assign v2=0xaa
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_ne(d11,0xaa,'test sample')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d11,0xaa,'test sample')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d11,0xaa,'test sample')
         assign v1 = 1
-      .posedge($clock()) =>
+        posedge $clock()
         assign v1 = 0
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_1(d12,'test fall')
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_0(d12,'test fall')
         assign v2=5
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d13,5,'test array decode')
         assign v2=9
-      .posedge($clock()) =>
+        posedge $clock()
         @assert_eq(d13,9,'test array decode')
-      .delay(10) =>
+        go 10
         @assert_report()
         @sim_finish()
-      .end()
 
 
 

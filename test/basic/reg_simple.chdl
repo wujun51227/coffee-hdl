@@ -200,7 +200,7 @@ class tb extends Module
       neg_init: @neg_init_ch
     )
 
-    SetProperty(
+    Property(
       default_clock: 'clk'
       default_reset: 'rstn'
     )

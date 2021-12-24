@@ -18,8 +18,10 @@ class lruTb extends Module
       dout: wire(3)
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -27,80 +29,79 @@ class lruTb extends Module
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .delay(500) =>
-      .posedge(@clk) =>
+      $flow =>
+        go 500
+        posedge @clk
         assign @din=0x7
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x0
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,0,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x3
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x2
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x5
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x6
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x4
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x1
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,1,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x7
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,7,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x3
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,0,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x0
         assign @push=1
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,0,'lru select')
-      .posedge(@clk) =>
+        posedge @clk
         assign @push=0
-      .delay(5) =>
-        @display("dout is %d",$(@dout))
+        go 5
+        display("dout is %d",$(@dout))
         @assert_eq(@dout,2,'lru select')
-      .delay(100) =>
+        go 100
         @assert_report('lru test')
         @sim_finish()
-      .end()
 
     assign(@dout) = $lru(@push,@din)
 

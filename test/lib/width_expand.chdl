@@ -22,8 +22,10 @@ class widthExpandTb extends Module
       dout: wire(16*4)
     )
 
-    @setDefaultClock('tx_clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'tx_clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -31,89 +33,88 @@ class widthExpandTb extends Module
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .delay(500) =>
-      .posedge(@tx_clk) =>
+      $flow =>
+        go 500
+        posedge @tx_clk
         assign @din=0x7
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x0
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x3
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x2
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .delay(5) =>
+        go 5
         @assert_1(@ready,'ready set test')
-        @display('dout is %x',$(@dout))
+        display('dout is %x',$(@dout))
         @assert_eq(@dout,64'h0002000300000007','expand test')
-      .posedge(@tx_clk) =>
-      .delay(5) =>
+        posedge @tx_clk
+        go 5
         @assert_1(@ready,'ready set test')
-      .posedge(@tx_clk) =>
-      .delay(5) =>
+        posedge @tx_clk
+        go 5
         @assert_1(@ready,'ready set test')
-      .posedge(@tx_clk) =>
-      .delay(5) =>
+        posedge @tx_clk
+        go 5
         @assert_1(@ready,'ready set test')
-      .posedge(@tx_clk) =>
-      .delay(5) =>
+        posedge @tx_clk
+        go 5
         @assert_0(@ready,'ready set test')
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x5
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x6
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x4
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x1
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .delay(5) =>
+        go 5
         @assert_1(@ready,'ready set test')
-        @display('dout is %x',$(@dout))
+        display('dout is %x',$(@dout))
         @assert_eq(@dout,64'h0001000400060005','expand test')
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x7
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x3
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @din=0x0
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      .delay(5) =>
+        go 5
         @assert_0(@ready,'ready set test')
-      .delay(100) =>
+        go 100
         @assert_report("width expand test")
         @sim_finish()
-      .end()
 
     assign({ready:@ready,data:@dout})  = $width_expand(@push,@din,0,4)
 

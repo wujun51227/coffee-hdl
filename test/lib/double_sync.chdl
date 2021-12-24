@@ -30,8 +30,10 @@ class tb extends Module
       rstn: vreg()
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
     Channel(
       io: channel()
@@ -46,26 +48,24 @@ class tb extends Module
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign @io.din=0
-      .delay(505) =>
+        go 505
         assign @io.din=1
-      .posedge(@clk) =>
+        posedge @clk
         @assert_0(@io.dout1)
         @assert_0(@io.dout2)
-      .posedge(@clk) =>
+        posedge @clk
         @assert_0(@io.dout1)
         @assert_0(@io.dout2)
-      .posedge(@clk) =>
+        posedge @clk
         @assert_1(@io.dout1)
         @assert_0(@io.dout2)
-      .posedge(@clk) =>
+        posedge @clk
         @assert_1(@io.dout2)
-      .delay(10) =>
+        go 10
         @assert_report()
         @sim_finish()
-      .end()
 
 module.exports=tb
 

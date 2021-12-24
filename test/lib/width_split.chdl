@@ -21,8 +21,10 @@ class widthSplitTb extends Module
       dout: wire(8)
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -30,88 +32,87 @@ class widthSplitTb extends Module
     @create_resetn(@rstn)
 
     initial
-      $sequence()
-      .delay(500) =>
-      .posedge(@clk) =>
+      $flow =>
+        go 500
+        posedge @clk
         assign @din=0x12345678
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55aa55aa
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0xaabbccdd
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55667788
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @push=0
-      .delay(5) =>
+        go 5
         @assert_eq(@full,1,'full set')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x78,'select byte 0')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x56,'select byte 1')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x34,'select byte 2')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x12,'select byte 3')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xaa,'select byte 0')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x55,'select byte 1')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xaa,'select byte 2')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0x55,'select byte 3')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xdd,'select byte 0')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xcc,'select byte 1')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xbb,'select byte 2')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .delay(5) =>
+        go 5
         @assert_eq(@dout,0xaa,'select byte 3')
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @pop=0
-      .delay(5) =>
+        go 5
         @assert_eq(@empty,1,'empty set')
-      .delay(100) =>
+        go 100
         @assert_report("width split test")
         @sim_finish()
-      .end()
 
     assign({dout:@dout,empty:@empty,full:@full}) = $width_split(3,@din,@push,@pop,8)
 

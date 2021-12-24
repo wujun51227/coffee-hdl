@@ -38,16 +38,15 @@ class tb extends Module
 
   build: ->
     initial
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go 10
         assign @io.din = 5'b10101'
         assign @io.width= 3
-      .delay(10) =>
+        go 10
         @assert_eq(@io.dout1,25'b101011010110101')
         @assert_eq(@io.dout2,10'b0101010101')
-      .delay(10) =>
+        go 10
         @assert_report()
         @sim_finish()
-      .end()
       
 module.exports=tb

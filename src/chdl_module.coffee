@@ -961,21 +961,31 @@ class Module
   _progress:(delay_time)->
     @__regAssignList.push ['flow_delay',null,delay_time,null]
 
-  _posedge:(signal)->
+  _posedge:(signal,delay=null)->
     signalName = do ->
       if _.isString(signal)
         signal
       else
         signal.getName()
-    @__regAssignList.push ['flow_posedge',null,signalName,null]
+    @__regAssignList.push ['flow_posedge',null,signalName,delay]
 
-  _negedge:(signal)->
+  _negedge:(signal,delay=null)->
     signalName = do ->
       if _.isString(signal)
         signal
       else
         signal.getName()
-    @__regAssignList.push ['flow_negedge',null,signalName,null]
+    @__regAssignList.push ['flow_negedge',null,signalName,delay]
+
+  _polling:(signal,expr)->
+    signalName = do ->
+      if _.isString(signal)
+        signal
+      else
+        signal.getName()
+    id = stepName ? _id('poll')
+    active=@_localVreg(1,'break').init(1)
+    @__regAssignList.push ['flow_polling',null,signalName,{id:id,active:active.getName(),expr:expr}]
 
   _wait:(expr)->
     @__regAssignList.push ['flow_wait',null,expr,null]

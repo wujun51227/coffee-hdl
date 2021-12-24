@@ -1,4 +1,5 @@
 rm -rf out
+chdl_compile.coffee --force --iverilog -o out/async_trans async_trans.chdl
 chdl_compile.coffee --force --iverilog -o out/asyncFifo asyncFifo.chdl
 chdl_compile.coffee --force --iverilog -o out/double_sync double_sync.chdl
 chdl_compile.coffee --force --iverilog -o out/expand expand.chdl

@@ -14,8 +14,10 @@ class asyncTransTb extends Module
       push:vreg()
     )
 
-    @setDefaultClock('tx_clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'tx_clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -27,45 +29,42 @@ class asyncTransTb extends Module
     Net rx_done
 
     initial
-      seq = $sequence()
-      seq.delay(500) =>
-      seq.posedge(@tx_clk) =>
+      $flow =>
+        go 500
+        posedge @tx_clk
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      seq.delay(500) =>
-      seq.posedge(@tx_clk) =>
+        go 500
+        posedge @tx_clk
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      seq.delay(500) =>
-      seq.posedge(@tx_clk) =>
+        go 500
+        posedge @tx_clk
         assign @push=1
-      .posedge(@tx_clk) =>
+        posedge @tx_clk
         assign @push=0
-      seq.end()
 
     initial
-      seq = $sequence()
-      seq.delay(100) =>
-      seq.polling(@rx_clk,$(rx_done==1)) =>
+      $flow =>
+        go 100
+        polling @rx_clk,$(rx_done==1)
         @assert_1(rx_done)
-      seq.polling(@rx_clk,$(rx_done==1)) =>
+        polling @rx_clk,$(rx_done==1)
         @assert_1(rx_done)
-      seq.polling(@rx_clk,$(rx_done==1)) =>
+        polling @rx_clk,$(rx_done==1)
         @assert_1(rx_done)
-      seq.delay(100) =>
+        go 100
         @assert_report('async trans test')
         @sim_finish()
-      .end()
 
     initial
-      seq = $sequence()
-      seq.delay(10000) =>
+      $flow =>
+        go 10000
         @assert_fail()
         @assert_report('async trans test')
         @sim_finish()
-      .end()
 
     assign rx_done  = $async_trans(@push,@tx_clk,@rstn,@rx_clk,@rstn)
 

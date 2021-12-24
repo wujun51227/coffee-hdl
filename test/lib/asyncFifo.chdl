@@ -21,7 +21,7 @@ class asyncFifoTb extends Module
       dout: wire(8)
     )
 
-    SetProperty(
+    Property(
       default_clock: 'clk'
       default_reset: 'rstn'
     )
@@ -34,89 +34,87 @@ class asyncFifoTb extends Module
     initial
       $flow =>
         go 5000
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0x55)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0xaa)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0x55)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0xaa)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0x55)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0xaa)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0x55)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0xaa)
-      .polling(@clk,$(@empty==0)) =>
+        polling(@clk,$(@empty==0))
         assign @pop = 1
         go 5
         @assert_eq(@dout,0x55)
-      .posedge(@clk) =>
+        posedge @clk
         go 5
         @assert_1(@empty)
         go 1000
         @assert_report('async fifo test')
         @sim_finish()
-      .end()
 
     initial
-      $sequence()
+      $flow =>
         go 500
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0xaa
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0xaa
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0xaa
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55
         assign @push=1
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0xaa
         assign @push=1
         go 5
         @assert_0(@full)
-      .posedge(@clk) =>
+        posedge @clk
         assign @din=0x55
         assign @push=1
         go 5
         @assert_0(@full)
-      .posedge(@clk) =>
+        posedge @clk
         assign @push=0
         go 5
         @assert_1(@full)
-      .end()
 
     assign({dout:@dout,empty:@empty,full:@full}) = $async_fifo(8,@din,@push.attach(@clk,@rstn),@pop.attach(@clk,@rstn))
 

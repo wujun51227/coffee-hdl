@@ -255,14 +255,27 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
       buffer.add "  ##{statement[2]}"
   else if stateType=='flow_posedge'
     buffer.add "  @(posedge #{statement[2]});"
+    if statement[3]?
+      buffer.add "  ##{statement[3]});"
   else if stateType=='flow_negedge'
     buffer.add "  @(negedge #{statement[2]});"
+    if statement[3]?
+      buffer.add "  ##{statement[3]});"
   else if stateType=='flow_wait'
     buffer.add "  wait(#{statement[2].e.str});"
   else if stateType=='flow_event'
     buffer.add "  -> #{statement[2]};"
   else if stateType=='flow_trigger'
     buffer.add "  @(#{statement[2]});"
+  else if stateType=='flow_polling'
+    item = statement[3]
+    buffer.add "  #{item.active} = 1;"
+    buffer.add "  while(#{item.active}) begin"
+    buffer.add "    @(posedge #{statement[2]});"
+    buffer.add "    if(#{item.expr.e.str}) begin"
+    buffer.add "      #{item.active} = 0;"
+    buffer.add "    end;"
+    buffer.add "  end;"
   else if stateType=='event'
     item = statement[1]
     buffer.add "  -> #{item.event};"
