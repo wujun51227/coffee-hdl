@@ -243,13 +243,6 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
       buffer.add space+"else begin #{lineComment(lineno)}"
     else
       buffer.add space+"else begin"
-  else if stateType=='delay'
-    item = statement[1]
-    if _.isNumber(item.delay)
-      if item.delay!=null
-        buffer.add "  ##{item.delay}"
-      for i in item.list
-        statementGen(buffer,i)
   else if stateType=='flow_delay'
     if _.isNumber(statement[2]) and statement[2]!=null
       buffer.add "  ##{statement[2]}"
@@ -276,39 +269,6 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
     buffer.add "      #{item.active} = 0;"
     buffer.add "    end;"
     buffer.add "  end;"
-  else if stateType=='event'
-    item = statement[1]
-    buffer.add "  -> #{item.event};"
-  else if stateType=='trigger'
-    item = statement[1]
-    buffer.add "  @(#{item.signal});"
-    for i in item.list
-      statementGen(buffer,i)
-  else if stateType=='polling'
-    item = statement[1]
-    buffer.add "  while(#{item.active}) begin"
-    buffer.add "    @(posedge #{item.signal});"
-    buffer.add "    if(#{item.expr.e.str}) begin"
-    buffer.add "      #{item.active} = 0;"
-    buffer.add "    end;"
-    buffer.add "  end;"
-    for i in item.list
-      statementGen(buffer,i)
-  else if stateType=='posedge'
-    item = statement[1]
-    buffer.add "  @(posedge #{item.signal});"
-    for i in item.list
-      statementGen(buffer,i)
-  else if stateType=='negedge'
-    item = statement[1]
-    buffer.add "  @(negedge #{item.signal});"
-    for i in item.list
-      statementGen(buffer,i)
-  else if stateType=='wait'
-    item = statement[1]
-    buffer.add "  wait(#{item.expr.e.str})"
-    for i in item.list
-      statementGen(buffer,i)
   else if stateType=='array_init'
     array_el=statement[1]
     file_type=statement[2][0]
@@ -557,38 +517,9 @@ code_gen= (inst,allInst,first=false)=>
   for seqList in inst.__initialList when seqList.length>0
     printBuffer.add "initial begin"
     for seq in seqList
-      initSegmentList = seq.bin
-      seqName= seq.name ? ''
-      if seqName!=''
-        printBuffer.add "  $display(\"start sequence #{seqName}\");"
-      for initSegment in initSegmentList
-        item = initSegment
-        if item.type=='delay'
-          if _.isNumber(item.delay)
-            printBuffer.add "  ##{item.delay}"
-        if item.type=='polling'
-          printBuffer.add "  #{item.active} = 1;"
-          printBuffer.add "  while(#{item.active}) begin"
-          printBuffer.add "    @(posedge #{item.signal});"
-          printBuffer.add "    if(#{item.expr.e.str}) begin"
-          printBuffer.add "      #{item.active} = 0;"
-          printBuffer.add "    end;"
-          printBuffer.add "  end;"
-        if item.type=='posedge'
-          printBuffer.add "  @(posedge #{item.signal});"
-        if item.type=='after_posedge'
-          printBuffer.add "  @(posedge #{item.signal});"
-          printBuffer.add "  ##{item.delay};"
-        if item.type=='negedge'
-          printBuffer.add "  @(negedge #{item.signal});"
-        if item.type=='wait'
-          printBuffer.add "  wait(#{item.expr.e.str})"
-        if item.type=='event'
-          printBuffer.add "  -> #{item.event};"
-        if item.type=='trigger'
-          printBuffer.add "  @(#{item.signal});"
-        for statement in item.list
-          statementGen(printBuffer,statement)
+      initSegmentList = seq
+      for statement in initSegmentList
+        statementGen(printBuffer,statement)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -596,35 +527,9 @@ code_gen= (inst,allInst,first=false)=>
   for seqList in inst.__foreverList when seqList.length>0
     printBuffer.add "always begin"
     for seq in seqList
-      initSegmentList = seq.bin
-      for initSegment in initSegmentList
-        item = initSegment
-        if item.type=='delay'
-          if _.isNumber(item.delay)
-            printBuffer.add "  ##{item.delay}"
-        if item.type=='polling'
-          printBuffer.add "  #{item.active} = 1;"
-          printBuffer.add "  while(#{item.active}) begin"
-          printBuffer.add "    @(posedge #{item.signal});"
-          printBuffer.add "    if(#{item.expr.e.str}) begin"
-          printBuffer.add "      #{item.active} = 0;"
-          printBuffer.add "    end;"
-          printBuffer.add "  end;"
-        if item.type=='posedge'
-          printBuffer.add "  @(posedge #{item.signal});"
-        if item.type=='after_posedge'
-          printBuffer.add "  @(posedge #{item.signal});"
-          printBuffer.add "  ##{item.delay};"
-        if item.type=='negedge'
-          printBuffer.add "  @(negedge #{item.signal});"
-        if item.type=='wait'
-          printBuffer.add "  wait(#{item.expr.e.str})"
-        if item.type=='event'
-          printBuffer.add "  -> #{item.event};"
-        if item.type=='trigger'
-          printBuffer.add "  @(#{item.signal});"
-        for statement in item.list
-          statementGen(printBuffer,statement)
+      initSegmentList = seq
+      for statement in initSegmentList
+        statementGen(printBuffer,statement)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -691,18 +596,19 @@ code_gen= (inst,allInst,first=false)=>
       )
       printBuffer.blank()
 
-    defaultClk = _.get(inst.__ports,inst._clock())
-    defaultRst = _.get(inst.__ports,inst._reset())
-    for {pin,port} in i.inst.__pinPortPair when port.getType()=='input'
-      item = _.find(driven_list,{key:pin.getId()})
-      if not item?
-        if port.isClock
-          printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultClock};"
-          driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultClk.getId()],conds:[]})
-        if port.isReset
-          printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultReset};"
-          driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultRst.getId()],conds:[]})
-    printBuffer.blank()
+    if !inst.__isCombModule
+      defaultClk = _.get(inst.__ports,inst._clock())
+      defaultRst = _.get(inst.__ports,inst._reset())
+      for {pin,port} in i.inst.__pinPortPair when port.getType()=='input'
+        item = _.find(driven_list,{key:pin.getId()})
+        if not item?
+          if port.isClock
+            printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultClock};"
+            driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultClk.getId()],conds:[]})
+          if port.isReset
+            printBuffer.add "assign #{toSignal(pin.getName())} = #{inst.__defaultReset};"
+            driven_list.push({key:pin.getElId(),checkPoint:false,inst:pin,driven:[defaultRst.getId()],conds:[]})
+      printBuffer.blank()
 
   printBuffer.blank('//Verilog Segment')
   for plainLines in inst.__verilogSegments

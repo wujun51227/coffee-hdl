@@ -13,32 +13,29 @@ class master_cell extends Module
     assign @master.valid  = v
 
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign v = 0
-      .delay(1000) =>
-      .delay(100) =>
+        go 1000
+        go 100
         assign v = 1
-      .delay(100) =>
+        go 100
         assign v = 0
-      .delay(100) =>
+        go 100
         assign v = 1
-      .delay(100) =>
+        go 100
         assign v = 0
-      .end()
 
     initial
-      $sequence()
-      .delay(10) =>
+      $flow =>
+        go 10
         @assert_1(@master.ready,'check 1')
-      .delay(1110) =>
+        go 1110
         @assert_0(@master.ready,'check 0')
-      .delay(1210) =>
+        go 1210
         @assert_1(@master.ready,'check 1')
-      .delay(1310) =>
+        go 1310
         @assert_0(@master.ready,'check 0')
-      .delay(1410) =>
+        go 1410
         @assert_1(@master.ready,'check 1')
-      .end()
 
 module.exports=master_cell

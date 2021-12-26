@@ -21,7 +21,7 @@ class SubModule extends Module
     )
 
   build: ->
-    value = getParameter('hello')
+    value = get_parameter('hello')
     assign @dout =  value
 
 class ParameterTest extends Module

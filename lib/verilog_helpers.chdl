@@ -5,8 +5,7 @@ global  = require('chdl_global')
 module.exports={
   dump_wave: (fileName,inst=null,level=0)->
     initial
-      $sequence()
-      .init ()=>
+      $flow =>
         if global.getWaveFormat()=='fsdb'
           verilog("$fsdbDumpfile(\"#{fileName}.fsdb\");")
           if inst?
@@ -19,7 +18,6 @@ module.exports={
             verilog("$dumpvars(#{level},#{inst._getPath()});")
           else
             verilog("$dumpvars;")
-      .end()
 
   sim_finish: ()->
     verilog("$finish;")
@@ -35,34 +33,29 @@ module.exports={
     assert_module.monitor_handle.noInit()
     handle = assert_module.monitor_handle
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign assert_module.monitor_handle= {"$fopen(\"#{fileName}\")"}
         display("#{assert_module.message_prefix} Create file #{fileName}")
         for inst in inst_list
           for [name,item] in toFlatten(inst.__local_regs)
             verilog("$fmonitor(#{handle.oomrName()},\"%0d #{item.oomrName()} 0x%x\",$time,#{item.oomrName()});")
-      .end()
     return assert_module.monitor_handle
 
   inst_monitor: (inst)->
     handle = assert_module.monitor_handle
     initial
-      $sequence()
-      .delay(0.1) =>
+      $flow =>
+        go 0.1
         for [name,item] in toFlatten(inst.__local_regs)
           verilog("$fmonitor(#{handle.oomrName()},\"%d #{item.oomrName()}\",$time,#{item.oomrName()});")
-      .end()
 
   fopen:(name=null)->
     fileName = name ? @_getPath()+'.dump'
     handle=vreg(32)
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign handle= {"$fopen(\"#{fileName}\")"}
         display("#{assert_module.message_prefix} Create file #{fileName}")
-      .end()
     return handle
 
   fdisplay:(handle,s,args...)->
@@ -73,21 +66,18 @@ module.exports={
 
   create_clock: (clk,period=10)->
     forever
-      $sequence()
-      .delay(period/2) =>
+      $flow =>
+        go(period/2)
         assign(clk) = !clk
-      .end()
 
   create_resetn: (rstn,assert_start=0,assert_hold_time=100)->
     initial
-      $sequence()
-      .init =>
+      $flow =>
         assign rstn = 1
-      .delay(assert_start) =>
+        go(assert_start)
         assign rstn = 0
-      .delay(assert_hold_time) =>
+        go(assert_hold_time)
         assign rstn = 1
-      .end()
 
   readmemh: (file_path,sig)->
     sig.readmemh(this,file_path)
