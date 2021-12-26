@@ -41,11 +41,11 @@ moduleKeyTable={
   polling: '_polling'
   go: '_progress'
   mold: '_mold'
-  targetWidth: '_targetWidth'
+  target_width: '_targetWidth'
   verilog: '_verilog'
   verilog_segment: '_verilog_segment'
   display: '_display'
-  getParameter: '_getParameter'
+  get_parameter: '_getParameter'
   '$flow': '_flow'
   '$sequence': '_sequenceDef'
 }

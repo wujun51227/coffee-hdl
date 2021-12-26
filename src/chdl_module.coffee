@@ -1333,31 +1333,31 @@ class Module
   _getModuleName: -> @__moduleName ? this.constructor.name
 
   instParameter: (s)->
-    throw new Error("break changes, use SetProperty override_parameter")
+    throw new Error("break changes, use Property override_parameter")
 
   setLint:(key,value)->
-    throw new Error("break changes, use SetProperty lint_width_check_overflow,lint_width_check_mismatch,lint_width_check_disable")
+    throw new Error("break changes, use Property lint_width_check_overflow,lint_width_check_mismatch,lint_width_check_disable")
 
   specifyModuleName: (name)->
-    throw new Error("break changes, use SetProperty module_name")
+    throw new Error("break changes, use Property module_name")
 
   setCombModule: ->
-    throw new Error("break changes, use SetProperty comb_module")
+    throw new Error("break changes, use Property comb_module")
 
   notUniq: ->
-    throw new Error("break changes, use SetProperty uniq")
+    throw new Error("break changes, use Property uniq")
 
   moduleParameter: (list)->
-    throw new Error("break changes, use SetProperty parameter")
+    throw new Error("break changes, use Property parameter")
 
   setDefaultClock: (clock)=>
-    throw new Error("break changes, use SetProperty default_clock")
+    throw new Error("break changes, use Property default_clock")
 
   setDefaultReset: (reset)=>
-    throw new Error("break changes, use SetProperty default_reset")
+    throw new Error("break changes, use Property default_reset")
 
   setBlackBox: ()=>
-    throw new Error("break changes, use SetProperty blackbox")
+    throw new Error("break changes, use Property blackbox")
 
   display: (s,args...)->
     throw new Error("break changes, use display literal")
@@ -1366,12 +1366,15 @@ class Module
     throw new Error("break changes, use verilog literal")
 
   targetWidth: => 
-    throw new Error("break changes, use targetWidth literal")
+    throw new Error("break changes, use target_width literal")
 
   mold: => 
     throw new Error("break changes, use mold literal")
 
   getParameter: =>
     throw new Error("break changes, use getParameter literal")
+
+  moduleParameter: =>
+    throw new Error("break changes, use Property module_parameter")
 
 module.exports=Module
