@@ -1,6 +1,6 @@
 
 
-# Coffee-HDL 用户手册 v0.6
+# Coffee-HDL 用户手册 v0.7
 
 ##  介绍
 
@@ -17,10 +17,14 @@ CoffeeScript编程语言中的硬件构造语言,是一种对CoffeeScript语言�
 会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的CoffeeScript书籍 
 ["CoffeeScript in action"](https://www.manning.com/books/CoffeeScript-in-action).
 
+## 破坏性更新
+
+0.6->0.7: 
+
 ##  安装
 Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的CoffeeScript编译器支持,如果操作系统没有自
 带nodejs环境,请在 https://nodejs.org/en/download/ 下载相应版本,解压缩以后把path指向nodejs安装目
-录的bin目录就可以了.
+录的bin目录.
 
 Coffee-HDL安装步骤
 
@@ -93,8 +97,8 @@ Coffee-HDL的未来要实现的功能
  ```
 
 ## 文件类型和模块
-Coffee-HDL模块描述文件以.chdl作为文件后缀名,一个模块一个文件,导入模块
-使用importDesign("design"),  其中design可以省略.chdl后缀名,
+Coffee-HDL模块描述文件以.chdl作为文件后缀名,一个模块一个文件.导入模块
+使用importDesign("design.chdl"),  其中design可以省略.chdl后缀名,
 如果导入普通CoffeeScript模块,使用标准的require方式导入.
 
 Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
@@ -124,7 +128,26 @@ Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
 编程人员可以通过函数名清晰的知道该函数会生成电路。编译器缺省会导入自带的chdl_primitive_lib函数库，
 该函数库提供了一些常用电路生成函数。
 
-
+模块可以通过Property()方法设置属性，以下是模块相关的属性列表
+* blackbox: boolean, 如果是true,当前模块是blackbox模块，不需要编译输出
+verilog代码,缺省false
+* module_name: string, 设置当前模块名字
+* comb_module: boolean, 设置当前模块是纯组合逻辑模块,缺省根据
+是否有clock输入判定是不是纯组合逻辑模块
+* default_clock: string, 设置当前模块的主时钟
+* default_reset: string, 设置当前模块的主复位
+* uniq_name: boolean, 如果是false,设置所有实例化模块共享同样的模块名,缺省
+是true
+* lint_width_check_overflow: boolean, 如果是true,设置检查
+传递信号溢出,被传递信号宽度必须大于等于激励表达式,缺省true
+* lint_width_check_mismatch: boolean, 如果是true,设置检查
+传递信号宽度必须一致,缺省false,当设置为true的时候,lint_width_check_overflow
+设置无效
+* lint_width_check_disable: boolean,如果是true,设置不需要检查
+传递信号宽度,缺省false,当设置为true的时候,lint_width_check_mismatch
+,lint_width_check_overflow无效
+* module_parameter: list, 设置模块的verilog参数,格式为[{key:parameter_name,value:default_value}...]
+* override_parameter: list, 设置实例化模块时候覆盖verilog参数,格式为[{key:parameter_name,value:default_value}...]
 
 电路模块内容一般是三部分组成
 
@@ -308,7 +331,7 @@ Coffee-HDL采用“$”符号作为verilog组合电路表达式的前导符,如�
 (signal) = 或者 consign(signal) = 后面可以省略$符号，电路表达式会产生相应的的v
 erilog组合电路表达式,其中有几点需要注意
 
-* 可以用 @signal的方式直接引用模块内部使用Wire,Reg等资源
+* 可以用 @variable_name 的方式直接引用模块内部使用Wire,Reg等资源
 * 需有求值的部分必须放在{}中,比如局部变量,原生数据计算等等
 * 除此以外的符号都按照字面量生成在verilog表达式当中
 * 三目运算符的: 通过$if $else 结构代替
@@ -1141,7 +1164,7 @@ constructor: ->
 
 
 
-也可以使用@mold函数，而不是显式bind
+也可以使用mold函数，而不是显式bind
 
 ```coffeescript
 constructor: ->
@@ -1149,7 +1172,7 @@ constructor: ->
     	u0_cell: new sub_module()
 	)
 	Channel(
-		u0_cell_ch: @mold(@u0_cell)
+		u0_cell_ch: mold(@u0_cell)
 	)
 ```
 
@@ -1366,32 +1389,46 @@ CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有�
 0.2  . 
 ```
 
+## flow
+可以在initial/forever中可以用$flow模式编程产生verilog行为语句
+，操作对象一般是vreg类型变量，
+
+可用的行为序列语句
+* posedge(signal:string|object,delay)
+* negedge(signal:string|object,delay)
+* wait(expression:$expr)
+* go(delay:number)
+* trigger(trigger_name:string) 
+* event(tringger_name:string)
+* polling(signal:string|object,expr:$expr) 
+
+示例代码
+		
+```coffeescript
+initial
+  $flow =>
+    assign @cs = 0
+    posedge(@sel)
+    assign @cs = 1
+    assign @addr_out = @addr
+    go(5)
+    negedge(@sel)
+    assign @cs = 0
+    assign @addr_out = 16'hffff'
+    wait($(@finish==1))
+    assign @addr = @addr+4
+```
 
 ## 序列
-为了把更加容易理解的序列操作变成硬件电路或者行为语句，可以用$sequence模式编程，
-序列分为可综合序列和行为序列，在initial中出现的是行为序列，操作对象是vreg类型变量，
-在sequenace_always中出现的是可综合序列，操作对象是reg,port,wire.
+为了把更加容易理解的序列操作变成硬件电路，可以用$sequence模式编程，
+序列必须在always中出现,并且可综合成硬件电路，操作对象是reg,port,wire.
 
 可综合序列触发条件和回调函数形式
 
 * posedge(signal:string|object) (trans,next) =>
-* negedge(signal::string|object) (trans,next) =>
+* negedge(signal:string|object) (trans,next) =>
 * next(cycle: number) (trans,next)=>
 * wait(expression:$expr) (trans,next)=>
-* end()
-
-行为序列触发条件和回调函数形式
-
-* init =>
-* posedge(signal:string|object) =>
-* after_posedge(signal:string|object,delay=0.1) =>
-* negedge(signal:string|object) =>
-* wait(expression:$expr) =>
-* delay(delay:number) =>
-* trigger(trigger_name:string) =>
-* event(tringger_name:string)
-* do =>
-* polling(signal:string|object,expr:$expr) =>
 * end()
 
 可综合事件对应的回调函数带有两个参数，第一个参数trans是进入状态的的信号,第二个参数next
@@ -1400,26 +1437,25 @@ CDC静态检查会报告当前设计所有时钟关系，顶层输入的所有�
 示例代码
 		
 ```coffeescript
- $sequence('writeSeq') =>
+always
+  $sequence('writeSeq') =>
+     assign @cs = 0
+    .posedge(@sel) =>
+      assign @cs = 1
+      assign @addr_out = @addr
+    .next(5) =>
+    .negedge(@sel) (trans,next)=>
+      $if(trans)
         assign @cs = 0
-      .posedge(@sel) =>
-        assign @cs = 1
-        assign @addr_out = @addr
-      .next(5) =>
-      .negedge(@sel) (trans,next)=>
-        $if(trans)
-          assign @cs = 0
-        $elseif(next)
-          assign @addr_out = 16'hffff'
-      .wait($(@finish==1)) =>
-        assign @addr = @addr+4
-      .end()
+      $elseif(next)
+        assign @addr_out = 16'hffff'
+    .wait($(@finish==1)) =>
+      assign @addr = @addr+4
+    .end()
 ```
-在initial当中的sequence，编译结果是verilog行为语句，目的在于描述testbench行为。
 
 在always当中如果使用序列，编译器会在最终状态自动根据第一个状态的触发条件决定是回到idle,还是
 直接进入第一个状态.
-
 
 ##  集成
 除了使用通常的port-pin方式逐步向上信号互联集成的方式以外,Coffee-HDL还可以使用hub方式集成.
@@ -1577,13 +1613,11 @@ class top extends Module
 * Mem()
 * Reg()
 
-模块自带方法
+全局方法
 
-* @setBlackBox()
-* @specifyModuleName(name)
-* @moduleParameter(parameter_list)
-* @instParameter(parameter_list)
-* @verilog(verilog_string)
+* verilog(verilog_string) 用在always,initial中
+* verilog_segment(multi_line_string) 用在顶层
+* display(print_string,args...) 
 
 ## 感谢
 powelljin,lizhousun,siyu,solar对本项目提的意见以及小白鼠工作
