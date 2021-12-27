@@ -296,8 +296,8 @@ class Module
       @__defaultClock=obj.default_clock
     if obj.default_reset?
       @__defaultReset=obj.default_reset
-    if obj.uniq?
-      @__uniq=obj.uniq
+    if obj.uniq_name?
+      @__uniq=obj.uniq_name
     if obj.lint_width_check_overflow?
       @__lint.widthCheckLevel=1
     if obj.lint_width_check_mismatch?

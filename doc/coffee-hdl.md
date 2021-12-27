@@ -17,9 +17,7 @@ CoffeeScript编程语言中的硬件构造语言,是一种对CoffeeScript语言�
 会翻译成javascript语言通过nodejs引擎运行, 进一步的学习请参考一本优秀的CoffeeScript书籍 
 ["CoffeeScript in action"](https://www.manning.com/books/CoffeeScript-in-action).
 
-## 破坏性更新
 
-0.6->0.7: 
 
 ##  安装
 Coffee-HDL需要nodejs v10以上环境支持以及2.4以上版本的CoffeeScript编译器支持,如果操作系统没有自
@@ -128,27 +126,6 @@ Coffee-HDL描述文件可以分为两类，模块设计文件和函数库文件:
 编程人员可以通过函数名清晰的知道该函数会生成电路。编译器缺省会导入自带的chdl_primitive_lib函数库，
 该函数库提供了一些常用电路生成函数。
 
-模块可以通过Property()方法设置属性，以下是模块相关的属性列表
-* blackbox: boolean, 如果是true,当前模块是blackbox模块，不需要编译输出
-verilog代码,缺省false
-* module_name: string, 设置当前模块名字
-* comb_module: boolean, 设置当前模块是纯组合逻辑模块,缺省根据
-是否有clock输入判定是不是纯组合逻辑模块
-* default_clock: string, 设置当前模块的主时钟
-* default_reset: string, 设置当前模块的主复位
-* uniq_name: boolean, 如果是false,设置所有实例化模块共享同样的模块名,缺省
-是true
-* lint_width_check_overflow: boolean, 如果是true,设置检查
-传递信号溢出,被传递信号宽度必须大于等于激励表达式,缺省true
-* lint_width_check_mismatch: boolean, 如果是true,设置检查
-传递信号宽度必须一致,缺省false,当设置为true的时候,lint_width_check_overflow
-设置无效
-* lint_width_check_disable: boolean,如果是true,设置不需要检查
-传递信号宽度,缺省false,当设置为true的时候,lint_width_check_mismatch
-,lint_width_check_overflow无效
-* module_parameter: list, 设置模块的verilog参数,格式为[{key:parameter_name,value:default_value}...]
-* override_parameter: list, 设置实例化模块时候覆盖verilog参数,格式为[{key:parameter_name,value:default_value}...]
-
 电路模块内容一般是三部分组成
 
 1. 实例化子模块
@@ -253,6 +230,26 @@ cell1 u0_cell1(
 );
 
 endmodule
+```
+
+## 模块属性
+
+模块可以通过Property()方法设置属性，以下是模块相关的属性列表
+
+```csv-text
+属性名,类型,缺省值,描述
+blackbox, boolean,false,"如果是true,当前模块是blackbox模块,不需要编译输出 verilog代码"
+module_name, string,auto,"设置当前模块名字,缺省等同于类名"
+comb_module,boolean,auto,"设置当前模块是纯组合逻辑模块,缺省根据 是否有clock输入判定是不是纯组合逻辑模块"
+default_clock,string,auto,设置当前模块的主时钟
+default_reset,string,auto,设置当前模块的主复位
+uniq_name,boolean,true,"如果是false,设置所有实例化模块共享同样的模块名"
+lint_width_check_overflow,boolean,true,"如果是true,检查 信号赋值溢出,被传递信号宽度必须大于等于激励表达式"
+lint_width_check_mismatch,boolean,false,"如果是true,检查 信号赋值宽度必须一致,当设置为true的时候,lint_width_check_overflow无效"
+lint_width_check_disable,boolean,false,"如果是true,不检查 信号宽度,当设置为true的时候,lint_width_check_mismatch ,int_width_check_overflow无效"
+module_parameter,list,[]," 设置模块的verilog参数,格式为[{key:parameter_name,value:default_value}...]"
+override_parameter,list,[]," 设置实例化模块时候覆盖verilog参数,格式为[{key:parameter_name,value:default_value}...]"
+
 ```
 
 ## 语言要素
@@ -1618,6 +1615,95 @@ class top extends Module
 * verilog(verilog_string) 用在always,initial中
 * verilog_segment(multi_line_string) 用在顶层
 * display(print_string,args...) 
+* mold(instance)
+* target_width() 被赋值信号宽度
+* get_parameter(key_string) 获取verilog parameter的参数值
+
+## 破坏性更新
+
+0.6升级到0.7版本有不向前兼容的更新，
+
+  * 移除了一些模块级api函数，使用Property()方法申明模块属性，并增加了一些全局函数，如下所示
+ 
+
+```csv-text
+  0.6版本模块api函数,0.7版本的方式
+  @moduleParameter()   , Property.module_parameter
+  @instParameter()     , Property.override_parameter
+  @specifyModuleName() , Property.module_name
+  @setLint()           , Property.(lint_width_check_overflow| lint_width_check_mismatch| lint_width_check_disable)
+  @setCombModule()     , Property.comb_module
+  @notUniq()           , Property.uniq_name
+  @setDefaultClock()   , Property.default_clock
+  @setDefaultReset()   , Property.default_reset
+  @setBlackBox()       , Property.blackbox
+  @mold()              , mold()
+  @display()           , display()
+  @verilog()           , verilog()
+  @targetWidth()       , target_width()
+  @getParameter()      , get_parameter()
+```
+
+
+示例，0.6版本写法
+```coffeescript
+  @setDefaultClock('clk')
+  @setDefaultReset('rstn')
+```
+ 
+0.7以上版本写法
+```coffeescript
+ Property(
+   default_clock: 'clk'
+   default_reset: 'rstn'
+ )
+```
+
+* 去除了testbench里面的行为级$sequence用法, 增加了$flow函数实现可阻塞的次序操作
+ 
+ 在$flow函数中你可以像在verilog一样使用阻塞操作，列表如下
+
+```csv-text
+ 操作, 描述
+ go n                   , 延时 n 纳秒，n可以是小数
+ posedge/negedge signal , 等待信号上升/下降沿
+ polling signal expr    , 使用signal采样表达式expr直到为真
+ wait expr              , 等待表达式expr为真
+ event event_name             , 发送事件
+ trigger event_name           , 等待事件触发
+```
+ 
+示例，0.6版本写法
+```coffeescript
+ initial
+   $sequence()
+   .init =>
+     assign a = 1
+   .delay(10) =>
+     assign a = 0
+   .posedge(@clk) =>
+     assign a = 1
+   .wait($(aa==bb)) =>
+     assign a = 0
+   .end()
+```
+ 
+0.7以上版本写法
+
+```coffeescript
+ initial
+   $flow =>
+     assign a = 1
+     go 10
+     assign a = 0
+     posedge @clk
+     assign a = 1
+     wait $(aa==bb)
+     assign a = 0
+```
+
+
+
 
 ## 感谢
-powelljin,lizhousun,siyu,solar对本项目提的意见以及小白鼠工作
+powelljin,lizhousun,siyu,solar对本项目提的意见
