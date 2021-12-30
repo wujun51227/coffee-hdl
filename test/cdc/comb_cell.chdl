@@ -71,10 +71,10 @@ class comb_cell extends Module
 
 
     Channel(
-      ch0: @mold(@u0)
-      ch1: @mold(@u1)
-      ch2: @mold(@u2)
-      ch3: @mold(@u3)
+      ch0: mold(@u0)
+      ch1: mold(@u1)
+      ch2: mold(@u2)
+      ch3: mold(@u3)
     )
 
   build: ->

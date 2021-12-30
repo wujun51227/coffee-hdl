@@ -63,13 +63,13 @@ class generate_clk extends Module
     )
 
     Channel(
-      ch_p0: @mold(@p0)
-      ch_p1: @mold(@p1)
+      ch_p0: mold(@p0)
+      ch_p1: mold(@p1)
 
-      ch_u0: @mold(@u0)
+      ch_u0: mold(@u0)
 
-      cg0: @mold(@clk_gen0)
-      cg1: @mold(@clk_gen1)
+      cg0: mold(@clk_gen0)
+      cg1: mold(@clk_gen1)
     )
 
   build: ->

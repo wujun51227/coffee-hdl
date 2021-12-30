@@ -41,7 +41,7 @@ class async_ignore extends Module
 
 
     Channel(
-      ch0: @mold(@u0)
+      ch0: mold(@u0)
     )
 
   build: ->

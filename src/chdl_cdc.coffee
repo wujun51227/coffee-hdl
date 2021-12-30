@@ -191,7 +191,7 @@ mergeSync=(checkObj,syncObj,clkGroup)->
               checkObj.sync.type = syncType.async
             else
               checkObj.sync.dirty=true
-          else if syncObj.type==syncType.sync and syncObj.sync.dirty==true
+          else if syncObj.type==syncType.sync and syncObj.dirty==true
             checkObj.sync.dirty=true
       else if syncObj.type==syncType.async || syncObj.type==syncType.unstable
         checkObj.sync.type = syncType.async
@@ -230,7 +230,7 @@ syncJudge=(checkObj,driveSigPath,syncObj,clkGroup)->
               })
             else
               checkObj.sync.dirty=true
-          else if syncObj.type==syncType.sync and syncObj.sync.dirty==true
+          else if syncObj.type==syncType.sync and syncObj.dirty==true
             if checkObj.sync.dirty==true
               cdcError.push({
                 msg:"async converge",
@@ -349,7 +349,7 @@ cdcAnalysis=(driven_tree,clkGroup,result=[])->
     else
       cdcAnalysis(i,clkGroup,result)
 
-  log ("Clock Domain Crossing Checking, Module: "+driven_tree.inst.getModuleName()).yellow
+  log ("Clock Domain Crossing Checking, Module: "+driven_tree.inst._getModuleName()).yellow
 
   for {pin,port} in channelPortList
     instPort= port
