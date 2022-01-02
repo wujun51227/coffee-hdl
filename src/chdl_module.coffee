@@ -1259,13 +1259,13 @@ class Module
     throw new Error("break changes, use verilog literal")
 
   targetWidth: => 
-    throw new Error("break changes, use target_width literal")
+    throw new Error("break changes, use assignee_width literal")
 
   mold: => 
     throw new Error("break changes, use mold literal")
 
   getParameter: =>
-    throw new Error("break changes, use getParameter literal")
+    throw new Error("break changes, use get_parameter literal")
 
   moduleParameter: =>
     throw new Error("break changes, use Property module_parameter")

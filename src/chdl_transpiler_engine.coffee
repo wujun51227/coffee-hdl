@@ -41,7 +41,7 @@ moduleKeyTable={
   polling: '_polling'
   go: '_progress'
   mold: '_mold'
-  target_width: '_targetWidth'
+  assignee_width: '_targetWidth'
   verilog: '_verilog'
   verilog_segment: '_verilog_segment'
   display: '_display'

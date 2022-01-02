@@ -1616,7 +1616,7 @@ class top extends Module
 * verilog_segment(multi_line_string) 用在顶层
 * display(print_string,args...) 
 * mold(instance)
-* target_width() 被赋值信号宽度
+* assignee_width() 被赋值信号宽度
 * get_parameter(key_string) 获取verilog parameter的参数值
 
 ## 破坏性更新
@@ -1640,7 +1640,7 @@ class top extends Module
   @mold()              , mold()
   @display()           , display()
   @verilog()           , verilog()
-  @targetWidth()       , target_width()
+  @targetWidth()       , assignee_width()
   @getParameter()      , get_parameter()
 ```
 
