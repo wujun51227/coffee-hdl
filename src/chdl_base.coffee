@@ -314,7 +314,7 @@ buildSim= (buildName,inst)=>
 
 code_gen= (inst,allInst,first=false)=>
   if first
-    inst._setProperty({uniq:false})
+    inst._setProperty({uniq_name:false})
   buildName = inst._getBuildName()
 
   if first and (!inst._isCompany()) and global.getTopName()?
