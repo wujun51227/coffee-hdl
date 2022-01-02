@@ -249,11 +249,11 @@ statementGen=(buffer,statement,cond_stack=[],sig_driven_list=[])->
   else if stateType=='flow_posedge'
     buffer.add "  @(posedge #{statement[2]});"
     if statement[3]?
-      buffer.add "  ##{statement[3]});"
+      buffer.add "  ##{statement[3]};"
   else if stateType=='flow_negedge'
     buffer.add "  @(negedge #{statement[2]});"
     if statement[3]?
-      buffer.add "  ##{statement[3]});"
+      buffer.add "  ##{statement[3]};"
   else if stateType=='flow_wait'
     buffer.add "  wait(#{statement[2].e.str});"
   else if stateType=='flow_event'
@@ -518,8 +518,9 @@ code_gen= (inst,allInst,first=false)=>
     printBuffer.add "initial begin"
     for seq in seqList
       initSegmentList = seq
+      cond_stack=[]
       for statement in initSegmentList
-        statementGen(printBuffer,statement)
+        statementGen(printBuffer,statement,cond_stack)
     printBuffer.add "end"
     printBuffer.blank()
 
@@ -528,8 +529,9 @@ code_gen= (inst,allInst,first=false)=>
     printBuffer.add "always begin"
     for seq in seqList
       initSegmentList = seq
+      cond_stack=[]
       for statement in initSegmentList
-        statementGen(printBuffer,statement)
+        statementGen(printBuffer,statement,cond_stack)
     printBuffer.add "end"
     printBuffer.blank()
 
