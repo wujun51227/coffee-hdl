@@ -1,6 +1,6 @@
 
 
-# Coffee-HDL 用户手册 v0.7
+# Coffee-HDL 用户手册 v0.7.1
 
 ##  介绍
 
@@ -1621,13 +1621,13 @@ class top extends Module
 
 ## 破坏性更新
 
-0.6升级到0.7版本有不向前兼容的更新，
+0.6升级到0.7.1版本有不向前兼容的更新，
 
   * 移除了一些模块级api函数，使用Property()方法申明模块属性，并增加了一些全局函数，如下所示
  
 
 ```csv-text
-  0.6版本模块api函数,0.7版本的方式
+  0.6版本模块api函数,0.7.1版本的方式
   @moduleParameter()   , Property.module_parameter
   @instParameter()     , Property.override_parameter
   @specifyModuleName() , Property.module_name
