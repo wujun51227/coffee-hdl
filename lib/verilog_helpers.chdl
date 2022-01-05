@@ -23,7 +23,10 @@ module.exports={
     verilog("$finish;")
 
   random: (seed='')->
-    return $("$urandom(#{seed})")
+    if seed==''
+      return $("$urandom()")
+    else
+      return $("$urandom(#{seed})")
 
   toExprList: (list)->
     return ($(i) for i in list)
