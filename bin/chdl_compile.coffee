@@ -114,7 +114,7 @@ class tb_#{moduleName} extends Module
     ])
 
     Channel(
-      dut_channel: @mold(@dut)
+      dut_channel: mold(@dut)
     )
 
     Reg(
@@ -122,8 +122,10 @@ class tb_#{moduleName} extends Module
       rstn: vreg().init(1)
     )
 
-    @setDefaultClock('clk')
-    @setDefaultReset('rstn')
+    Property(
+      default_clock: 'clk'
+      default_reset: 'rstn'
+    )
 
 
   build: ->
@@ -146,28 +148,24 @@ class tb_#{moduleName} extends Module
     count=vreg(32)
 
     forever
-      seq=$sequence()
-      seq.polling(@clk,$(signal)) =>
-      seq.delay(200) =>
-        @display("in forever %x",$(signal))
-      seq.end()
+      $flow =>
+        polling(@clk,$(signal))
+        go 200
+        display("in forever %x",$(signal))
 
     initial
-      seq=$sequence()
-      seq.init =>
-      seq.delay(200) =>
+      $flow =>
+        go 200
         $while(count>0)
           assign count=count-1
-      seq.do =>
-      seq.polling(@clk,$(signal)) =>
-      seq.posedge(@clk) =>
-      seq.negedge(@clk) =>
-      seq.wait($(@clk)) =>
-      seq.delay(1) =>
-        @display("simulation finish %x",$(signal))
+        polling(@clk,$(signal))
+        posedge(@clk)
+        negedge(@clk)
+        wait($(@clk))
+        go 1
+        display("simulation finish %x",$(signal))
         @assert_report()
         @sim_finish()
-      seq.end()
 
 module.exports=tb_#{moduleName}
 """
